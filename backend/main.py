@@ -42,12 +42,24 @@ if STATIC_DIR.exists():
 
 # --- Routes ---
 
+
 @app.get("/health")
 async def health_check():
     """Health check endpoint."""
     return {"status": "ok", "app": settings.APP_NAME, "version": settings.APP_VERSION}
 
 
-# Import dan daftarkan routers (akan ditambahkan di fase development)
-# from .routers import auth, transactions, categories, stats, export
-# app.include_router(auth.router)
+# --- API Routers ---
+from .routers import auth, transactions, categories, stats, export, payment_methods
+
+app.include_router(auth.router)
+app.include_router(transactions.router)
+app.include_router(categories.router)
+app.include_router(stats.router)
+app.include_router(export.router)
+app.include_router(payment_methods.router)
+
+# --- Page Router (HTML) — harus didaftarkan setelah API routers ---
+from .routers import pages
+
+app.include_router(pages.router)

@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% block title %}Daftar — Sribuu{% endblock %}
+
+{% block head %}
+<style>
+    .auth-card {
+        background: white;
+        border-radius: 20px;
+        padding: 32px 28px;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .auth-input {
+        width: 100%;
+        padding: 12px 14px;
+        border: 1.5px solid #e7e5e4;
+        border-radius: 10px;
+        font-size: 14px;
+        color: #44403c;
+        outline: none;
+        transition: all 0.2s;
+        background: #fafaf9;
+    }
+    .auth-input:focus {
+        border-color: #10b981;
+        box-shadow: 0 0 0 3px rgba(16,185,129,0.08);
+        background: white;
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="min-h-[80vh] flex items-center justify-center px-4 py-8">
+  <div class="auth-card w-full max-w-sm">
+
+    <!-- Header -->
+    <div class="text-center mb-7">
+      <div class="w-14 h-14 bg-emerald-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+        <i class="fas fa-wallet text-white text-2xl"></i>
+      </div>
+      <h1 class="text-2xl font-bold text-stone-800">Buat Akun</h1>
+      <p class="text-sm text-stone-400 mt-1">Daftar untuk mulai mencatat pengeluaran</p>
+    </div>
+
+    <!-- Form -->
+    <form method="POST" action="{{ url_for('register') }}" class="space-y-4">
+      <!-- Nama -->
+      <div>
+        <label for="name" class="block text-xs font-semibold text-stone-600 mb-1.5">
+          Nama Lengkap <span class="text-red-400">*</span>
+        </label>
+        <div class="relative">
+          <i class="fas fa-user absolute left-4 top-1/2 -translate-y-1/2 text-stone-300 text-sm"></i>
+          <input type="text" id="name" name="name" required autofocus
+                 placeholder="Nama Anda"
+                 class="auth-input pl-11"
+                 value="{{ name if name else '' }}">
+        </div>
+      </div>
+
+      <!-- Email -->
+      <div>
+        <label for="email" class="block text-xs font-semibold text-stone-600 mb-1.5">
+          Email <span class="text-red-400">*</span>
+        </label>
+        <div class="relative">
+          <i class="fas fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-stone-300 text-sm"></i>
+          <input type="email" id="email" name="email" required
+                 placeholder="anda@email.com"
+                 class="auth-input pl-11"
+                 value="{{ email if email else '' }}">
+        </div>
+      </div>
+
+      <!-- Password -->
+      <div>
+        <label for="password" class="block text-xs font-semibold text-stone-600 mb-1.5">
+          Kata Sandi <span class="text-red-400">*</span>
+        </label>
+        <div class="relative" x-data="{ show: false }">
+          <i class="fas fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-stone-300 text-sm"></i>
+          <input :type="show ? 'text' : 'password'" id="password" name="password" required
+                 placeholder="Minimal 6 karakter"
+                 class="auth-input pl-11 pr-11">
+          <button type="button" @click="show = !show"
+                  class="absolute right-4 top-1/2 -translate-y-1/2 text-stone-300 hover:text-stone-500 text-sm">
+            <i :class="show ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+          </button>
+        </div>
+        <p class="text-xs text-stone-400 mt-1">Minimal 6 karakter</p>
+      </div>
+
+      <!-- Konfirmasi Password -->
+      <div>
+        <label for="confirm_password" class="block text-xs font-semibold text-stone-600 mb-1.5">
+          Konfirmasi Kata Sandi <span class="text-red-400">*</span>
+        </label>
+        <div class="relative" x-data="{ show: false }">
+          <i class="fas fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-stone-300 text-sm"></i>
+          <input :type="show ? 'text' : 'password'" id="confirm_password" name="confirm_password" required
+                 placeholder="Ulangi kata sandi"
+                 class="auth-input pl-11 pr-11">
+          <button type="button" @click="show = !show"
+                  class="absolute right-4 top-1/2 -translate-y-1/2 text-stone-300 hover:text-stone-500 text-sm">
+            <i :class="show ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Submit -->
+      <button type="submit"
+              class="w-full py-3 bg-emerald-500 text-white font-semibold rounded-xl hover:bg-emerald-600 transition text-sm flex items-center justify-center gap-2 mt-6">
+        <i class="fas fa-user-plus"></i> Daftar
+      </button>
+    </form>
+
+    <!-- Divider -->
+    <div class="relative my-6">
+      <div class="absolute inset-0 flex items-center">
+        <div class="w-full border-t border-stone-200"></div>
+      </div>
+      <div class="relative flex justify-center text-xs">
+        <span class="bg-white px-3 text-stone-400">sudah punya akun?</span>
+      </div>
+    </div>
+
+    <!-- Login Link -->
+    <a href="{{ url_for('login') }}"
+       class="block w-full py-3 border-2 border-emerald-200 text-emerald-700 font-semibold rounded-xl hover:bg-emerald-50 transition text-sm text-center flex items-center justify-center gap-2">
+      <i class="fas fa-sign-in-alt"></i> Masuk Sekarang
+    </a>
+  </div>
+</div>
+{% endblock %}

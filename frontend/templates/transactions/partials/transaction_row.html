@@ -1,0 +1,59 @@
+{# transaction_row.html — Single transaction row, used in list and after add/edit/delete #}
+<div id="tx-{{ tx.id }}"
+     class="tx-row grid grid-cols-1 sm:grid-cols-12 gap-1 sm:gap-2 px-5 py-3.5 border-b border-stone-50 items-center"
+     {% if loop is defined and loop.last %}style="border-bottom: none;"{% endif %}>
+
+  <!-- Tanggal (Mobile + Desktop) -->
+  <div class="sm:col-span-3">
+    <span class="text-sm font-medium text-stone-700">{{ tx.transaction_date | format_date_id }}</span>
+    <span class="text-xs text-stone-400 sm:hidden ml-2">{{ tx.transaction_date | format_time if tx.created_at else '' }}</span>
+  </div>
+
+  <!-- Kategori / Catatan -->
+  <div class="sm:col-span-4">
+    <div class="flex items-center gap-2">
+      <span class="text-lg">{{ tx.category_icon }}</span>
+      <div>
+        <span class="text-sm font-medium text-stone-700">{{ tx.notes or tx.category_name }}</span>
+        {% if tx.notes %}
+        <span class="text-xs text-stone-400 block sm:hidden">{{ tx.category_name }}</span>
+        {% endif %}
+      </div>
+    </div>
+    {% if tx.notes %}
+    <p class="text-xs text-stone-400 hidden sm:block mt-0.5 truncate">{{ tx.notes }}</p>
+    {% endif %}
+  </div>
+
+  <!-- Metode Pembayaran -->
+  <div class="sm:col-span-2">
+    {% if tx.payment_icon %}
+    <span class="badge bg-stone-50 text-stone-600">
+      {{ tx.payment_icon }} <span class="sm:hidden ml-1">{{ tx.payment_name }}</span>
+      <span class="hidden sm:inline">{{ tx.payment_name }}</span>
+    </span>
+    {% else %}
+    <span class="text-xs text-stone-300">—</span>
+    {% endif %}
+  </div>
+
+  <!-- Jumlah -->
+  <div class="sm:col-span-2 sm:text-right">
+    <span class="text-sm font-semibold text-red-500 tabular-nums">-Rp {{ "{:,.0f}".format(tx.amount) }}</span>
+  </div>
+
+  <!-- Actions (Edit / Delete) -->
+  <div class="sm:col-span-1 flex gap-1 sm:justify-center">
+    <!-- Edit -->
+    <a href="{{ url_for('transactions_edit', transaction_id=tx.id) }}"
+       class="text-stone-300 hover:text-emerald-500 transition p-1" title="Edit">
+      <i class="fas fa-pen text-xs"></i>
+    </a>
+    <!-- Delete with Alpine.js confirmation -->
+    <button
+      @click="confirmDelete({{ tx.id }})"
+      class="text-stone-300 hover:text-red-500 transition p-1" title="Hapus">
+      <i class="fas fa-trash text-xs"></i>
+    </button>
+  </div>
+</div>
