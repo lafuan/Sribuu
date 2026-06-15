@@ -1,0 +1,87 @@
+"""
+SQLAlchemy models untuk Sribuu.
+"""
+
+from datetime import date, datetime
+from sqlalchemy import (
+    Column, Integer, String, Text, Date, DateTime, ForeignKey, CheckConstraint, Index
+)
+from sqlalchemy.orm import relationship
+from ..database import Base
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(100), nullable=False)
+    email = Column(String(255), nullable=False, unique=True, index=True)
+    password_hash = Column(String(128), nullable=False)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    transactions = relationship("Transaction", back_populates="user", cascade="all, delete-orphan")
+    categories = relationship("Category", back_populates="user", cascade="all, delete-orphan")
+
+
+class Category(Base):
+    __tablename__ = "categories"
+    __table_args__ = (
+        # nama unik per user (kategori user) — kategori default punya user_id NULL
+        Index("idx_categories_user_active", "user_id", "is_active"),
+        Index("idx_categories_default_active", "is_default", "is_active"),
+    )
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=True)
+    name = Column(String(50), nullable=False)
+    icon = Column(String(5), nullable=False, default="📦")
+    color = Column(String(7), nullable=False, default="#6b7280")
+    is_default = Column(Integer, nullable=False, default=0)
+    is_active = Column(Integer, nullable=False, default=1)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+    user = relationship("User", back_populates="categories")
+    transactions = relationship("Transaction", back_populates="category")
+
+
+class PaymentMethod(Base):
+    __tablename__ = "payment_methods"
+    __table_args__ = (
+        Index("idx_payment_methods_active", "is_active"),
+    )
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(30), nullable=False, unique=True)
+    icon = Column(String(5), nullable=False, default="💵")
+    is_default = Column(Integer, nullable=False, default=0)
+    is_active = Column(Integer, nullable=False, default=1)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+    transactions = relationship("Transaction", back_populates="payment_method")
+
+
+class Transaction(Base):
+    __tablename__ = "transactions"
+    __table_args__ = (
+        CheckConstraint("amount > 0", name="ck_transaction_amount_positive"),
+        # Index untuk query utama
+        Index("idx_tx_user_date", "user_id", "transaction_date"),
+        Index("idx_tx_user_category", "user_id", "category_id"),
+        Index("idx_tx_user_payment", "user_id", "payment_method_id"),
+        Index("idx_tx_user_amount", "user_id", "transaction_date", "amount"),
+    )
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    category_id = Column(Integer, ForeignKey("categories.id", ondelete="RESTRICT"), nullable=False)
+    payment_method_id = Column(Integer, ForeignKey("payment_methods.id", ondelete="SET NULL"), nullable=True)
+    amount = Column(Integer, nullable=False)  # dalam Rupiah (integer)
+    notes = Column(Text, nullable=True)
+    transaction_date = Column(Date, nullable=False)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = relationship("User", back_populates="transactions")
+    category = relationship("Category", back_populates="transactions")
+    payment_method = relationship("PaymentMethod", back_populates="transactions")
