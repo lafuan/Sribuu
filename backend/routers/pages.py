@@ -30,7 +30,7 @@ async def _optional_user(request: Request):
         return None
 
 
-@router.get("/login")
+@router.get("/login", name="login_page")
 async def login_page(request: Request):
     """Halaman login. Redirect ke / jika sudah login."""
     user = await _optional_user(request)
@@ -39,8 +39,9 @@ async def login_page(request: Request):
 
     templates = _get_templates()
     return templates.TemplateResponse(
+        request,
         "auth/login.html",
-        {"request": request, "current_user": None},
+        {"current_user": None},
     )
 
 
@@ -53,8 +54,9 @@ async def register_page(request: Request):
 
     templates = _get_templates()
     return templates.TemplateResponse(
+        request,
         "auth/register.html",
-        {"request": request, "current_user": None},
+        {"current_user": None},
     )
 
 
@@ -66,8 +68,9 @@ async def dashboard_page(
     """Halaman dashboard."""
     templates = _get_templates()
     return templates.TemplateResponse(
+        request,
         "dashboard.html",
-        {"request": request, "current_user": current_user},
+        {"current_user": current_user},
     )
 
 
@@ -79,8 +82,9 @@ async def transactions_page(
     """Halaman riwayat transaksi."""
     templates = _get_templates()
     return templates.TemplateResponse(
+        request,
         "transactions/list.html",
-        {"request": request, "current_user": current_user},
+        {"current_user": current_user},
     )
 
 
@@ -92,8 +96,9 @@ async def transactions_new_page(
     """Halaman form input transaksi baru."""
     templates = _get_templates()
     return templates.TemplateResponse(
+        request,
         "transactions/form.html",
-        {"request": request, "current_user": current_user},
+        {"current_user": current_user},
     )
 
 
@@ -106,12 +111,9 @@ async def transactions_edit_page(
     """Halaman form edit transaksi."""
     templates = _get_templates()
     return templates.TemplateResponse(
+        request,
         "transactions/form.html",
-        {
-            "request": request,
-            "current_user": current_user,
-            "tx_id": tx_id,
-        },
+        {"current_user": current_user, "tx_id": tx_id},
     )
 
 
@@ -123,8 +125,9 @@ async def stats_page(
     """Halaman statistik."""
     templates = _get_templates()
     return templates.TemplateResponse(
-        "stats/index.html",
-        {"request": request, "current_user": current_user},
+        request,
+        "stats.html",
+        {"current_user": current_user},
     )
 
 
@@ -133,20 +136,12 @@ async def settings_page(
     request: Request,
     current_user: User = Depends(get_current_user),
 ):
-    """Halaman pengaturan (redirect ke kategori)."""
-    return RedirectResponse(url="/settings/categories", status_code=302)
-
-
-@router.get("/settings/categories")
-async def settings_categories_page(
-    request: Request,
-    current_user: User = Depends(get_current_user),
-):
-    """Halaman kelola kategori."""
+    """Halaman pengaturan."""
     templates = _get_templates()
     return templates.TemplateResponse(
-        "settings/categories.html",
-        {"request": request, "current_user": current_user},
+        request,
+        "settings.html",
+        {"current_user": current_user},
     )
 
 
@@ -158,6 +153,7 @@ async def settings_password_page(
     """Halaman ganti password."""
     templates = _get_templates()
     return templates.TemplateResponse(
-        "settings/password.html",
-        {"request": request, "current_user": current_user},
+        request,
+        "settings.html",
+        {"current_user": current_user, "active_tab": "password"},
     )
