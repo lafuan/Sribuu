@@ -1,0 +1,48 @@
+{# Pagination Component #}
+{% macro render_pagination(page, total_pages, filters={}) %}
+{% if total_pages > 1 %}
+<div class="card flex items-center justify-between flex-wrap gap-3">
+  <span class="text-xs text-stone-400">
+    Halaman {{ page }} dari {{ total_pages }}
+  </span>
+  <div class="flex gap-1">
+    {% if page > 1 %}
+    <a href="?page={{ page - 1 }}{% for k, v in filters.items() %}&{{ k }}={{ v }}{% endfor %}"
+       class="w-9 h-9 border border-stone-200 rounded-lg flex items-center justify-center text-sm text-stone-500 hover:bg-stone-50 transition">
+      <i class="fas fa-chevron-left text-xs"></i>
+    </a>
+    {% else %}
+    <span class="w-9 h-9 border border-stone-100 rounded-lg flex items-center justify-center text-sm text-stone-300 cursor-not-allowed">
+      <i class="fas fa-chevron-left text-xs"></i>
+    </span>
+    {% endif %}
+
+    {% for p in range(1, total_pages + 1) %}
+      {% if p == page %}
+      <span class="w-9 h-9 bg-emerald-500 text-white border-emerald-500 rounded-lg flex items-center justify-center text-sm font-semibold">
+        {{ p }}
+      </span>
+      {% elif p <= 3 or p > total_pages - 3 or (p >= page - 1 and p <= page + 1) %}
+      <a href="?page={{ p }}{% for k, v in filters.items() %}&{{ k }}={{ v }}{% endfor %}"
+         class="w-9 h-9 border border-stone-200 rounded-lg flex items-center justify-center text-sm text-stone-500 hover:bg-stone-50 transition">
+        {{ p }}
+      </a>
+      {% elif p == 4 or p == total_pages - 3 %}
+      <span class="w-9 h-9 flex items-center justify-center text-sm text-stone-300">...</span>
+      {% endif %}
+    {% endfor %}
+
+    {% if page < total_pages %}
+    <a href="?page={{ page + 1 }}{% for k, v in filters.items() %}&{{ k }}={{ v }}{% endfor %}"
+       class="w-9 h-9 border border-stone-200 rounded-lg flex items-center justify-center text-sm text-stone-500 hover:bg-stone-50 transition">
+      <i class="fas fa-chevron-right text-xs"></i>
+    </a>
+    {% else %}
+    <span class="w-9 h-9 border border-stone-100 rounded-lg flex items-center justify-center text-sm text-stone-300 cursor-not-allowed">
+      <i class="fas fa-chevron-right text-xs"></i>
+    </span>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+{% endmacro %}
