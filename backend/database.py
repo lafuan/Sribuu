@@ -52,4 +52,11 @@ async def init_db():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
-    # Seed data akan dilakukan oleh service layer
+    # Seed data
+    from .services.seed import seed_all
+
+    async with AsyncSessionLocal() as session:
+        result = await seed_all(session)
+        if result["categories_added"] > 0 or result["payment_methods_added"] > 0:
+            await session.commit()
+            print(f"Seed data: {result['categories_added']} kategori, {result['payment_methods_added']} metode pembayaran")

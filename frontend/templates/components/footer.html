@@ -1,0 +1,12 @@
+<!-- Mobile Bottom Spacer (only when logged in / has bottom nav) -->
+{% if current_user %}
+<div class="h-16 sm:hidden"></div>
+{% endif %}
+
+<footer class="hidden sm:block border-t border-stone-200 bg-white mt-10">
+  <div class="max-w-4xl mx-auto px-4 py-4 text-center">
+    <p class="text-xs text-stone-400">
+      &copy; {{ now().year if now is defined else "2026" }} Sribuu &mdash; Catat Pengeluaran, Kendalikan Keuangan
+    </p>
+  </div>
+</footer>

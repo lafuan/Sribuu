@@ -1,0 +1,171 @@
+"""Tests untuk modul statistik: summary, by-category, daily-trend, monthly."""
+import pytest
+
+
+class TestStatsSummary:
+    """Test GET /api/stats/summary"""
+
+    async def test_summary_empty(self, auth_client):
+        """Dashboard saat belum ada transaksi."""
+        response = await auth_client.get("/api/stats/summary")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "success"
+        assert data["data"]["today"]["total_amount"] == 0
+        assert data["data"]["today"]["transaction_count"] == 0
+        assert data["data"]["this_month"]["total_amount"] == 0
+        assert len(data["data"]["recent_transactions"]) == 0
+
+    async def test_summary_with_data(self, auth_client):
+        """Dashboard setelah ada transaksi."""
+        cat_resp = await auth_client.get("/api/categories")
+        cat_id = cat_resp.json()["data"]["categories"][0]["id"]
+
+        # Buat 2 transaksi hari ini
+        from datetime import date
+        today = date.today().isoformat()
+
+        await auth_client.post(
+            "/api/transactions",
+            json={"amount": 25000, "category_id": cat_id, "transaction_date": today},
+        )
+        await auth_client.post(
+            "/api/transactions",
+            json={"amount": 15000, "category_id": cat_id, "transaction_date": today},
+        )
+
+        response = await auth_client.get("/api/stats/summary")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["data"]["today"]["total_amount"] == 40000
+        assert data["data"]["today"]["transaction_count"] == 2
+        assert data["data"]["this_month"]["total_amount"] == 40000
+        assert len(data["data"]["recent_transactions"]) >= 2
+
+
+class TestStatsByCategory:
+    """Test GET /api/stats/by-category"""
+
+    async def test_by_category_empty(self, auth_client):
+        """By-category tanpa data transaksi."""
+        response = await auth_client.get("/api/stats/by-category")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "success"
+        assert data["data"]["total_amount"] == 0
+        assert len(data["data"]["categories"]) == 0
+
+    async def test_by_category_with_data(self, auth_client):
+        """By-category dengan data transaksi."""
+        cat_resp = await auth_client.get("/api/categories")
+        cats = cat_resp.json()["data"]["categories"]
+
+        from datetime import date
+        today = date.today().isoformat()
+
+        await auth_client.post(
+            "/api/transactions",
+            json={"amount": 50000, "category_id": cats[0]["id"], "transaction_date": today},
+        )
+        await auth_client.post(
+            "/api/transactions",
+            json={"amount": 30000, "category_id": cats[1]["id"], "transaction_date": today},
+        )
+
+        response = await auth_client.get("/api/stats/by-category")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["data"]["total_amount"] == 80000
+        assert len(data["data"]["categories"]) >= 2
+
+
+class TestDailyTrend:
+    """Test GET /api/stats/daily-trend"""
+
+    async def test_daily_trend_empty(self, auth_client):
+        """Daily trend tanpa data."""
+        response = await auth_client.get("/api/stats/daily-trend")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "success"
+        assert len(data["data"]["daily"]) >= 7  # 7 hari terakhir meski kosong
+
+    async def test_daily_trend_with_data(self, auth_client):
+        """Daily trend dengan data."""
+        cat_resp = await auth_client.get("/api/categories")
+        cat_id = cat_resp.json()["data"]["categories"][0]["id"]
+
+        from datetime import date, timedelta
+        today = date.today()
+
+        for i in range(3):
+            d = today - timedelta(days=i)
+            await auth_client.post(
+                "/api/transactions",
+                json={"amount": 10000 * (i + 1), "category_id": cat_id,
+                      "transaction_date": d.isoformat()},
+            )
+
+        response = await auth_client.get("/api/stats/daily-trend")
+        assert response.status_code == 200
+        data = response.json()
+        # Harus ada hari dengan total > 0
+        totals = [d["total_amount"] for d in data["data"]["daily"]]
+        assert sum(totals) == 60000
+
+
+class TestMonthlyStats:
+    """Test GET /api/stats/monthly"""
+
+    async def test_monthly_empty(self, auth_client):
+        """Monthly stats tanpa data."""
+        response = await auth_client.get("/api/stats/monthly")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "success"
+        assert data["data"]["total_amount"] == 0
+        assert data["data"]["transaction_count"] == 0
+
+    async def test_monthly_with_data(self, auth_client):
+        """Monthly stats dengan data."""
+        cat_resp = await auth_client.get("/api/categories")
+        cat_id = cat_resp.json()["data"]["categories"][0]["id"]
+
+        from datetime import date
+        today = date.today()
+
+        await auth_client.post(
+            "/api/transactions",
+            json={"amount": 100000, "category_id": cat_id, "transaction_date": today.isoformat()},
+        )
+
+        response = await auth_client.get(f"/api/stats/monthly?year={today.year}&month={today.month}")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["data"]["total_amount"] == 100000
+        assert data["data"]["transaction_count"] == 1
+
+
+class TestMonthlyComparison:
+    """Test GET /api/stats/monthly-comparison"""
+
+    async def test_monthly_comparison(self, auth_client):
+        """Monthly comparison (default 3 bulan)."""
+        response = await auth_client.get("/api/stats/monthly-comparison")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "success"
+        assert len(data["data"]["months"]) >= 1  # Minimal bulan ini
+        # Setiap bulan punya struktur yang benar
+        for m in data["data"]["months"]:
+            assert "year" in m
+            assert "month" in m
+            assert "total_amount" in m
+            assert "transaction_count" in m
+
+    async def test_monthly_comparison_custom_months(self, auth_client):
+        """Monthly comparison dengan custom months=6."""
+        response = await auth_client.get("/api/stats/monthly-comparison?months=6")
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["data"]["months"]) == 6
