@@ -3,6 +3,7 @@ Konfigurasi aplikasi Sribuu.
 """
 
 import os
+
 from pydantic_settings import BaseSettings
 
 

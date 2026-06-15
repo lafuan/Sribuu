@@ -1,0 +1,30 @@
+[Unit]
+Description=Sribuu — Aplikasi Pencatatan Pengeluaran Harian
+After=network.target
+
+[Service]
+Type=simple
+User=sribuu
+Group=sribuu
+WorkingDirectory=/opt/sribuu/backend
+Environment="PATH=/opt/sribuu/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+Environment="PYTHONPATH=/opt/sribuu"
+Environment="DATABASE_URL=sqlite+aiosqlite:////var/lib/sribuu/sribuu.db"
+Environment="SECRET_KEY=change-me-in-production-to-random-string"
+ExecStart=/opt/sribuu/venv/bin/uvicorn backend.main:app --host 127.0.0.1 --port 8000 --workers 4
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=sribuu
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/sribuu /var/log/sribuu
+ReadOnlyPaths=/opt/sribuu
+
+[Install]
+WantedBy=multi-user.target

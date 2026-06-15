@@ -2,11 +2,21 @@
 SQLAlchemy models untuk Sribuu.
 """
 
-from datetime import date, datetime
+from datetime import datetime
+
 from sqlalchemy import (
-    Column, Integer, String, Text, Date, DateTime, ForeignKey, CheckConstraint, Index
+    CheckConstraint,
+    Column,
+    Date,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
 )
 from sqlalchemy.orm import relationship
+
 from ..database import Base
 
 

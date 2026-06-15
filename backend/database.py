@@ -2,8 +2,9 @@
 Database connection dan session management.
 """
 
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
+
 from .config import settings
 
 # Async engine untuk SQLite
@@ -41,11 +42,11 @@ async def get_db() -> AsyncSession:
 
 async def init_db():
     """Inisialisasi database: buat tabel + seed data."""
-    from .models import (  # noqa: F401
-        User,
+    from .models import (  # noqa: F401, PLC0415
         Category,
         PaymentMethod,
         Transaction,
+        User,
     )
 
     async with engine.begin() as conn:
