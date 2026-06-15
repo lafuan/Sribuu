@@ -1,6 +1,6 @@
 """Utility modules for Sribuu."""
 
-from .formatting import format_currency
+from .formatting import format_rupiah, format_date_id
 from .logging import configure_logging, get_logger
 from .middleware import LoggingMiddleware
 from .security import (
@@ -17,7 +17,8 @@ __all__ = [
     "create_access_token",
     "verify_access_token",
     "get_token_expiry_days",
-    "format_currency",
+    "format_rupiah",
+    "format_date_id",
     "get_logger",
     "configure_logging",
     "LoggingMiddleware",
