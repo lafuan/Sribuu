@@ -45,7 +45,7 @@ async def login_page(request: Request):
     )
 
 
-@router.get("/register")
+@router.get("/register", name="register_page")
 async def register_page(request: Request):
     """Halaman registrasi. Redirect ke / jika sudah login."""
     user = await _optional_user(request)
@@ -60,7 +60,7 @@ async def register_page(request: Request):
     )
 
 
-@router.get("/")
+@router.get("/", name="dashboard")
 async def dashboard_page(
     request: Request,
     current_user: User = Depends(get_current_user),
@@ -74,7 +74,7 @@ async def dashboard_page(
     )
 
 
-@router.get("/transactions")
+@router.get("/transactions", name="transactions_list")
 async def transactions_page(
     request: Request,
     current_user: User = Depends(get_current_user),
@@ -88,7 +88,7 @@ async def transactions_page(
     )
 
 
-@router.get("/transactions/new")
+@router.get("/transactions/new", name="transactions_new")
 async def transactions_new_page(
     request: Request,
     current_user: User = Depends(get_current_user),
@@ -102,7 +102,7 @@ async def transactions_new_page(
     )
 
 
-@router.get("/transactions/{tx_id}/edit")
+@router.get("/transactions/{tx_id}/edit", name="transactions_edit")
 async def transactions_edit_page(
     tx_id: int,
     request: Request,
@@ -117,7 +117,7 @@ async def transactions_edit_page(
     )
 
 
-@router.get("/stats")
+@router.get("/stats", name="stats")
 async def stats_page(
     request: Request,
     current_user: User = Depends(get_current_user),
@@ -131,7 +131,7 @@ async def stats_page(
     )
 
 
-@router.get("/settings")
+@router.get("/settings", name="settings")
 async def settings_page(
     request: Request,
     current_user: User = Depends(get_current_user),
@@ -145,7 +145,7 @@ async def settings_page(
     )
 
 
-@router.get("/settings/password")
+@router.get("/settings/password", name="settings_password")
 async def settings_password_page(
     request: Request,
     current_user: User = Depends(get_current_user),
