@@ -46,7 +46,7 @@
       <p class="text-xl font-bold text-stone-700">Rp {{ "{:,.0f}".format(total_amount) }}</p>
     </div>
     <div class="flex gap-2">
-      <a href="{{ url_for('export_csv') }}{% if query_string %}?{{ query_string }}{% endif %}"
+      <a href="/api/export/csv{% if query_string %}?{{ query_string }}{% endif %}"
          class="flex items-center gap-1.5 px-3 py-2 border border-stone-200 rounded-lg text-sm text-stone-600 hover:bg-stone-50 transition">
         <i class="fas fa-download text-xs"></i> Export CSV
       </a>
