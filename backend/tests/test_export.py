@@ -1,5 +1,4 @@
 """Tests untuk modul export CSV."""
-import pytest
 
 
 class TestExportCSV:

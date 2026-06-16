@@ -2,7 +2,7 @@
 Pydantic schemas untuk modul transaksi.
 """
 
-from datetime import date, datetime
+from datetime import date
 
 from pydantic import BaseModel, Field, model_validator
 

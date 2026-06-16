@@ -8,9 +8,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database import get_db
 from ..models import User
-from ..schemas.auth import RegisterRequest, LoginRequest, PasswordChangeRequest, UserResponse
+from ..schemas.auth import LoginRequest, PasswordChangeRequest, RegisterRequest
 from ..utils.security import (
-    create_access_token,
     get_token_expiry_days,
     hash_password,
     verify_access_token,

@@ -1,6 +1,6 @@
 """Utility modules for Sribuu."""
 
-from .formatting import format_rupiah, format_date_id
+from .formatting import format_date_id, format_rupiah
 from .logging import configure_logging, get_logger
 from .middleware import LoggingMiddleware
 from .security import (

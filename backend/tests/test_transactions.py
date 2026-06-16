@@ -1,5 +1,4 @@
 """Tests untuk modul transaksi: CRUD, filter, pagination."""
-import pytest
 
 
 class TestCreateTransaction:

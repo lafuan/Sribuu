@@ -12,13 +12,12 @@ from ..models import User
 from ..schemas.auth import StandardResponse
 from ..services.auth_service import get_current_user
 from ..services.stats_service import (
-    get_dashboard,
     get_daily_trend,
+    get_dashboard,
     get_monthly_comparison,
     get_monthly_stats,
     get_stats_by_category,
 )
-from ..services.transaction_service import list_transactions
 
 router = APIRouter(prefix="/api/stats", tags=["Stats"])
 

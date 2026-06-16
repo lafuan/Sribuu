@@ -5,6 +5,7 @@ Entry point aplikasi Sribuu.
 import subprocess
 import sys
 from contextlib import asynccontextmanager
+from datetime import datetime
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -74,7 +75,6 @@ def _format_date_id(value, fmt="%d %B %Y"):
     if value is None:
         return ""
     if isinstance(value, str):
-        from datetime import datetime
         value = datetime.fromisoformat(value)
     months = [
         "Januari", "Februari", "Maret", "April", "Mei", "Juni",
@@ -92,7 +92,6 @@ def _format_time(value, fmt="%H:%M"):
     if value is None:
         return ""
     if isinstance(value, str):
-        from datetime import datetime
         value = datetime.fromisoformat(value)
     return value.strftime(fmt)
 
@@ -113,7 +112,7 @@ async def health_check():
 
 
 # --- API Routers ---
-from .routers import auth, transactions, categories, stats, export, payment_methods
+from .routers import auth, categories, export, payment_methods, stats, transactions  # noqa: E402
 
 app.include_router(auth.router)
 app.include_router(transactions.router)
@@ -123,6 +122,6 @@ app.include_router(export.router)
 app.include_router(payment_methods.router)
 
 # --- Page Router (HTML) — harus didaftarkan setelah API routers ---
-from .routers import pages
+from .routers import pages  # noqa: E402
 
 app.include_router(pages.router)

@@ -5,23 +5,27 @@ Service layer untuk CRUD transaksi dengan filter, search, dan pagination.
 import math
 from datetime import date, datetime, timedelta, timezone
 
+from fastapi import HTTPException, status
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
-from fastapi import HTTPException, status
 
 from ..models import Category, PaymentMethod, Transaction
 from ..schemas.transaction import (
     CategoryBrief,
-    PaymentMethodBrief,
     PaginationInfo,
+    PaymentMethodBrief,
     TransactionCreate,
     TransactionListResponse,
     TransactionResponse,
     TransactionSummary,
     TransactionUpdate,
 )
-from ..utils.formatting import format_date_id, format_date_id_short, format_datetime_id, format_rupiah
+from ..utils.formatting import (
+    format_date_id_short,
+    format_datetime_id,
+    format_rupiah,
+)
 
 WIB = timezone(timedelta(hours=7))
 
@@ -235,8 +239,7 @@ async def list_transactions(
     """List transaksi dengan filter, search, dan pagination."""
 
     # Batasi per_page
-    if per_page > 100:
-        per_page = 100
+    per_page = min(per_page, 100)
     if per_page < 1:
         per_page = 25
 

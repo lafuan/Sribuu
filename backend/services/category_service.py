@@ -2,9 +2,9 @@
 Service layer untuk CRUD kategori.
 """
 
+from fastapi import HTTPException, status
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import HTTPException, status
 
 from ..models import Category, Transaction
 from ..schemas.category import CategoryCreate, CategoryUpdate
@@ -240,7 +240,6 @@ async def toggle_category(
     cat.is_active = 0 if cat.is_active else 1
     await db.flush()
 
-    status_text = "ditampilkan" if cat.is_active else "disembunyikan"
     return {
         "id": cat.id,
         "name": cat.name,

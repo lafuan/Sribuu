@@ -1,5 +1,4 @@
 """Tests untuk modul kategori: list, create, update, delete, toggle."""
-import pytest
 
 
 class TestListCategories:

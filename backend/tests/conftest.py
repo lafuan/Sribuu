@@ -4,10 +4,10 @@ Digunakan file-based SQLite agar semua koneksi share database yang sama.
 """
 import os
 import tempfile
-import pytest
+
 import pytest_asyncio
-from httpx import AsyncClient, ASGITransport
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+from httpx import ASGITransport, AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 # Gunakan file-based SQLite agar semua koneksi share database yang sama
 TEST_DB_FILE = os.path.join(tempfile.gettempdir(), "sribuu_test.db")
@@ -18,8 +18,6 @@ os.environ["DATABASE_URL"] = TEST_DB_URL
 
 from backend.database import Base, get_db  # noqa: E402
 from backend.services.seed import seed_all  # noqa: E402
-from backend.utils.security import hash_password  # noqa: E402
-from backend.models import User  # noqa: E402
 
 # Test engine (file-based — semua koneksi otomatis share DB yang sama)
 TEST_ENGINE = create_async_engine(
@@ -88,8 +86,9 @@ async def test_user(db_session):
     """Buat test user via API (register) dan return credentials."""
     # Always use fresh user by registering via API
     # We need a client for this, use a fresh one
+    from httpx import ASGITransport, AsyncClient
+
     from backend.main import app
-    from httpx import AsyncClient, ASGITransport
 
     # Set up override for this client
     app.dependency_overrides[get_db] = _override_get_db

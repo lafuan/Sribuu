@@ -58,8 +58,7 @@ async def init_db():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
-    # Seed data
-    from .services.seed import seed_all
+    from .services.seed import seed_all  # noqa: PLC0415 (circular import)
 
     async with AsyncSessionLocal() as session:
         result = await seed_all(session)

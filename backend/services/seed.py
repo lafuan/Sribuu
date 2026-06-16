@@ -2,7 +2,7 @@
 Seed data: kategori default dan metode pembayaran.
 """
 
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..models import Category, PaymentMethod

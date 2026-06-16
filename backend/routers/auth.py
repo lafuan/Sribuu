@@ -4,6 +4,7 @@ Router untuk modul autentikasi: register, login, logout, me, password.
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database import get_db
 from ..models import User
@@ -22,7 +23,6 @@ from ..services.auth_service import (
     set_token_cookie,
     to_user_response,
 )
-from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(prefix="/api/auth", tags=["Auth"])
 

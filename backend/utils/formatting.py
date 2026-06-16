@@ -2,7 +2,6 @@
 Formatting utilities: Rupiah, tanggal Indonesia.
 """
 
-import locale
 from datetime import date, datetime
 
 # Nama bulan dalam Bahasa Indonesia

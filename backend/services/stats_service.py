@@ -2,17 +2,14 @@
 Service layer untuk statistik: dashboard, by-category, daily-trend, monthly.
 """
 
-import math
-from collections import defaultdict
 from datetime import date, datetime, timedelta, timezone
 
-from sqlalchemy import and_, func, select, extract
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
 from ..models import Category, Transaction
 from ..utils.formatting import (
-    format_date_id,
     format_rupiah,
     get_day_name_id,
     get_month_label,
@@ -231,8 +228,7 @@ async def get_daily_trend(
     current = date_from
     while current <= date_to:
         total, count = db_data.get(current, (0, 0))
-        if total > max_amount:
-            max_amount = total
+        max_amount = max(max_amount, total)
         daily.append({
             "date": current.isoformat(),
             "date_formatted": f"{current.day:02d}/{current.month:02d}",
@@ -364,8 +360,7 @@ async def get_monthly_comparison(
     months: int = 3,
 ) -> dict:
     """Perbandingan multi-bulan."""
-    if months > 12:
-        months = 12
+    months = min(months, 12)
     if months < 1:
         months = 3
 
@@ -397,8 +392,7 @@ async def get_monthly_comparison(
         )
         total, count = result.one()
 
-        if total > max_amount:
-            max_amount = total
+        max_amount = max(max_amount, total)
 
         months_data.append({
             "year": y,

@@ -1,5 +1,4 @@
 """Tests untuk modul statistik: summary, by-category, daily-trend, monthly."""
-import pytest
 
 
 class TestStatsSummary:

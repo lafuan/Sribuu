@@ -1,5 +1,4 @@
 """Tests untuk modul autentikasi: register, login, logout, me, password."""
-import pytest
 
 
 class TestRegister:

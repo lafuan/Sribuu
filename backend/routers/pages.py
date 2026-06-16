@@ -29,7 +29,6 @@ async def _optional_user(request: Request):
     Version ini panggil DB langsung (tanpa Depends) agar bisa dipanggil
     dari fungsi non-DI seperti handler redirect."""
     from sqlalchemy import select
-    from sqlalchemy.ext.asyncio import AsyncSession
 
     from ..database import get_db_session
     from ..models import User
@@ -75,7 +74,6 @@ async def login_page(request: Request):
 @router.post("/login", name="login_post")
 async def login_post(request: Request):
     """Handle form login POST — set cookie + redirect."""
-    from sqlalchemy.ext.asyncio import AsyncSession
     from ..database import get_db_session
     from ..services.auth_service import login_user, set_token_cookie
     from ..utils.security import create_access_token
@@ -156,7 +154,6 @@ async def register_post(request: Request):
             status_code=400,
         )
 
-    from sqlalchemy.ext.asyncio import AsyncSession
     from ..database import get_db_session
     from ..services.auth_service import register_user, set_token_cookie
     from ..utils.security import create_access_token
@@ -205,15 +202,14 @@ async def dashboard_page(
     if current_user is None:
         return RedirectResponse(url="/login", status_code=302)
 
-    from sqlalchemy.ext.asyncio import AsyncSession
+    from datetime import date
+
     from ..database import get_db_session
-    from datetime import date, datetime
 
     db = get_db_session()
     try:
-        from ..services.stats_service import get_dashboard
-        from ..models import Category
         from ..services.category_service import list_categories
+        from ..services.stats_service import get_dashboard
 
         today = date.today()
         data = await get_dashboard(db, current_user.id)
@@ -237,6 +233,7 @@ async def dashboard_page(
 
         # Payment methods for quick-add form
         from sqlalchemy import select
+
         from ..models import PaymentMethod
         pm_result = await db.execute(
             select(PaymentMethod)
@@ -283,7 +280,6 @@ async def transactions_page(
     from urllib.parse import urlencode
 
     from sqlalchemy import select
-    from sqlalchemy.ext.asyncio import AsyncSession
 
     from ..database import get_db_session
     from ..models import PaymentMethod
@@ -372,7 +368,6 @@ async def transactions_new_page(
 ):
     """Halaman form input transaksi baru."""
     from sqlalchemy import select
-    from sqlalchemy.ext.asyncio import AsyncSession
 
     from ..database import get_db_session
     from ..models import PaymentMethod
@@ -413,7 +408,6 @@ async def transactions_edit_page(
 ):
     """Halaman form edit transaksi."""
     from sqlalchemy import select
-    from sqlalchemy.ext.asyncio import AsyncSession
 
     from ..database import get_db_session
     from ..models import PaymentMethod
@@ -469,15 +463,14 @@ async def stats_page(
     current_user: User = Depends(get_current_user),
 ):
     """Halaman statistik."""
-    from sqlalchemy.ext.asyncio import AsyncSession
     from datetime import date, timedelta
 
     from ..database import get_db_session
     from ..services.stats_service import (
-        get_monthly_stats,
-        get_stats_by_category,
         get_daily_trend,
         get_monthly_comparison,
+        get_monthly_stats,
+        get_stats_by_category,
     )
 
     today = date.today()
@@ -487,10 +480,7 @@ async def stats_page(
         month = today.month
 
     month_start = date(year, month, 1)
-    if month == 12:
-        month_end = date(year, 12, 31)
-    else:
-        month_end = date(year, month + 1, 1) - timedelta(days=1)
+    month_end = date(year, 12, 31) if month == 12 else date(year, month + 1, 1) - timedelta(days=1)
 
     db = get_db_session()
     try:
