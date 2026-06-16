@@ -213,6 +213,7 @@ async def dashboard_page(
     try:
         from ..services.stats_service import get_dashboard
         from ..models import Category
+        from ..services.category_service import list_categories
 
         today = date.today()
         data = await get_dashboard(db, current_user.id)
@@ -231,6 +232,22 @@ async def dashboard_page(
         else:
             top_category = None
 
+        # Categories for quick-add form
+        categories = await list_categories(db, current_user.id)
+
+        # Payment methods for quick-add form
+        from sqlalchemy import select
+        from ..models import PaymentMethod
+        pm_result = await db.execute(
+            select(PaymentMethod)
+            .where(PaymentMethod.is_active == 1)
+            .order_by(PaymentMethod.id)
+        )
+        payment_methods = [
+            {"id": m.id, "name": m.name, "icon": m.icon}
+            for m in pm_result.scalars().all()
+        ]
+
         templates = _get_templates()
         return templates.TemplateResponse(
             request,
@@ -242,6 +259,8 @@ async def dashboard_page(
                 "month_total": month_total,
                 "month_name": month_name,
                 "top_category": top_category,
+                "categories": categories,
+                "payment_methods": payment_methods,
             },
         )
     finally:
