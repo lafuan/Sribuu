@@ -68,6 +68,37 @@ templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 # Add flash messages support (dummy — implement session-based later)
 templates.env.globals["get_flashed_messages"] = lambda with_categories=False: []
 
+# Custom Jinja2 filters (Indonesian locale)
+def _format_date_id(value, fmt="%d %B %Y"):
+    """Format datetime ke bahasa Indonesia. e.g. '15 Juni 2026'"""
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        from datetime import datetime
+        value = datetime.fromisoformat(value)
+    months = [
+        "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+        "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+    ]
+    result = fmt
+    result = result.replace("%B", months[value.month - 1])
+    result = result.replace("%d", str(value.day))
+    result = result.replace("%Y", str(value.year))
+    result = result.replace("%m", f"{value.month:02d}")
+    return value.strftime(result) if "%" in result else result
+
+def _format_time(value, fmt="%H:%M"):
+    """Format datetime ke jam. e.g. '14:30'"""
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        from datetime import datetime
+        value = datetime.fromisoformat(value)
+    return value.strftime(fmt)
+
+templates.env.filters["format_date_id"] = _format_date_id
+templates.env.filters["format_time"] = _format_time
+
 # Static files (CSS, JS, images)
 if STATIC_DIR.exists():
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")

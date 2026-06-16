@@ -42,7 +42,7 @@
     </div>
 
     <!-- Form -->
-    <form method="POST" action="/api/auth/login" class="space-y-4">
+    <form method="POST" action="/login" class="space-y-4">
       <!-- Email -->
       <div>
         <label for="email" class="block text-xs font-semibold text-stone-600 mb-1.5">Email</label>
@@ -94,4 +94,29 @@
     </a>
   </div>
 </div>
+
+<script>
+document.querySelector('form').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const btn = this.querySelector('button[type="submit"]');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
+  try {
+    const fd = new FormData(this);
+    const res = await fetch('/api/auth/login', {method: 'POST', body: JSON.stringify({
+      email: fd.get('email'), password: fd.get('password')
+    }), headers: {'Content-Type': 'application/json'}});
+    const data = await res.json();
+    if (res.ok) {
+      window.location = data.data?.redirect || '/';
+    } else {
+      alert(data.detail?.message || data.message || 'Login gagal');
+    }
+  } catch (err) {
+    alert('Error: ' + err.message);
+  }
+  btn.disabled = false;
+  btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Masuk';
+});
+</script>
 {% endblock %}
