@@ -31,7 +31,7 @@ async def _optional_user(request: Request):
     from sqlalchemy import select
     from sqlalchemy.ext.asyncio import AsyncSession
 
-    from ..database import get_db
+    from ..database import get_db_session
     from ..models import User
     from ..utils.security import verify_access_token
 
@@ -47,7 +47,7 @@ async def _optional_user(request: Request):
     if not user_id:
         return None
 
-    db: AsyncSession = await anext(get_db())
+    db = get_db_session()
     try:
         result = await db.execute(select(User).where(User.id == int(user_id)))
         return result.scalar_one_or_none()
@@ -76,7 +76,7 @@ async def login_page(request: Request):
 async def login_post(request: Request):
     """Handle form login POST — set cookie + redirect."""
     from sqlalchemy.ext.asyncio import AsyncSession
-    from ..database import get_db
+    from ..database import get_db_session
     from ..services.auth_service import login_user, set_token_cookie
     from ..utils.security import create_access_token
 
@@ -93,7 +93,7 @@ async def login_post(request: Request):
             status_code=400,
         )
 
-    db: AsyncSession = await anext(get_db())
+    db = get_db_session()
     try:
         from ..schemas.auth import LoginRequest
         user = await login_user(db, LoginRequest(email=str(email), password=str(password)))
@@ -157,11 +157,11 @@ async def register_post(request: Request):
         )
 
     from sqlalchemy.ext.asyncio import AsyncSession
-    from ..database import get_db
+    from ..database import get_db_session
     from ..services.auth_service import register_user, set_token_cookie
     from ..utils.security import create_access_token
 
-    db: AsyncSession = await anext(get_db())
+    db = get_db_session()
     try:
         from ..schemas.auth import RegisterRequest
         user = await register_user(db, RegisterRequest(
@@ -206,10 +206,10 @@ async def dashboard_page(
         return RedirectResponse(url="/login", status_code=302)
 
     from sqlalchemy.ext.asyncio import AsyncSession
-    from ..database import get_db
+    from ..database import get_db_session
     from datetime import date, datetime
 
-    db: AsyncSession = await anext(get_db())
+    db = get_db_session()
     try:
         from ..services.stats_service import get_dashboard
         from ..models import Category
@@ -285,12 +285,12 @@ async def transactions_page(
     from sqlalchemy import select
     from sqlalchemy.ext.asyncio import AsyncSession
 
-    from ..database import get_db
+    from ..database import get_db_session
     from ..models import PaymentMethod
     from ..services.category_service import list_categories
     from ..services.transaction_service import list_transactions
 
-    db: AsyncSession = await anext(get_db())
+    db = get_db_session()
     try:
         result = await list_transactions(
             db=db,
@@ -374,11 +374,11 @@ async def transactions_new_page(
     from sqlalchemy import select
     from sqlalchemy.ext.asyncio import AsyncSession
 
-    from ..database import get_db
+    from ..database import get_db_session
     from ..models import PaymentMethod
     from ..services.category_service import list_categories
 
-    db: AsyncSession = await anext(get_db())
+    db = get_db_session()
     try:
         categories = await list_categories(db, current_user.id)
         pm_result = await db.execute(
@@ -415,12 +415,12 @@ async def transactions_edit_page(
     from sqlalchemy import select
     from sqlalchemy.ext.asyncio import AsyncSession
 
-    from ..database import get_db
+    from ..database import get_db_session
     from ..models import PaymentMethod
     from ..services.category_service import list_categories
     from ..services.transaction_service import get_transaction_detail
 
-    db: AsyncSession = await anext(get_db())
+    db = get_db_session()
     try:
         categories = await list_categories(db, current_user.id)
         pm_result = await db.execute(
@@ -472,7 +472,7 @@ async def stats_page(
     from sqlalchemy.ext.asyncio import AsyncSession
     from datetime import date, timedelta
 
-    from ..database import get_db
+    from ..database import get_db_session
     from ..services.stats_service import (
         get_monthly_stats,
         get_stats_by_category,
@@ -492,7 +492,7 @@ async def stats_page(
     else:
         month_end = date(year, month + 1, 1) - timedelta(days=1)
 
-    db: AsyncSession = await anext(get_db())
+    db = get_db_session()
     try:
         monthly = await get_monthly_stats(db, current_user.id, year=year, month=month)
         by_category = await get_stats_by_category(

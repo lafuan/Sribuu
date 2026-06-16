@@ -28,7 +28,7 @@ class Base(DeclarativeBase):
 
 
 async def get_db() -> AsyncSession:
-    """Dependency untuk mendapatkan database session."""
+    """Dependency untuk mendapatkan database session (via FastAPI DI / Depends)."""
     async with AsyncSessionLocal() as session:
         try:
             yield session
@@ -36,8 +36,14 @@ async def get_db() -> AsyncSession:
         except Exception:
             await session.rollback()
             raise
-        finally:
-            await session.close()
+
+
+def get_db_session() -> AsyncSession:
+    """Buat session langsung tanpa async generator.
+    Gunakan ini untuk direct calls (bukan via Depends).
+    Handler wajib close manual: finally: await db.close()
+    """
+    return AsyncSessionLocal()
 
 
 async def init_db():
