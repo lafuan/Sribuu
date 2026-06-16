@@ -25,11 +25,36 @@ def _get_templates():
 
 
 async def _optional_user(request: Request):
-    """Dapatkan user jika login, None jika tidak."""
+    """Dapatkan user jika login, None jika tidak.
+    Version ini panggil DB langsung (tanpa Depends) agar bisa dipanggil
+    dari fungsi non-DI seperti handler redirect."""
+    from sqlalchemy import select
+    from sqlalchemy.ext.asyncio import AsyncSession
+
+    from ..database import get_db
+    from ..models import User
+    from ..utils.security import verify_access_token
+
+    token = request.cookies.get("access_token")
+    if not token:
+        return None
+
+    payload = verify_access_token(token)
+    if not payload:
+        return None
+
+    user_id = payload.get("sub")
+    if not user_id:
+        return None
+
+    db: AsyncSession = await anext(get_db())
     try:
-        return await get_current_user(request)
+        result = await db.execute(select(User).where(User.id == int(user_id)))
+        return result.scalar_one_or_none()
     except Exception:
         return None
+    finally:
+        await db.close()
 
 
 @router.get("/login", name="login_page")
@@ -174,9 +199,12 @@ async def logout_page():
 @router.get("/", name="dashboard")
 async def dashboard_page(
     request: Request,
-    current_user: User = Depends(get_current_user),
+    current_user: User | None = Depends(_optional_user),
 ):
     """Halaman dashboard dengan ringkasan keuangan."""
+    if current_user is None:
+        return RedirectResponse(url="/login", status_code=302)
+
     from sqlalchemy.ext.asyncio import AsyncSession
     from ..database import get_db
     from datetime import date, datetime
