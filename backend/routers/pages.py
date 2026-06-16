@@ -324,12 +324,38 @@ async def transactions_new_page(
     current_user: User = Depends(get_current_user),
 ):
     """Halaman form input transaksi baru."""
-    templates = _get_templates()
-    return templates.TemplateResponse(
-        request,
-        "transactions/form.html",
-        {"current_user": current_user},
-    )
+    from sqlalchemy import select
+    from sqlalchemy.ext.asyncio import AsyncSession
+
+    from ..database import get_db
+    from ..models import PaymentMethod
+    from ..services.category_service import list_categories
+
+    db: AsyncSession = await anext(get_db())
+    try:
+        categories = await list_categories(db, current_user.id)
+        pm_result = await db.execute(
+            select(PaymentMethod)
+            .where(PaymentMethod.is_active == 1)
+            .order_by(PaymentMethod.id)
+        )
+        payment_methods = [
+            {"id": m.id, "name": m.name, "icon": m.icon}
+            for m in pm_result.scalars().all()
+        ]
+
+        templates = _get_templates()
+        return templates.TemplateResponse(
+            request,
+            "transactions/form.html",
+            {
+                "current_user": current_user,
+                "categories": categories,
+                "payment_methods": payment_methods,
+            },
+        )
+    finally:
+        await db.close()
 
 
 @router.get("/transactions/{tx_id}/edit", name="transactions_edit")
@@ -339,12 +365,53 @@ async def transactions_edit_page(
     current_user: User = Depends(get_current_user),
 ):
     """Halaman form edit transaksi."""
-    templates = _get_templates()
-    return templates.TemplateResponse(
-        request,
-        "transactions/form.html",
-        {"current_user": current_user, "tx_id": tx_id},
-    )
+    from sqlalchemy import select
+    from sqlalchemy.ext.asyncio import AsyncSession
+
+    from ..database import get_db
+    from ..models import PaymentMethod
+    from ..services.category_service import list_categories
+    from ..services.transaction_service import get_transaction_detail
+
+    db: AsyncSession = await anext(get_db())
+    try:
+        categories = await list_categories(db, current_user.id)
+        pm_result = await db.execute(
+            select(PaymentMethod)
+            .where(PaymentMethod.is_active == 1)
+            .order_by(PaymentMethod.id)
+        )
+        payment_methods = [
+            {"id": m.id, "name": m.name, "icon": m.icon}
+            for m in pm_result.scalars().all()
+        ]
+
+        # Fetch existing transaction data for edit form
+        try:
+            tx_detail = await get_transaction_detail(db, tx_id, current_user.id)
+            form_data = {
+                "amount": tx_detail["amount"],
+                "category_id": tx_detail["category"]["id"],
+                "payment_method_id": tx_detail["payment_method"]["id"],
+                "notes": tx_detail["notes"],
+            }
+        except Exception:
+            form_data = {}
+
+        templates = _get_templates()
+        return templates.TemplateResponse(
+            request,
+            "transactions/form.html",
+            {
+                "current_user": current_user,
+                "tx_id": tx_id,
+                "categories": categories,
+                "payment_methods": payment_methods,
+                "form_data": form_data,
+            },
+        )
+    finally:
+        await db.close()
 
 
 @router.get("/stats", name="stats")
