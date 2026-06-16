@@ -65,6 +65,8 @@ app.add_middleware(LoggingMiddleware)
 
 # Templates
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
+# Add flash messages support (dummy — implement session-based later)
+templates.env.globals["get_flashed_messages"] = lambda with_categories=False: []
 
 # Static files (CSS, JS, images)
 if STATIC_DIR.exists():
