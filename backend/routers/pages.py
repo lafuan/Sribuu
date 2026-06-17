@@ -219,13 +219,23 @@ async def dashboard_page(
         month_total = data["this_month"]["total_amount"]
         month_name = today.strftime("%B %Y")
 
-        # Top category
-        top_categories = data.get("top_categories", [])
+        # Top 3 categories — flatten untuk template
+        top_categories_raw = data.get("top_categories", [])
+        top_categories = []
+        top_category = None
+        for tc in top_categories_raw:
+            cat = tc["category"]
+            flat = {
+                "icon": cat["icon"],
+                "name": cat["name"],
+                "color": cat["color"] if cat.get("color") else "#6b7280",
+                "amount": tc["total_amount"],
+                "amount_formatted": tc["total_amount_formatted"],
+                "percentage": tc["percentage"],
+            }
+            top_categories.append(flat)
         if top_categories:
-            tc = top_categories[0]
-            top_category = {"icon": tc["category"]["icon"], "name": tc["category"]["name"], "amount": tc["total_amount"]}
-        else:
-            top_category = None
+            top_category = top_categories[0]
 
         # Recent 5 transactions
         recent_result = await list_transactions(
