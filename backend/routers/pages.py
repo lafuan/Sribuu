@@ -192,6 +192,7 @@ async def logout_page():
 @router.get("/", name="dashboard")
 async def dashboard_page(
     request: Request,
+    partial: str | None = Query(None, description="Partial render: 'recent' untuk recent transactions"),
     current_user: User | None = Depends(_optional_user),
 ):
     """Halaman dashboard dengan ringkasan keuangan."""
@@ -206,8 +207,10 @@ async def dashboard_page(
     try:
         from ..services.category_service import list_categories
         from ..services.stats_service import get_dashboard
+        from ..services.transaction_service import list_transactions
 
         today = date.today()
+        today_iso = today.isoformat()  # untuk hidden input
         data = await get_dashboard(db, current_user.id)
 
         # Extract values
@@ -223,6 +226,24 @@ async def dashboard_page(
             top_category = {"icon": tc["category"]["icon"], "name": tc["category"]["name"], "amount": tc["total_amount"]}
         else:
             top_category = None
+
+        # Recent 5 transactions
+        recent_result = await list_transactions(
+            db=db, user_id=current_user.id,
+            per_page=5, page=1,
+        )
+        recent_transactions = [
+            {
+                "id": tx["id"],
+                "amount": tx["amount"],
+                "notes": tx["notes"],
+                "transaction_date": tx["transaction_date"],
+                "category_name": tx["category"]["name"] if tx["category"] else "",
+                "category_icon": tx["category"]["icon"] if tx["category"] else "",
+                "category_color": tx["category"]["color"] if tx["category"] else "#6b7280",
+            }
+            for tx in recent_result["transactions"]
+        ]
 
         # Categories for quick-add form
         categories = await list_categories(db, current_user.id)
@@ -241,19 +262,36 @@ async def dashboard_page(
             for m in pm_result.scalars().all()
         ]
 
+        # Handle partial render untuk HTMX refresh
+        if partial == "recent":
+            templates = _get_templates()
+            return templates.TemplateResponse(
+                request,
+                "dashboard.html",
+                {
+                    "current_user": current_user,
+                    "recent_transactions": recent_transactions,
+                },
+                # Hanya render block 'recent-transactions'
+            )
+
         templates = _get_templates()
         return templates.TemplateResponse(
             request,
             "dashboard.html",
             {
                 "current_user": current_user,
+                "today": today,
+                "today_iso": today_iso,
                 "today_total": today_total,
                 "today_count": today_count,
                 "month_total": month_total,
                 "month_name": month_name,
                 "top_category": top_category,
+                "top_categories": top_categories,
                 "categories": categories,
                 "payment_methods": payment_methods,
+                "recent_transactions": recent_transactions,
             },
         )
     finally:
