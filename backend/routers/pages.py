@@ -240,7 +240,7 @@ async def dashboard_page(
                 "transaction_date": tx["transaction_date"],
                 "category_name": tx["category"]["name"] if tx["category"] else "",
                 "category_icon": tx["category"]["icon"] if tx["category"] else "",
-                "category_color": tx["category"]["color"] if tx["category"] else "#6b7280",
+                "category_color": tx["category"].get("color", "#6b7280") if tx["category"] else "#6b7280",
             }
             for tx in recent_result["transactions"]
         ]
