@@ -22,7 +22,7 @@ from ..services.stats_service import (
 router = APIRouter(prefix="/api/stats", tags=["Stats"])
 
 
-@router.get("/summary")
+@router.get("/summary", name="api_dashboard")
 async def dashboard(
     request: Request,
     db: AsyncSession = Depends(get_db),
