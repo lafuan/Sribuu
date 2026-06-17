@@ -694,6 +694,65 @@ async def stats_page(
         await db.close()
 
 
+@router.get("/stats", name="stats")
+async def stats_page(
+    request: Request,
+    year: int | None = Query(None, description="Tahun"),
+    month: int | None = Query(None, description="Bulan (1-12)"),
+    current_user: User = Depends(get_current_user),
+):
+    """Halaman statistik."""
+    from datetime import date
+
+    from ..database import get_db_session
+
+    today = date.today()
+    y = year or today.year
+    m = month or today.month
+
+    db = get_db_session()
+    try:
+        from ..services.stats_service import get_monthly_stats, get_stats_by_category
+
+        # Summary bulan ini
+        monthly = await get_monthly_stats(db, current_user.id, y, m)
+        summary = {
+            "total": monthly["total_amount"],
+            "count": monthly["transaction_count"],
+            "avg_per_day": monthly["daily_average"],
+            "highest": monthly.get("highest_transaction", {}).get("amount", 0),
+        }
+
+        # Kategori
+        cat_result = await get_stats_by_category(db, current_user.id)
+        categories = cat_result.get("categories", [])
+        category_stats = [
+            {
+                "name": c["category"]["name"],
+                "icon": c["category"]["icon"],
+                "color": c["category"]["color"] if c["category"].get("color") else "#6b7280",
+                "amount": c["total_amount"],
+                "percentage": c["percentage"],
+            }
+            for c in categories
+        ]
+
+        templates = _get_templates()
+        return templates.TemplateResponse(
+            request,
+            "stats.html",
+            {
+                "current_user": current_user,
+                "current_year": y,
+                "current_month": m,
+                "summary": summary,
+                "category_stats": category_stats,
+            },
+        )
+    finally:
+        await db.close()
+
+
 @router.get("/settings", name="settings")
 async def settings_page(
     request: Request,
