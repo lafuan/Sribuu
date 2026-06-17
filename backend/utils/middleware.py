@@ -3,7 +3,7 @@ Request/response logging middleware for Sribuu.
 """
 
 import time
-from typing import Callable
+from typing import Callable, cast
 
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -25,7 +25,7 @@ class LoggingMiddleware(BaseHTTPMiddleware):
         # Skip logging for certain paths
         path = request.url.path
         if any(path.startswith(p) for p in self.skip_paths):
-            return await call_next(request)
+            return cast(Response, await call_next(request))
 
         start_time = time.monotonic()
         method = request.method
@@ -41,7 +41,7 @@ class LoggingMiddleware(BaseHTTPMiddleware):
         )
 
         try:
-            response = await call_next(request)
+            response = cast(Response, await call_next(request))
             duration_ms = round((time.monotonic() - start_time) * 1000, 2)
 
             # Log response

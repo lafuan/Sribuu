@@ -49,6 +49,7 @@ jobs:
 
             echo "=== Installing dependencies ==="
             source venv/bin/activate
+            pip install --upgrade pip
             pip install -r requirements.txt --quiet
 
             echo "=== Running database migrations ==="
@@ -79,6 +80,7 @@ jobs:
             ROLLBACK_COMMIT=$(cat /tmp/sribuu_last_deploy)
             git checkout "$ROLLBACK_COMMIT"
             source venv/bin/activate
+            pip install --upgrade pip
             pip install -r requirements.txt --quiet
             if [ -f backend/alembic.ini ]; then
                 cd backend && alembic downgrade -1 && cd ..

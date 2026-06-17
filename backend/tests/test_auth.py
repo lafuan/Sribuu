@@ -144,7 +144,7 @@ class TestLogout:
         assert data["status"] == "success"
         # Cookie harus di-clear (max-age=0 atau value kosong)
         cookie = response.cookies.get("access_token")
-        assert cookie == '""' or cookie == "" or cookie is None
+        assert cookie in {'""', "", None}
 
 
 class TestGetMe:

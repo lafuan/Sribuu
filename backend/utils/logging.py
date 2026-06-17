@@ -5,7 +5,7 @@ Menggunakan structlog dengan output console (development) dan JSON (production).
 
 import logging
 import sys
-from typing import Any
+from typing import Any, cast
 
 import structlog
 
@@ -85,4 +85,4 @@ def get_logger(name: str | None = None) -> structlog.stdlib.BoundLogger:
         >>> logger = get_logger(__name__)
         >>> logger.info("user_login", user_id=42, email="user@example.com")
     """
-    return structlog.get_logger(name or __name__)
+    return cast(structlog.stdlib.BoundLogger, structlog.get_logger(name or __name__))

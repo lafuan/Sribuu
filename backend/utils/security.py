@@ -4,6 +4,8 @@ Keamanan: password hashing (bcrypt) dan JWT token.
 
 from datetime import datetime, timedelta, timezone
 
+from typing import cast
+
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 
@@ -18,12 +20,12 @@ WIB = timezone(timedelta(hours=7))
 
 def hash_password(password: str) -> str:
     """Hash password dengan bcrypt."""
-    return pwd_context.hash(password)
+    return pwd_context.hash(password)  # type: ignore[no-any-return]
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verifikasi password terhadap hash."""
-    return pwd_context.verify(plain_password, hashed_password)
+    return pwd_context.verify(plain_password, hashed_password)  # type: ignore[no-any-return]
 
 
 def create_access_token(user_id: int, email: str) -> str:
@@ -35,14 +37,14 @@ def create_access_token(user_id: int, email: str) -> str:
         "exp": expire,
         "iat": datetime.now(WIB),
     }
-    return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    return cast(str, jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM))
 
 
 def verify_access_token(token: str) -> dict | None:
     """Verifikasi JWT token, kembalikan payload atau None."""
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        return payload
+        return cast(dict, payload)
     except JWTError:
         return None
 

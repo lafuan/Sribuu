@@ -3,6 +3,7 @@ Router untuk page routes (HTML).
 """
 
 from datetime import date
+from functools import lru_cache
 
 from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import RedirectResponse
@@ -12,16 +13,11 @@ from ..services.auth_service import get_current_user
 
 router = APIRouter(tags=["Pages"])
 
-# Try to import templates lazily
-_templates = None
 
-
+@lru_cache(maxsize=1)
 def _get_templates():
-    global _templates
-    if _templates is None:
-        from ..main import templates
-        _templates = templates
-    return _templates
+    from ..main import templates
+    return templates
 
 
 async def _optional_user(request: Request):
@@ -406,13 +402,13 @@ async def transactions_new_post(
     current_user: User = Depends(get_current_user),
 ):
     """Handler form tambah transaksi baru."""
+    from sqlalchemy import select
+
     from ..database import get_db_session
     from ..models import PaymentMethod
     from ..schemas.transaction import TransactionCreate
     from ..services.category_service import list_categories
     from ..services.transaction_service import create_transaction
-
-    from sqlalchemy import select
 
     form = await request.form()
     amount_str = str(form.get("amount", "0")).strip()

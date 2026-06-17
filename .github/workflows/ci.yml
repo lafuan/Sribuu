@@ -55,7 +55,9 @@ jobs:
         with:
           python-version: "3.11"
       - name: Install dependencies
-        run: pip install -r requirements.txt mypy
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt mypy
       - name: Run mypy
         run: mypy backend/
 
@@ -71,15 +73,20 @@ jobs:
         with:
           python-version: "3.11"
       - name: Install dependencies
-        run: pip install -r requirements.txt
-      - name: Run ${{ matrix.suite }} tests
         run: |
-          if [ "${{ matrix.suite }}" = "backend" ]; then
-            pytest backend/tests/ -v --tb=short
-          else
-            pip install pytest-html 2>/dev/null || true
-            pytest frontend/tests/ -v --tb=short
-          fi
+          pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Run ${{ matrix.suite }} tests
+        if: matrix.suite == 'frontend'
+        run: |
+          pip install pytest-html 2>/dev/null || true
+          pytest frontend/tests/ -v --tb=short
+
+      - name: Install backend + run tests
+        if: matrix.suite == 'backend'
+        run: |
+          pip install -e .
+          pytest backend/tests/ -v --tb=short
 
   pytest-cov:
     name: "📊 Coverage"
@@ -91,7 +98,10 @@ jobs:
         with:
           python-version: "3.11"
       - name: Install dependencies
-        run: pip install -r requirements.txt pytest-cov
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt pytest-cov
+          pip install -e .
       - name: Run tests with coverage
         run: |
           pytest backend/tests/ frontend/tests/ \

@@ -9,6 +9,7 @@ from datetime import datetime
 from pathlib import Path
 
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -112,7 +113,6 @@ async def health_check():
 
 
 # --- PWA Routes ---
-from fastapi.responses import FileResponse
 
 
 @app.get("/sw.js", include_in_schema=False)

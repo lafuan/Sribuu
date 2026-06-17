@@ -5,6 +5,7 @@ Router untuk modul transaksi: CRUD, filter, pagination.
 from datetime import date
 
 from fastapi import APIRouter, Depends, Query, Request
+from fastapi.responses import HTMLResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database import get_db
@@ -86,6 +87,16 @@ async def create_tx(
     result = await create_transaction(db, current_user.id, data)
     await db.commit()
 
+    # HTMX request: return HTML snippet untuk feedback visual
+    if request.headers.get("HX-Request") == "true":
+        return HTMLResponse(
+            f'<div class="flex items-center gap-2 p-3 bg-emerald-50 text-emerald-700 rounded-xl text-sm border border-emerald-200">'
+            f'<i class="fas fa-check-circle text-emerald-500"></i> '
+            f'✅ Transaksi berhasil disimpan — Rp {{:,.0f}}</div>'.format(result["amount"]),
+            status_code=200,
+        )
+
+    # Regular API request: return JSON
     return StandardResponse(
         status="success",
         data=result,

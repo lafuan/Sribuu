@@ -1,9 +1,9 @@
 """Tests untuk template HTML frontend Sribuu."""
 import os
-import pytest
 from pathlib import Path
-from jinja2 import Environment, FileSystemLoader, TemplateNotFound, pass_context
 
+import pytest
+from jinja2 import Environment, FileSystemLoader, TemplateNotFound
 
 TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "templates"
 
@@ -49,7 +49,7 @@ def jinja_env():
 def _get_all_templates() -> list[str]:
     """Dapatkan semua file .html di templates/ (relatif)."""
     templates = []
-    for root, dirs, files in os.walk(TEMPLATES_DIR):
+    for root, _dirs, files in os.walk(TEMPLATES_DIR):
         for f in files:
             if f.endswith(".html"):
                 rel = os.path.relpath(os.path.join(root, f), TEMPLATES_DIR)

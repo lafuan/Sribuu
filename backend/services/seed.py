@@ -37,7 +37,7 @@ async def seed_categories(db: AsyncSession) -> int:
         select(func.count()).select_from(Category).where(Category.is_default == 1)
     )
     count = result.scalar()
-    if count > 0:
+    if count is not None and count > 0:
         return 0
 
     added = 0
@@ -63,7 +63,7 @@ async def seed_payment_methods(db: AsyncSession) -> int:
         select(func.count()).select_from(PaymentMethod)
     )
     count = result.scalar()
-    if count > 0:
+    if count is not None and count > 0:
         return 0
 
     added = 0
