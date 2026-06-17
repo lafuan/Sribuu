@@ -57,7 +57,6 @@ async def create_bgt(
     current_user: User = Depends(get_current_user),
 ):
     """Buat budget baru."""
-    from ..schemas.budget import BudgetCreate
 
     # Detect HTMX form-data vs JSON
     if request.headers.get("Content-Type", "").startswith("application/x-www-form-urlencoded") or request.headers.get("HX-Request") == "true":
@@ -80,6 +79,7 @@ async def create_bgt(
         now = _now_wib()
         budgets = await list_budgets(db, current_user.id, now.month, now.year)
         from ..main import templates as tpl
+
         # juga butuh categories, current_month, current_year buat modal
         from ..services.category_service import list_categories as list_cats
         categories = await list_cats(db, current_user.id)

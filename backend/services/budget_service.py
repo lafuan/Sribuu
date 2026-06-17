@@ -8,7 +8,6 @@ from datetime import date
 from fastapi import HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-
 from sqlalchemy.orm import joinedload
 
 from ..models import Budget, Category, Transaction
@@ -130,7 +129,7 @@ async def list_budgets(
 
     result_list = []
     for budget in budgets:
-        spent = spending_map.get(budget.category_id, 0)
+        spent = spending_map.get(int(budget.category_id), 0)
         result_list.append(await _budget_to_response(budget, spent))
 
     return result_list

@@ -135,7 +135,15 @@ async def manifest():
 
 
 # --- API Routers ---
-from .routers import auth, budgets, categories, export, payment_methods, stats, transactions  # noqa: E402
+from .routers import (  # noqa: E402
+    auth,
+    budgets,
+    categories,
+    export,
+    payment_methods,
+    stats,
+    transactions,
+)
 
 app.include_router(auth.router)
 app.include_router(transactions.router)

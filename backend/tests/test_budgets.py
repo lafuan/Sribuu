@@ -1,6 +1,5 @@
 """Tests untuk budget API endpoints."""
 
-import pytest
 
 
 class TestBudgetCreate:
