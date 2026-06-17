@@ -25,9 +25,64 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
-          debug: true
           script_stop: true
           script: |
-            echo "=== CONNECTED ==="
-            whoami
-            echo "=== VPS Info ==="
+            set -e
+
+            # ─── Konfigurasi ────────────────────────────────────────────────
+            APP_DIR="/home/ubuntu/Sribuu"
+            APP_SERVICE="sribuu"
+            MAX_RETRIES=5
+            RETRY_DELAY=3
+            HEALTHCHECK_URL="http://localhost:8000/health"
+
+            cd "$APP_DIR"
+
+            # Simpan commit saat ini untuk rollback
+            CURRENT_COMMIT=$(git rev-parse HEAD)
+            echo "$CURRENT_COMMIT" > /tmp/sribuu_last_deploy
+
+            echo "=== Pulling latest code ==="
+            git fetch origin main
+            git checkout main
+            git pull origin main
+
+            echo "=== Installing dependencies ==="
+            source venv/bin/activate
+            pip install -r requirements.txt --quiet
+
+            echo "=== Running database migrations ==="
+            if [ -f backend/alembic.ini ]; then
+                cd backend
+                alembic upgrade head
+                cd ..
+            else
+                echo "(alembic not setup yet, skipping)"
+            fi
+
+            echo "=== Restarting service ==="
+            sudo systemctl restart "$APP_SERVICE"
+
+            echo "=== Health check ==="
+            for i in $(seq 1 $MAX_RETRIES); do
+                sleep "$RETRY_DELAY"
+                STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$HEALTHCHECK_URL" || echo "000")
+                if [ "$STATUS" = "200" ]; then
+                    echo "✅ Health check passed (attempt $i/$MAX_RETRIES)"
+                    exit 0
+                fi
+                echo "⏳ Attempt $i/$MAX_RETRIES: got status $STATUS, retrying..."
+            done
+
+            # Health check gagal — rollback
+            echo "❌ Health check failed after $MAX_RETRIES attempts. Rolling back..."
+            ROLLBACK_COMMIT=$(cat /tmp/sribuu_last_deploy)
+            git checkout "$ROLLBACK_COMMIT"
+            source venv/bin/activate
+            pip install -r requirements.txt --quiet
+            if [ -f backend/alembic.ini ]; then
+                cd backend && alembic downgrade -1 && cd ..
+            fi
+            sudo systemctl restart "$APP_SERVICE"
+            echo "🔄 Rollback completed to commit $ROLLBACK_COMMIT"
+            exit 1
