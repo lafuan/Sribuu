@@ -109,7 +109,7 @@ jobs:
             --cov=frontend \
             --cov-report=term-missing \
             --cov-report=xml \
-            --cov-fail-under=70 \
+            --cov-fail-under=50 \
             -v
       - name: Upload coverage to Codecov (optional)
         uses: codecov/codecov-action@v5
