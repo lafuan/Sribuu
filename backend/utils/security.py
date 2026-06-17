@@ -3,7 +3,6 @@ Keamanan: password hashing (bcrypt) dan JWT token.
 """
 
 from datetime import datetime, timedelta, timezone
-
 from typing import cast
 
 from jose import JWTError, jwt

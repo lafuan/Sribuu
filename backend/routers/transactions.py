@@ -89,10 +89,11 @@ async def create_tx(
 
     # HTMX request: return HTML snippet untuk feedback visual
     if request.headers.get("HX-Request") == "true":
+        msg = "✅ Transaksi berhasil disimpan — Rp {:,.0f}</div>".format(result["amount"])
         return HTMLResponse(
-            f'<div class="flex items-center gap-2 p-3 bg-emerald-50 text-emerald-700 rounded-xl text-sm border border-emerald-200">'
-            f'<i class="fas fa-check-circle text-emerald-500"></i> '
-            f'✅ Transaksi berhasil disimpan — Rp {{:,.0f}}</div>'.format(result["amount"]),
+            '<div class="flex items-center gap-2 p-3 bg-emerald-50 text-emerald-700 rounded-xl text-sm border border-emerald-200">'
+            '<i class="fas fa-check-circle text-emerald-500"></i> '
+            + msg,
             status_code=200,
         )
 
