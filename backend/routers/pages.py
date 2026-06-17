@@ -280,9 +280,18 @@ async def dashboard_page(
                 "dashboard.html",
                 {
                     "current_user": current_user,
+                    "today": today,
+                    "today_iso": today_iso,
+                    "today_total": today_total,
+                    "today_count": today_count,
+                    "month_total": month_total,
+                    "month_name": month_name,
+                    "top_category": top_category,
+                    "top_categories": top_categories,
+                    "categories": categories,
+                    "payment_methods": payment_methods,
                     "recent_transactions": recent_transactions,
                 },
-                # Hanya render block 'recent-transactions'
             )
 
         templates = _get_templates()
