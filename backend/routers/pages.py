@@ -184,7 +184,7 @@ async def register_post(request: Request):
         await db.close()
 
 
-@router.get("/logout", name="logout")
+@router.get("/logout", name="page_logout")
 async def logout_page():
     """Logout user — clear cookie + redirect ke login."""
     from ..services.auth_service import clear_token_cookie
@@ -398,6 +398,116 @@ async def transactions_new_page(
         )
     finally:
         await db.close()
+
+
+@router.post("/transactions/new", name="transactions_new_post")
+async def transactions_new_post(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+):
+    """Handler form tambah transaksi baru."""
+    from ..database import get_db_session
+    from ..models import PaymentMethod
+    from ..schemas.transaction import TransactionCreate
+    from ..services.category_service import list_categories
+    from ..services.transaction_service import create_transaction
+
+    from sqlalchemy import select
+
+    form = await request.form()
+    amount_str = str(form.get("amount", "0")).strip()
+    category_id_str = str(form.get("category_id", "")).strip()
+    payment_method_id_str = str(form.get("payment_method_id", "")).strip()
+    notes = str(form.get("notes", "")).strip()
+    transaction_date_str = str(form.get("transaction_date", "")).strip()
+
+    errors = {}
+    if not amount_str or not amount_str.isdigit() or int(amount_str) <= 0:
+        errors["amount"] = "Nominal harus diisi dengan angka positif"
+    if not category_id_str or not category_id_str.isdigit():
+        errors["category_id"] = "Pilih kategori"
+
+    # Parse transaction date
+    parsed_date = None
+    if transaction_date_str:
+        try:
+            parsed_date = date.fromisoformat(transaction_date_str)
+        except (ValueError, TypeError):
+            errors["transaction_date"] = "Format tanggal tidak valid"
+
+    if errors:
+        db = get_db_session()
+        try:
+            categories = await list_categories(db, current_user.id)
+            pm_result = await db.execute(
+                select(PaymentMethod)
+                .where(PaymentMethod.is_active == 1)
+                .order_by(PaymentMethod.id)
+            )
+            payment_methods = [
+                {"id": m.id, "name": m.name, "icon": m.icon}
+                for m in pm_result.scalars().all()
+            ]
+            templates = _get_templates()
+            return templates.TemplateResponse(
+                request,
+                "transactions/form.html",
+                {
+                    "current_user": current_user,
+                    "categories": categories,
+                    "payment_methods": payment_methods,
+                    "form_data": dict(form),
+                    "errors": errors,
+                },
+                status_code=422,
+            )
+        finally:
+            await db.close()
+
+    data = TransactionCreate(
+        amount=int(amount_str),
+        category_id=int(category_id_str),
+        payment_method_id=int(payment_method_id_str) if payment_method_id_str and payment_method_id_str.isdigit() else None,
+        notes=notes or None,
+        transaction_date=parsed_date,
+    )
+
+    db = get_db_session()
+    try:
+        await create_transaction(db, current_user.id, data)
+        await db.commit()
+    except Exception as e:
+        await db.rollback()
+        templates = _get_templates()
+        categories = await list_categories(db, current_user.id)
+        pm_result = await db.execute(
+            select(PaymentMethod)
+            .where(PaymentMethod.is_active == 1)
+            .order_by(PaymentMethod.id)
+        )
+        payment_methods = [
+            {"id": m.id, "name": m.name, "icon": m.icon}
+            for m in pm_result.scalars().all()
+        ]
+        return templates.TemplateResponse(
+            request,
+            "transactions/form.html",
+            {
+                "current_user": current_user,
+                "categories": categories,
+                "payment_methods": payment_methods,
+                "form_data": dict(form),
+                "errors": {"general": f"Gagal menyimpan: {str(e)}"},
+            },
+            status_code=500,
+        )
+    finally:
+        await db.close()
+
+    return RedirectResponse(
+        url=request.url_for("transactions_list"),
+        status_code=303,
+    )
 
 
 @router.get("/transactions/{tx_id}/edit", name="transactions_edit")

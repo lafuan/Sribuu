@@ -1,0 +1,30 @@
+{
+  "name": "Sribuu - Pencatatan Pengeluaran",
+  "short_name": "Sribuu",
+  "description": "Catat pengeluaran harian, kendalikan keuangan",
+  "start_url": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait",
+  "background_color": "#f5f5f4",
+  "theme_color": "#6366F1",
+  "scope": "/",
+  "categories": ["finance", "productivity", "utilities"],
+  "lang": "id-ID",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/static/pwa/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/pwa/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "splash_pages": null
+}

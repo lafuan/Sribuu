@@ -111,6 +111,29 @@ async def health_check():
     return {"status": "ok", "app": settings.APP_NAME, "version": settings.APP_VERSION}
 
 
+# --- PWA Routes ---
+from fastapi.responses import FileResponse
+
+
+@app.get("/sw.js", include_in_schema=False)
+async def service_worker():
+    sw_path = STATIC_DIR / "sw.js"
+    if sw_path.exists():
+        return FileResponse(str(sw_path), media_type="application/javascript",
+                            headers={"Service-Worker-Allowed": "/",
+                                     "Cache-Control": "no-cache"})
+    return {"status": "not found"}, 404
+
+
+@app.get("/manifest.json", include_in_schema=False)
+async def manifest():
+    m_path = STATIC_DIR / "manifest.json"
+    if m_path.exists():
+        return FileResponse(str(m_path), media_type="application/manifest+json",
+                            headers={"Cache-Control": "no-cache"})
+    return {"status": "not found"}, 404
+
+
 # --- API Routers ---
 from .routers import auth, categories, export, payment_methods, stats, transactions  # noqa: E402
 

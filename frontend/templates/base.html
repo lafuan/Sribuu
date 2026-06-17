@@ -2,8 +2,20 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>{% block title %}Sribuu{% endblock %}</title>
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+
+    <!-- iOS PWA Meta -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Sribuu">
+    <link rel="apple-touch-icon" href="/static/pwa/icon-192.png">
+    <link rel="mask-icon" href="/static/pwa/icon-192.png" color="#6366F1">
+    <meta name="theme-color" content="#6366F1" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#1e1b4b" media="(prefers-color-scheme: dark)">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/htmx.org@1.9.12"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.5/dist/cdn.min.js"></script>
@@ -31,5 +43,16 @@
     {% include "components/footer.html" %}
 
     {% block scripts %}{% endblock %}
+
+    <!-- PWA: Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js', { scope: '/' })
+                    .then(() => console.log('📒 Sribuu PWA: Service Worker registered'))
+                    .catch((err) => console.warn('📒 Sribuu PWA: SW registration failed', err));
+            });
+        }
+    </script>
 </body>
 </html>
