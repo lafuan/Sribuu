@@ -609,6 +609,76 @@ async def transactions_edit_page(
         await db.close()
 
 
+@router.post("/transactions/{tx_id}/edit", name="transactions_edit_post")
+async def transactions_edit_post(
+    tx_id: int,
+    request: Request,
+    current_user: User = Depends(get_current_user),
+):
+    """Handler form edit transaksi."""
+    from datetime import date
+
+    from ..database import get_db_session
+    from ..schemas.transaction import TransactionUpdate
+    from ..services.transaction_service import update_transaction
+
+    form = await request.form()
+    amount_str = str(form.get("amount", "0")).strip()
+    category_id_str = str(form.get("category_id", "")).strip()
+    pm_str = str(form.get("payment_method_id", "")).strip()
+    notes = str(form.get("notes", "")).strip()
+    txn_date_str = str(form.get("transaction_date", "")).strip()
+
+    # Parse date
+    try:
+        parsed_date = date.fromisoformat(txn_date_str)
+    except (ValueError, TypeError):
+        parsed_date = date.today()
+
+    data = TransactionUpdate(
+        amount=int(amount_str) if amount_str.isdigit() else 0,
+        category_id=int(category_id_str) if category_id_str.isdigit() else 0,
+        transaction_date=parsed_date,
+        payment_method_id=int(pm_str) if pm_str.isdigit() else None,
+        notes=notes or None,
+    )
+
+    db = get_db_session()
+    try:
+        await update_transaction(db, tx_id, current_user.id, data)
+        await db.commit()
+        return RedirectResponse(
+            url=request.url_for("transactions_list"),
+            status_code=303,
+        )
+    except Exception as e:
+        await db.rollback()
+        from ..services.category_service import list_categories
+        from sqlalchemy import select
+        from ..models import PaymentMethod
+        categories = await list_categories(db, current_user.id)
+        pm_result = await db.execute(
+            select(PaymentMethod).where(PaymentMethod.is_active == 1).order_by(PaymentMethod.id)
+        )
+        payment_methods = [{"id": m.id, "name": m.name, "icon": m.icon} for m in pm_result.scalars().all()]
+        templates = _get_templates()
+        return templates.TemplateResponse(
+            request,
+            "transactions/form.html",
+            {
+                "current_user": current_user,
+                "tx_id": tx_id,
+                "categories": categories,
+                "payment_methods": payment_methods,
+                "form_data": dict(form),
+                "errors": {"general": str(e)},
+            },
+            status_code=422,
+        )
+    finally:
+        await db.close()
+
+
 @router.get("/stats", name="stats")
 async def stats_page(
     request: Request,
@@ -694,65 +764,6 @@ async def stats_page(
         await db.close()
 
 
-@router.get("/stats", name="stats")
-async def stats_page(
-    request: Request,
-    year: int | None = Query(None, description="Tahun"),
-    month: int | None = Query(None, description="Bulan (1-12)"),
-    current_user: User = Depends(get_current_user),
-):
-    """Halaman statistik."""
-    from datetime import date
-
-    from ..database import get_db_session
-
-    today = date.today()
-    y = year or today.year
-    m = month or today.month
-
-    db = get_db_session()
-    try:
-        from ..services.stats_service import get_monthly_stats, get_stats_by_category
-
-        # Summary bulan ini
-        monthly = await get_monthly_stats(db, current_user.id, y, m)
-        summary = {
-            "total": monthly["total_amount"],
-            "count": monthly["transaction_count"],
-            "avg_per_day": monthly["daily_average"],
-            "highest": monthly.get("highest_transaction", {}).get("amount", 0),
-        }
-
-        # Kategori
-        cat_result = await get_stats_by_category(db, current_user.id)
-        categories = cat_result.get("categories", [])
-        category_stats = [
-            {
-                "name": c["category"]["name"],
-                "icon": c["category"]["icon"],
-                "color": c["category"]["color"] if c["category"].get("color") else "#6b7280",
-                "amount": c["total_amount"],
-                "percentage": c["percentage"],
-            }
-            for c in categories
-        ]
-
-        templates = _get_templates()
-        return templates.TemplateResponse(
-            request,
-            "stats.html",
-            {
-                "current_user": current_user,
-                "current_year": y,
-                "current_month": m,
-                "summary": summary,
-                "category_stats": category_stats,
-            },
-        )
-    finally:
-        await db.close()
-
-
 @router.get("/settings", name="settings")
 async def settings_page(
     request: Request,
@@ -779,3 +790,74 @@ async def settings_password_page(
         "settings.html",
         {"current_user": current_user, "active_tab": "password"},
     )
+
+
+@router.post("/settings/password", name="settings_password_post")
+async def settings_password_post(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+):
+    """Handler form ganti password."""
+    from ..database import get_db_session
+    from ..services.auth_service import change_password
+
+    form = await request.form()
+    old_password = str(form.get("old_password", "")).strip()
+    new_password = str(form.get("new_password", "")).strip()
+    new_password_confirm = str(form.get("confirm_password", "")).strip()
+
+    errors = {}
+    if not old_password:
+        errors["old_password"] = "Password lama wajib diisi"
+    if not new_password:
+        errors["new_password"] = "Password baru wajib diisi"
+    elif len(new_password) < 6:
+        errors["new_password"] = "Minimal 6 karakter"
+    if new_password != new_password_confirm:
+        errors["confirm_password"] = "Konfirmasi password tidak cocok"
+
+    if errors:
+        templates = _get_templates()
+        return templates.TemplateResponse(
+            request,
+            "settings.html",
+            {
+                "current_user": current_user,
+                "active_tab": "password",
+                "errors": errors,
+            },
+            status_code=422,
+        )
+
+    db = get_db_session()
+    try:
+        from ..schemas.auth import PasswordChangeRequest
+        pwd_data = PasswordChangeRequest(
+            old_password=old_password,
+            new_password=new_password,
+            new_password_confirm=new_password_confirm,
+        )
+        await change_password(db, current_user.id, pwd_data)
+        await db.commit()
+        return RedirectResponse(
+            url=request.url_for("settings"),
+            status_code=303,
+        )
+    except Exception as e:
+        await db.rollback()
+        detail = getattr(e, "detail", {})
+        err_msg = detail.get("message", str(e)) if isinstance(detail, dict) else str(e)
+        err_fields = detail.get("errors", {"general": [err_msg]}) if isinstance(detail, dict) else {"general": [str(e)]}
+        templates = _get_templates()
+        return templates.TemplateResponse(
+            request,
+            "settings.html",
+            {
+                "current_user": current_user,
+                "active_tab": "password",
+                "errors": err_fields,
+            },
+            status_code=400,
+        )
+    finally:
+        await db.close()
