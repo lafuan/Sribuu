@@ -74,6 +74,13 @@ MINIMAL_CONTEXT = {
     "recent_transactions": [],
     "categories": [],
     "payment_methods": [],
+    "budgets": [],
+    "current_month": 6,
+    "current_year": 2026,
+    "prev_month": 5,
+    "prev_year": 2026,
+    "next_month": 7,
+    "next_year": 2026,
     "transactions": [],
     "total_pages": 0,
     "pagination": {
@@ -146,6 +153,7 @@ class TestTemplateExtendsBase:
         skip = {"base.html", "components/flash_messages.html",
                 "components/navbar.html", "components/footer.html",
                 "components/pagination.html",
+                "budgets/partials/summary.html",
                 "transactions/partials/transaction_list.html",
                 "transactions/partials/transaction_row.html"}
 
@@ -161,6 +169,7 @@ class TestTemplateExtendsBase:
         skip = {"base.html", "components/flash_messages.html",
                 "components/navbar.html", "components/footer.html",
                 "components/pagination.html",
+                "budgets/partials/summary.html",
                 "transactions/partials/transaction_list.html",
                 "transactions/partials/transaction_row.html"}
 

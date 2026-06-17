@@ -765,6 +765,64 @@ async def stats_page(
         await db.close()
 
 
+@router.get("/budgets", name="budgets_page")
+async def budgets_page(
+    request: Request,
+    month: int | None = None,
+    year: int | None = None,
+    current_user: User = Depends(get_current_user),
+):
+    """Halaman manajemen anggaran bulanan per kategori."""
+    from datetime import date
+
+    today = date.today()
+    if not year:
+        year = today.year
+    if not month:
+        month = today.month
+
+    # Nav bulan sebelumnya & berikutnya
+    prev_month = month - 1 if month > 1 else 12
+    prev_year = year if month > 1 else year - 1
+    next_month = month + 1 if month < 12 else 1
+    next_year = year if month < 12 else year + 1
+
+    months_id = [
+        "", "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+        "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+    ]
+    month_name = f"{months_id[month]} {year}"
+
+    from ..database import get_db_session
+    from ..services.budget_service import list_budgets
+    from ..services.category_service import list_categories
+
+    db = get_db_session()
+    try:
+        budgets = await list_budgets(db, current_user.id, month=month, year=year)
+        categories = await list_categories(db, current_user.id)
+
+        templates = _get_templates()
+        return templates.TemplateResponse(
+            request,
+            "budgets/list.html",
+            {
+                "current_user": current_user,
+                "budgets": budgets,
+                "categories": categories,
+                "current_month": month,
+                "current_year": year,
+                "prev_month": prev_month,
+                "prev_year": prev_year,
+                "next_month": next_month,
+                "next_year": next_year,
+                "month_name": month_name,
+            },
+        )
+    finally:
+        await db.close()
+
+
 @router.get("/settings", name="settings")
 async def settings_page(
     request: Request,
