@@ -135,7 +135,7 @@ async def manifest():
 
 
 # --- API Routers ---
-from .routers import auth, categories, export, payment_methods, stats, transactions  # noqa: E402
+from .routers import auth, budgets, categories, export, payment_methods, stats, transactions  # noqa: E402
 
 app.include_router(auth.router)
 app.include_router(transactions.router)
@@ -143,6 +143,7 @@ app.include_router(categories.router)
 app.include_router(stats.router)
 app.include_router(export.router)
 app.include_router(payment_methods.router)
+app.include_router(budgets.router)
 
 # --- Page Router (HTML) — harus didaftarkan setelah API routers ---
 from .routers import pages  # noqa: E402

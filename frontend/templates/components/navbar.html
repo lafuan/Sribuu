@@ -17,6 +17,9 @@
       <a href="{{ url_for('transactions_list') }}" class="text-sm font-medium text-stone-600 hover:text-emerald-600 transition {% if '/transactions' in request.url.path %}text-emerald-600{% endif %}">
         <i class="fas fa-list mr-1"></i> Riwayat
       </a>
+      <a href="{{ url_for('budgets_page') }}" class="text-sm font-medium text-stone-600 hover:text-emerald-600 transition {% if '/budgets' in request.url.path %}text-emerald-600{% endif %}">
+        <i class="fas fa-coins mr-1"></i> Anggaran
+      </a>
       <a href="{{ url_for('stats') }}" class="text-sm font-medium text-stone-600 hover:text-emerald-600 transition {% if '/stats' in request.url.path %}text-emerald-600{% endif %}">
         <i class="fas fa-chart-pie mr-1"></i> Statistik
       </a>
@@ -64,6 +67,10 @@
     <a href="{{ url_for('transactions_list') }}" class="flex flex-col items-center {% if '/transactions' in request.url.path %}text-emerald-600{% else %}text-stone-400{% endif %}">
       <i class="fas fa-list text-lg"></i>
       <span class="text-[10px]">Riwayat</span>
+    </a>
+    <a href="{{ url_for('budgets_page') }}" class="flex flex-col items-center {% if '/budgets' in request.url.path %}text-emerald-600{% else %}text-stone-400{% endif %}">
+      <i class="fas fa-coins text-lg"></i>
+      <span class="text-[10px]">Anggaran</span>
     </a>
     <a href="{{ url_for('stats') }}" class="flex flex-col items-center {% if '/stats' in request.url.path %}text-emerald-600{% else %}text-stone-400{% endif %}">
       <i class="fas fa-chart-pie text-lg"></i>

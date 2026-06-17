@@ -32,6 +32,7 @@ class User(Base):
 
     transactions = relationship("Transaction", back_populates="user", cascade="all, delete-orphan")
     categories = relationship("Category", back_populates="user", cascade="all, delete-orphan")
+    budgets = relationship("Budget", back_populates="user", cascade="all, delete-orphan")
 
 
 class Category(Base):
@@ -53,6 +54,7 @@ class Category(Base):
 
     user = relationship("User", back_populates="categories")
     transactions = relationship("Transaction", back_populates="category")
+    budgets = relationship("Budget", back_populates="category", cascade="all, delete-orphan")
 
 
 class PaymentMethod(Base):
@@ -95,3 +97,24 @@ class Transaction(Base):
     user = relationship("User", back_populates="transactions")
     category = relationship("Category", back_populates="transactions")
     payment_method = relationship("PaymentMethod", back_populates="transactions")
+
+
+class Budget(Base):
+    __tablename__ = "budgets"
+    __table_args__ = (
+        # Satu budget per kategori per bulan
+        Index("idx_budget_user_category_month", "user_id", "category_id", "month", "year", unique=True),
+        Index("idx_budget_user_month", "user_id", "month", "year"),
+    )
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    category_id = Column(Integer, ForeignKey("categories.id", ondelete="CASCADE"), nullable=False)
+    month = Column(Integer, nullable=False)  # 1-12
+    year = Column(Integer, nullable=False)
+    amount = Column(Integer, nullable=False)  # dalam Rupiah (integer)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = relationship("User", back_populates="budgets")
+    category = relationship("Category", back_populates="budgets")
