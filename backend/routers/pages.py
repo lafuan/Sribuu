@@ -653,9 +653,9 @@ async def transactions_edit_post(
         )
     except Exception as e:
         await db.rollback()
+        from ..models import PaymentMethod
         from ..services.category_service import list_categories
         from sqlalchemy import select
-        from ..models import PaymentMethod
         categories = await list_categories(db, current_user.id)
         pm_result = await db.execute(
             select(PaymentMethod).where(PaymentMethod.is_active == 1).order_by(PaymentMethod.id)
