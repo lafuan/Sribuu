@@ -78,12 +78,29 @@ async def get_tx(
 
 @router.post("", status_code=201)
 async def create_tx(
-    data: TransactionCreate,
     request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Buat transaksi baru."""
+    """Buat transaksi baru. Menerima JSON dan form-urlencoded (HTMX)."""
+    content_type = request.headers.get("content-type", "")
+    if "application/json" in content_type:
+        body = await request.json()
+        data = TransactionCreate(**body)
+    else:
+        form = await request.form()
+        raw_amount = form.get("amount", "0")
+        raw_category_id = form.get("category_id", "0")
+        raw_pm = form.get("payment_method_id")
+        raw_notes = form.get("notes")
+        data = TransactionCreate(
+            amount=int(str(raw_amount)) if raw_amount else 0,
+            category_id=int(str(raw_category_id)) if raw_category_id else 0,
+            transaction_date=str(form["transaction_date"]) if form.get("transaction_date") else None,
+            payment_method_id=int(str(raw_pm)) if raw_pm else None,
+            notes=str(raw_notes) if raw_notes else None,
+        )
+
     result = await create_transaction(db, current_user.id, data)
     await db.commit()
 
