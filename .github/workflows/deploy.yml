@@ -30,7 +30,7 @@ jobs:
             set -e
 
             # Configuration
-            APP_DIR="/opt/sribuu"
+            APP_DIR="/home/ubuntu/Sribuu"
             APP_SERVICE="sribuu"
             BACKUP_DIR="/opt/sribuu-backups"
             MAX_RETRIES=5
@@ -52,9 +52,13 @@ jobs:
             source venv/bin/activate
             pip install -r requirements.txt
 
-            echo "=== Running database migrations ==="
+            echo "=== Running database migrations (if any) ==="
             cd backend
-            alembic upgrade head
+            if [ -d "alembic/versions" ] && [ "$(ls -A alembic/versions 2>/dev/null)" ]; then
+              alembic upgrade head
+            else
+              echo "ℹ️  No migrations found, skipping..."
+            fi
             cd ..
 
             echo "=== Restarting service ==="
