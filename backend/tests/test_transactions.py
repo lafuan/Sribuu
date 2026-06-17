@@ -151,7 +151,7 @@ class TestFilterTransactions:
         )
         await auth_client.post(
             "/api/transactions",
-            json={"amount": 20000, "category_id": cat_id, "transaction_date": "2026-06-20"},
+            json={"amount": 20000, "category_id": cat_id, "transaction_date": "2026-06-15"},
         )
 
         resp = await auth_client.get("/api/transactions?date_from=2026-06-01&date_to=2026-06-10")

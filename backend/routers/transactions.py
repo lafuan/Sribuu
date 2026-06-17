@@ -83,10 +83,26 @@ async def create_tx(
     current_user: User = Depends(get_current_user),
 ):
     """Buat transaksi baru. Menerima JSON dan form-urlencoded (HTMX)."""
+    from pydantic import ValidationError
+
     content_type = request.headers.get("content-type", "")
     if "application/json" in content_type:
         body = await request.json()
-        data = TransactionCreate(**body)
+        try:
+            data = TransactionCreate(**body)
+        except ValidationError as e:
+            from fastapi.responses import JSONResponse
+            return JSONResponse(
+                status_code=422,
+                content={
+                    "detail": {
+                        "status": "error",
+                        "data": None,
+                        "message": "Validasi gagal",
+                        "errors": e.errors(),
+                    }
+                },
+            )
     else:
         form = await request.form()
         raw_amount = form.get("amount", "0")
