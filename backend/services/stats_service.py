@@ -354,6 +354,95 @@ async def get_monthly_stats(
     }
 
 
+async def get_spending_pace(
+    db: AsyncSession,
+    user_id: int,
+    month: int | None = None,
+    year: int | None = None,
+) -> dict:
+    """Hitung spending pace bulan ini: rata-rata harian, proyeksi akhir bulan, perbandingan budget."""
+    today = _today_wib()
+    if not year:
+        year = today.year
+    if not month:
+        month = today.month
+
+    month_start = _start_of_month(year, month)
+    month_end = _end_of_month(year, month)
+
+    # Hari yang sudah berlalu (paling tidak 1)
+    days_elapsed = (today - month_start).days + 1
+    days_elapsed = max(days_elapsed, 1)
+    days_in_month = (month_end - month_start).days + 1
+
+    # Total pengeluaran bulan ini
+    result = await db.execute(
+        select(func.coalesce(func.sum(Transaction.amount), 0))
+        .where(
+            Transaction.user_id == user_id,
+            Transaction.transaction_date >= month_start,
+            Transaction.transaction_date <= today,
+        )
+    )
+    total_spent = result.scalar() or 0
+
+    # Rata-rata per hari
+    daily_avg = total_spent // days_elapsed if days_elapsed > 0 else 0
+
+    # Proyeksi akhir bulan
+    projected_total = daily_avg * days_in_month
+
+    # Total budget bulan ini (dari semua kategori)
+    from ..models import Budget
+    result = await db.execute(
+        select(func.coalesce(func.sum(Budget.amount), 0))
+        .where(
+            Budget.user_id == user_id,
+            Budget.month == month,
+            Budget.year == year,
+        )
+    )
+    total_budget = int(result.scalar() or 0)
+
+    # Pace: berapa % budget yang sudah terpakai vs waktu yang berlalu
+    budget_used_pct = round((total_spent / total_budget * 100), 1) if total_budget > 0 else None
+    time_elapsed_pct = round((days_elapsed / days_in_month * 100), 1)
+
+    # Apakah pengeluaran sesuai pace? (budget_used_pct <= time_elapsed_pct = on track)
+    is_on_track: bool | None = None
+    if total_budget > 0 and budget_used_pct is not None:
+        is_on_track = budget_used_pct <= time_elapsed_pct
+
+    # Sisa budget per hari ke depan
+    remaining_days = days_in_month - days_elapsed
+    remaining_budget = max(0, total_budget - total_spent)
+    daily_remaining_budget = remaining_budget // remaining_days if remaining_days > 0 else remaining_budget
+
+    return {
+        "month": month,
+        "year": year,
+        "month_label": get_month_label(year, month),
+        "days_elapsed": days_elapsed,
+        "days_in_month": days_in_month,
+        "total_spent": total_spent,
+        "total_spent_formatted": format_rupiah(total_spent),
+        "daily_avg": daily_avg,
+        "daily_avg_formatted": format_rupiah(daily_avg),
+        "projected_total": projected_total,
+        "projected_total_formatted": format_rupiah(projected_total),
+        "total_budget": total_budget,
+        "total_budget_formatted": format_rupiah(total_budget) if total_budget > 0 else None,
+        "budget_used_pct": budget_used_pct,
+        "time_elapsed_pct": time_elapsed_pct,
+        "is_on_track": is_on_track,
+        "remaining_days": remaining_days,
+        "remaining_budget": remaining_budget,
+        "remaining_budget_formatted": format_rupiah(remaining_budget),
+        "daily_remaining_budget": daily_remaining_budget,
+        "daily_remaining_budget_formatted": format_rupiah(daily_remaining_budget),
+    }
+
+
 async def get_monthly_comparison(
     db: AsyncSession,
     user_id: int,

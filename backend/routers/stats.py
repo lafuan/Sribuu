@@ -16,6 +16,7 @@ from ..services.stats_service import (
     get_dashboard,
     get_monthly_comparison,
     get_monthly_stats,
+    get_spending_pace,
     get_stats_by_category,
 )
 
@@ -84,6 +85,32 @@ async def monthly(
     result = await get_monthly_stats(
         db, current_user.id, year, month
     )
+    return StandardResponse(
+        status="success",
+        data=result,
+    ).model_dump()
+
+
+@router.get("/spending-pace")
+async def spending_pace(
+    request: Request,
+    month: int | None = Query(None, ge=1, le=12, description="Bulan (default: sekarang)"),
+    year: int | None = Query(None, description="Tahun (default: sekarang)"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Spending pace: rata-rata harian, proyeksi, perbandingan budget."""
+    result = await get_spending_pace(db, current_user.id, month, year)
+
+    # HTMX: return HTML fragment
+    if request.headers.get("HX-Request") == "true":
+        from ..main import templates
+        return templates.TemplateResponse(
+            request,
+            "stats/partials/spending_pace.html",
+            {"pace": result},
+        )
+
     return StandardResponse(
         status="success",
         data=result,

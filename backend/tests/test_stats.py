@@ -168,3 +168,152 @@ class TestMonthlyComparison:
         assert response.status_code == 200
         data = response.json()
         assert len(data["data"]["months"]) == 6
+
+
+class TestSpendingPace:
+    """Test GET /api/stats/spending-pace"""
+
+    async def test_pace_no_data_no_budget(self, auth_client):
+        """Spending pace tanpa transaksi dan tanpa budget."""
+        response = await auth_client.get("/api/stats/spending-pace")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "success"
+        pace = data["data"]
+        assert pace["total_spent"] == 0
+        assert pace["daily_avg"] == 0
+        assert pace["projected_total"] == 0
+        assert pace["total_budget"] == 0
+        assert pace["budget_used_pct"] is None
+        assert pace["is_on_track"] is None
+        assert pace["days_elapsed"] >= 1
+        assert pace["time_elapsed_pct"] > 0
+
+    async def test_pace_with_transactions_no_budget(self, auth_client):
+        """Spending pace dengan transaksi tapi tanpa budget."""
+        cat_resp = await auth_client.get("/api/categories")
+        cat_id = cat_resp.json()["data"]["categories"][0]["id"]
+
+        from datetime import date
+        today = date.today().isoformat()
+
+        await auth_client.post(
+            "/api/transactions",
+            json={"amount": 50000, "category_id": cat_id, "transaction_date": today},
+        )
+
+        response = await auth_client.get("/api/stats/spending-pace")
+        assert response.status_code == 200
+        pace = response.json()["data"]
+        assert pace["total_spent"] == 50000
+        assert pace["daily_avg"] >= 1
+        assert pace["projected_total"] > 0
+        assert pace["total_budget"] == 0
+        assert pace["budget_used_pct"] is None
+        assert pace["is_on_track"] is None
+
+    async def test_pace_on_track(self, auth_client):
+        """Spending pace on track (budget cukup)."""
+        cat_resp = await auth_client.get("/api/categories")
+        cat_id = cat_resp.json()["data"]["categories"][0]["id"]
+
+        from datetime import date
+        today = date.today()
+
+        # Buat transaksi kecil
+        await auth_client.post(
+            "/api/transactions",
+            json={"amount": 10000, "category_id": cat_id, "transaction_date": today.isoformat()},
+        )
+
+        # Set budget besar agar on track
+        await auth_client.post(
+            "/api/budgets",
+            json={
+                "category_id": cat_id,
+                "amount": 999999999,
+                "month": today.month,
+                "year": today.year,
+            },
+        )
+
+        response = await auth_client.get("/api/stats/spending-pace")
+        assert response.status_code == 200
+        pace = response.json()["data"]
+        assert pace["total_budget"] > 0
+        assert pace["budget_used_pct"] is not None
+        assert pace["is_on_track"] is True
+
+    async def test_pace_over_pace(self, auth_client):
+        """Spending pace over pace (melebihi budget)."""
+        cat_resp = await auth_client.get("/api/categories")
+        cat_id = cat_resp.json()["data"]["categories"][0]["id"]
+
+        from datetime import date
+        today = date.today()
+
+        # Set budget sangat kecil
+        await auth_client.post(
+            "/api/budgets",
+            json={
+                "category_id": cat_id,
+                "amount": 1000,
+                "month": today.month,
+                "year": today.year,
+            },
+        )
+
+        # Transaksi besar
+        await auth_client.post(
+            "/api/transactions",
+            json={"amount": 50000, "category_id": cat_id, "transaction_date": today.isoformat()},
+        )
+
+        response = await auth_client.get("/api/stats/spending-pace")
+        assert response.status_code == 200
+        pace = response.json()["data"]
+        assert pace["total_budget"] > 0
+        assert pace["budget_used_pct"] is not None
+        # Budget terpakai harus > waktu berlalu
+        assert pace["is_on_track"] is False
+
+    async def test_pace_custom_month(self, auth_client):
+        """Spending pace dengan custom month/year."""
+        response = await auth_client.get("/api/stats/spending-pace?month=1&year=2025")
+        assert response.status_code == 200
+        pace = response.json()["data"]
+        assert pace["month"] == 1
+        assert pace["year"] == 2025
+        assert pace["days_in_month"] == 31
+
+    async def test_pace_htmx_request(self, auth_client):
+        """Spending pace dengan HTMX header returns HTML."""
+        response = await auth_client.get(
+            "/api/stats/spending-pace",
+            headers={"HX-Request": "true"},
+        )
+        assert response.status_code == 200
+        assert "text/html" in response.headers.get("content-type", "")
+
+    async def test_pace_with_multiple_transactions(self, auth_client):
+        """Spending pace dengan multiple transactions memverifikasi daily avg."""
+        cat_resp = await auth_client.get("/api/categories")
+        cat_id = cat_resp.json()["data"]["categories"][0]["id"]
+
+        from datetime import date, timedelta
+        today = date.today()
+
+        # Buat 3 transaksi pada hari berbeda (pastikan berbeda)
+        for i in range(3):
+            d = today - timedelta(days=i)
+            await auth_client.post(
+                "/api/transactions",
+                json={"amount": 15000, "category_id": cat_id, "transaction_date": d.isoformat()},
+            )
+
+        response = await auth_client.get("/api/stats/spending-pace")
+        assert response.status_code == 200
+        pace = response.json()["data"]
+        assert pace["total_spent"] == 45000
+        assert pace["daily_avg"] == 45000 // pace["days_elapsed"]
+        assert pace["remaining_days"] >= 0

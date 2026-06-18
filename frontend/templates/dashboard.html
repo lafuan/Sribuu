@@ -52,6 +52,13 @@
 
   <!-- Dashboard Summary (replaced by HTMX) -->
   <div id="dashboard-summary">
+    <!-- ⏱️ Spending Pace Indicator -->
+    <div id="spending-pace" class="card" hx-get="/api/stats/spending-pace" hx-trigger="load" hx-swap="innerHTML">
+      <div class="flex items-center justify-center py-4">
+        <div class="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    </div>
+
     <!-- Stats Cards -->
     <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
       <!-- Hari Ini -->
