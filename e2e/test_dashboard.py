@@ -2,7 +2,6 @@
 E2E tests: Dashboard page.
 """
 
-import pytest
 from conftest import BASE_URL
 
 

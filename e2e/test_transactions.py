@@ -2,7 +2,8 @@
 E2E tests: Transaction CRUD flow.
 """
 
-import pytest
+import contextlib
+
 from conftest import BASE_URL
 
 
@@ -16,7 +17,6 @@ class TestTransactions:
         page.wait_for_load_state("networkidle")
 
         # Halaman harus muncul
-        body_text = page.text_content("body") or ""
         assert page.url.rstrip("/") == f"{BASE_URL}/transactions" or "/transactions" in page.url
 
     def test_add_transaction_new_page(self, login_page):
@@ -52,21 +52,15 @@ class TestTransactions:
         page.fill("input[name=amount]", "50000")
 
         # Pilih kategori (select dropdown)
-        try:
+        with contextlib.suppress(Exception):
             category_select = page.locator("select[name=category_id]")
             if category_select.is_visible():
                 category_select.select_option(index=0)
-        except Exception:
-            pass
 
-        # Isi notes
-        try:
+        with contextlib.suppress(Exception):
             page.fill("input[name=notes]", "E2E Test Transaction")
-        except Exception:
-            try:
-                page.fill("textarea[name=notes]", "E2E Test Transaction")
-            except Exception:
-                pass
+        with contextlib.suppress(Exception):
+            page.fill("textarea[name=notes]", "E2E Test Transaction")
 
         # Submit
         page.click("button[type=submit]")
@@ -80,7 +74,6 @@ class TestTransactions:
         )
         assert successfully_redirected, f"Expected redirect to /transactions, got {page.url}"
 
-        body_text = page.text_content("body") or ""
         page.close()
 
     def test_empty_transaction_form_validation(self, login_page):

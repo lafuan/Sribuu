@@ -3,11 +3,11 @@ E2E test fixtures — start FastAPI app with test DB, Playwright browser page.
 """
 
 import os
+import shutil
 import subprocess
 import sys
-import time
 import tempfile
-import shutil
+import time
 from pathlib import Path
 
 import pytest
@@ -49,7 +49,7 @@ async def setup():
     db = get_db_session()
     try:
         await init_db()
-        
+
         # Check if user exists
         result = await db.execute(select(User).where(User.email == '{TEST_USER_EMAIL}'))
         user = result.scalar_one_or_none()
@@ -98,8 +98,8 @@ def _start_app():
     )
 
     # Wait for ready
-    import urllib.request
     import urllib.error
+    import urllib.request
 
     for attempt in range(30):
         try:
@@ -109,7 +109,7 @@ def _start_app():
         except Exception:
             if attempt == 29:
                 proc.kill()
-                raise RuntimeError("App failed to start within 30s")
+                raise RuntimeError("App failed to start within 30s") from None
             time.sleep(1)
 
     return proc

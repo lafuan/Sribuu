@@ -2,7 +2,6 @@
 E2E tests: Authentication flow — register, login, logout, validation.
 """
 
-import pytest
 from conftest import BASE_URL, TEST_USER_EMAIL, TEST_USER_PASSWORD
 
 
