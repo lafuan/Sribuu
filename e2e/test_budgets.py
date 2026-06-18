@@ -2,7 +2,6 @@
 E2E tests: Budget management flow.
 """
 
-import pytest
 from conftest import BASE_URL
 
 
