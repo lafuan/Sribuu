@@ -372,8 +372,7 @@ async def get_spending_pace(
 
     # Hari yang sudah berlalu (paling tidak 1)
     days_elapsed = (today - month_start).days + 1
-    if days_elapsed < 1:
-        days_elapsed = 1
+    days_elapsed = max(days_elapsed, 1)
     days_in_month = (month_end - month_start).days + 1
 
     # Total pengeluaran bulan ini

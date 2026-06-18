@@ -111,6 +111,19 @@ MINIMAL_CONTEXT = {
     "category": {"name": "Test", "id": 1, "icon": "📦", "color": "#10b981"},
     "flash_messages": [],
     "message": None,
+    "pace": {
+        "daily_avg_formatted": "Rp 25.000",
+        "total_budget": 0,
+        "projected_total": 750000,
+        "projected_total_formatted": "Rp 750.000",
+        "days_elapsed": 15,
+        "days_in_month": 30,
+        "time_elapsed_pct": 50.0,
+        "budget_used_pct": 0,
+        "is_on_track": True,
+        "remaining_days": 15,
+        "daily_remaining_budget_formatted": "Rp 0",
+    },
 }
 
 
@@ -154,6 +167,7 @@ class TestTemplateExtendsBase:
                 "components/navbar.html", "components/footer.html",
                 "components/pagination.html",
                 "budgets/partials/summary.html",
+                "stats/partials/spending_pace.html",
                 "transactions/partials/transaction_list.html",
                 "transactions/partials/transaction_row.html"}
 
@@ -170,6 +184,7 @@ class TestTemplateExtendsBase:
                 "components/navbar.html", "components/footer.html",
                 "components/pagination.html",
                 "budgets/partials/summary.html",
+                "stats/partials/spending_pace.html",
                 "transactions/partials/transaction_list.html",
                 "transactions/partials/transaction_row.html"}
 
