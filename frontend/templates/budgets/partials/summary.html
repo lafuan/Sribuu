@@ -10,12 +10,12 @@
     <div>
       <div class="flex justify-between text-sm mb-1">
         <span>{{ b.category_icon }} {{ b.category_name }}</span>
-        <span class="font-semibold {% if pct >= 100 %}text-red-500{% elif pct >= 80 %}text-amber-500{% else %}text-stone-700{% endif %}">
+        <span class="font-semibold {% if pct >= 100 %}text-red-500{% elif pct >= 80 %}text-red-500{% elif pct >= 50 %}text-amber-500{% else %}text-emerald-600{% endif %}">
           Rp {{ "{:,.0f}".format(b.spent) }} / Rp {{ "{:,.0f}".format(b.amount) }}
         </span>
       </div>
       <div class="w-full h-2.5 bg-stone-100 rounded-full overflow-hidden">
-        <div class="h-full rounded-full transition-all duration-500" style="width: {{ [pct, 100]|min }}%; {{ 'background: #ef4444' if pct >= 100 else ('background: #f59e0b' if pct >= 80 else 'background: #10b981') }}"></div>
+        <div class="h-full rounded-full transition-all duration-500" style="width: {{ [pct, 100]|min }}%; {{ 'background: #ef4444' if pct >= 80 else ('background: #f59e0b' if pct >= 50 else 'background: #10b981') }}"></div>
       </div>
       <div class="flex justify-between text-xs text-stone-400 mt-0.5">
         <span>{{ "%.0f"|format(pct) }}% terpakai</span>
