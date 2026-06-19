@@ -1,7 +1,5 @@
 """Pydantic schemas untuk modul TransactionTemplate (Favorit Transaksi)."""
 
-from datetime import datetime
-
 from pydantic import BaseModel, Field
 
 from .transaction import CategoryBrief, PaymentMethodBrief

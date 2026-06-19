@@ -2,13 +2,11 @@
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload
 
 from ..database import get_db, get_db_session
 from ..main import templates as jinja_templates
-from ..models import Category, PaymentMethod, TransactionTemplate, User
+from ..models import User
 from ..schemas.auth import StandardResponse
 from ..schemas.template import TransactionTemplateCreate, TransactionTemplateUpdate
 from ..services.auth_service import get_current_user
@@ -83,20 +81,13 @@ async def list_templates_partial(
     current_user: User = Depends(get_current_user),
 ):
     """HTMX partial: render template quick buttons."""
-    from sqlalchemy import select
-
-    from ..database import get_db_session
-    from ..models import Category, PaymentMethod
-
     db2 = get_db_session()
     try:
         result = await list_templates(db2, current_user.id)
     finally:
         await db2.close()
 
-    from ..main import templates
-
-    return templates.TemplateResponse(
+    return jinja_templates.TemplateResponse(
         request,
         "transactions/partials/template_buttons.html",
         {"current_user": current_user, "templates": result},
@@ -147,14 +138,12 @@ async def create_tx_template(
 
     # HTMX request: return updated template list partial
     if request.headers.get("HX-Request") == "true":
-        from ..main import templates as tmpl
-
         all_templates = await list_templates(db, current_user.id)
         # Return both success message + updated buttons
         return HTMLResponse(
             '<div id="template-feedback" class="text-xs text-emerald-600 mb-2">'
             f'✅ Template "{result["label"]}" berhasil dibuat</div>'
-            + await _render_template_buttons(all_templates, tmpl),
+            + await _render_template_buttons(all_templates),
         )
 
     return StandardResponse(
@@ -195,10 +184,8 @@ async def delete_tx_template(
     await db.commit()
 
     if request.headers.get("HX-Request") == "true":
-        from ..main import templates as tmpl
-
         all_templates = await list_templates(db, current_user.id)
-        return HTMLResponse(await _render_template_buttons(all_templates, tmpl))
+        return HTMLResponse(await _render_template_buttons(all_templates))
 
     return StandardResponse(
         status="success",
@@ -206,7 +193,7 @@ async def delete_tx_template(
     ).model_dump()
 
 
-async def _render_template_buttons(templates: list, templates_obj) -> str:
+async def _render_template_buttons(templates: list) -> str:
     """Render template buttons HTML."""
     if not templates:
         return '<div id="template-buttons"><p class="text-xs text-stone-400">Belum ada template.</p></div>'
