@@ -317,3 +317,52 @@ class TestSpendingPace:
         assert pace["total_spent"] == 45000
         assert pace["daily_avg"] == 45000 // pace["days_elapsed"]
         assert pace["remaining_days"] >= 0
+
+
+class TestWeeklySummary:
+    """Test GET /api/stats/weekly-summary"""
+
+    async def test_weekly_summary_empty(self, auth_client):
+        """Ringkasan mingguan saat belum ada transaksi."""
+        response = await auth_client.get("/api/stats/weekly-summary?force=true")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "success"
+        assert data["data"]["total_amount"] == 0
+        assert data["data"]["transaction_count"] == 0
+        assert data["data"]["categories"] == []
+        assert data["data"]["top_transactions"] == []
+        assert data["data"]["week"] >= 1  # ISO week valid
+    
+    async def test_weekly_summary_with_data(self, auth_client):
+        """Ringkasan mingguan dengan transaksi."""
+        cat_resp = await auth_client.get("/api/categories")
+        cat_id = cat_resp.json()["data"]["categories"][0]["id"]
+        
+        from datetime import date, timedelta
+        today = date.today()
+        monday = today - timedelta(days=today.weekday())
+        
+        # Buat 3 transaksi minggu ini
+        for amount, day_offset in [(50000, 0), (25000, 1), (100000, 2)]:
+            d = monday + timedelta(days=day_offset)
+            await auth_client.post(
+                "/api/transactions",
+                json={"amount": amount, "category_id": cat_id, "transaction_date": d.isoformat()},
+            )
+        
+        response = await auth_client.get("/api/stats/weekly-summary?force=true")
+        assert response.status_code == 200
+        data = response.json()["data"]
+        assert data["total_amount"] == 175000
+        assert data["transaction_count"] == 3
+        assert len(data["categories"]) >= 1
+        assert len(data["top_transactions"]) == 3
+        assert data["top_transactions"][0]["amount"] == 100000  # sorted desc
+    
+    async def test_weekly_summary_cached(self, auth_client):
+        """Ringkasan mingguan bisa di-cache."""
+        response = await auth_client.get("/api/stats/weekly-summary")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "success"
