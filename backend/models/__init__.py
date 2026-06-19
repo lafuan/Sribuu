@@ -99,6 +99,29 @@ class Transaction(Base):
     payment_method = relationship("PaymentMethod", back_populates="transactions")
 
 
+class TransactionTemplate(Base):
+    """Template transaksi yang sering dipakai (Favorit Transaksi)."""
+    __tablename__ = "transaction_templates"
+    __table_args__ = (
+        Index("idx_templates_user", "user_id"),
+    )
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    category_id = Column(Integer, ForeignKey("categories.id", ondelete="RESTRICT"), nullable=False)
+    payment_method_id = Column(Integer, ForeignKey("payment_methods.id", ondelete="SET NULL"), nullable=True)
+    amount = Column(Integer, nullable=False)  # dalam Rupiah (integer)
+    notes = Column(Text, nullable=True)
+    label = Column(String(50), nullable=False)  # Nama label tombol, misal "Makan Siang"
+    sort_order = Column(Integer, nullable=False, default=0)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = relationship("User", backref="transaction_templates")
+    category = relationship("Category")
+    payment_method = relationship("PaymentMethod")
+
+
 class Budget(Base):
     __tablename__ = "budgets"
     __table_args__ = (

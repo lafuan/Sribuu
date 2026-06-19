@@ -2,6 +2,7 @@
 Entry point aplikasi Sribuu.
 """
 
+import os
 import subprocess
 import sys
 from contextlib import asynccontextmanager
@@ -30,6 +31,9 @@ STATIC_DIR = BASE_DIR / "frontend" / "static"
 
 def _run_alembic_upgrade() -> None:
     """Run alembic upgrade to head before app startup."""
+    # Skip if SKIP_ALEMBIC env var is set (used by E2E tests)
+    if os.environ.get("SKIP_ALEMBIC") == "true":
+        return
     backend_dir = Path(__file__).resolve().parent
     alembic_ini = backend_dir / "alembic.ini"
     if alembic_ini.exists():
@@ -139,6 +143,7 @@ from .routers import (  # noqa: E402
     auth,
     budgets,
     categories,
+    expense_templates,
     export,
     payment_methods,
     stats,
@@ -152,6 +157,7 @@ app.include_router(stats.router)
 app.include_router(export.router)
 app.include_router(payment_methods.router)
 app.include_router(budgets.router)
+app.include_router(expense_templates.router)
 
 # --- Page Router (HTML) — harus didaftarkan setelah API routers ---
 from .routers import pages  # noqa: E402

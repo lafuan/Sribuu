@@ -6,6 +6,30 @@
     .quick-add input, .quick-add select { transition: border-color 0.2s; }
     .quick-add input:focus, .quick-add select:focus { border-color: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,0.1); }
 </style>
+<script>
+document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.template-quick-btn');
+    if (!btn) return;
+
+    const amountField = document.querySelector('#quick-amount');
+    const categoryField = document.querySelector('#quick-category');
+    const notesField = document.querySelector('textarea[name=notes]');
+
+    if (amountField && categoryField) {
+        const amount = btn.getAttribute('data-amount');
+        const catId = btn.getAttribute('data-category-id');
+        const notes = btn.getAttribute('data-notes');
+
+        if (amount) amountField.value = amount;
+        if (catId) categoryField.value = catId;
+        if (notes && notesField) notesField.value = notes;
+
+        // Highlight active button
+        document.querySelectorAll('.template-quick-btn').forEach(b => b.classList.remove('active', 'bg-emerald-50', 'border-emerald-300'));
+        btn.classList.add('active', 'bg-emerald-50', 'border-emerald-300');
+    }
+});
+</script>
 {% endblock %}
 
 {% block body %}
@@ -21,7 +45,7 @@
       hx-post="/api/transactions"
       hx-target="#quick-add-response"
       hx-swap="innerHTML"
-      hx-on::after-request="if(event.detail.successful) { this.reset(); setTimeout(() => { htmx.ajax('GET', window.location.href, {target: '#dashboard-summary', swap: 'outerHTML'}); htmx.ajax('GET', window.location.href + '?partial=recent', {target: '#recent-transactions', swap: 'outerHTML'}); }, 200); }"
+      hx-on::after-request="if(event.detail.successful) { this.reset(); document.querySelectorAll('.template-quick-btn').forEach(b => b.classList.remove('active')); setTimeout(() => { htmx.ajax('GET', window.location.href, {target: '#dashboard-summary', swap: 'outerHTML'}); htmx.ajax('GET', window.location.href + '?partial=recent', {target: '#recent-transactions', swap: 'outerHTML'}); }, 200); }"
     >
       <div class="flex flex-wrap gap-2">
         <div class="relative flex-1 min-w-[120px]">
@@ -29,10 +53,11 @@
           <input type="number" name="amount" placeholder="0" required
                  class="w-full pl-10 pr-3 py-2.5 border border-stone-200 rounded-xl text-lg font-semibold text-stone-700 outline-none"
                  style="appearance: none; -moz-appearance: textfield;"
-                 min="1">
+                 min="1" id="quick-amount">
         </div>
         <select name="category_id" required
-                class="flex-1 min-w-[130px] px-3 py-2.5 border border-stone-200 rounded-xl text-sm text-stone-600 bg-white outline-none cursor-pointer">
+                class="flex-1 min-w-[130px] px-3 py-2.5 border border-stone-200 rounded-xl text-sm text-stone-600 bg-white outline-none cursor-pointer"
+                id="quick-category">
           <option value="">📂 Pilih Kategori</option>
           {% for cat in categories %}
           <option value="{{ cat.id }}">{{ cat.icon }} {{ cat.name }}</option>
@@ -48,6 +73,13 @@
       </div>
     </form>
     <div id="quick-add-response" class="mt-2"></div>
+
+    <!-- Template Quick Buttons -->
+    <div id="templates-section"
+         hx-get="/api/templates/partials/list"
+         hx-trigger="load"
+         hx-swap="innerHTML">
+    </div>
   </div>
 
   <!-- Dashboard Summary (replaced by HTMX) -->
