@@ -333,16 +333,16 @@ class TestWeeklySummary:
         assert data["data"]["categories"] == []
         assert data["data"]["top_transactions"] == []
         assert data["data"]["week"] >= 1  # ISO week valid
-    
+
     async def test_weekly_summary_with_data(self, auth_client):
         """Ringkasan mingguan dengan transaksi."""
         cat_resp = await auth_client.get("/api/categories")
         cat_id = cat_resp.json()["data"]["categories"][0]["id"]
-        
+
         from datetime import date, timedelta
         today = date.today()
         monday = today - timedelta(days=today.weekday())
-        
+
         # Buat 3 transaksi minggu ini
         for amount, day_offset in [(50000, 0), (25000, 1), (100000, 2)]:
             d = monday + timedelta(days=day_offset)
@@ -350,7 +350,7 @@ class TestWeeklySummary:
                 "/api/transactions",
                 json={"amount": amount, "category_id": cat_id, "transaction_date": d.isoformat()},
             )
-        
+
         response = await auth_client.get("/api/stats/weekly-summary?force=true")
         assert response.status_code == 200
         data = response.json()["data"]
@@ -359,7 +359,7 @@ class TestWeeklySummary:
         assert len(data["categories"]) >= 1
         assert len(data["top_transactions"]) == 3
         assert data["top_transactions"][0]["amount"] == 100000  # sorted desc
-    
+
     async def test_weekly_summary_cached(self, auth_client):
         """Ringkasan mingguan bisa di-cache."""
         # First call generates and caches
@@ -370,7 +370,7 @@ class TestWeeklySummary:
         data = response.json()
         assert data["status"] == "success"
         assert data["data"]["total_amount"] >= 0  # dari cache
-        
+
         # Verifikasi cached flag
         response = await auth_client.get("/api/stats/weekly-summary?force=true")
         data = response.json()["data"]
