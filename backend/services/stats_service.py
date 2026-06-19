@@ -519,14 +519,14 @@ async def generate_weekly_summary(
 
     # Cek apakah sudah ada summary untuk minggu ini
     if not force:
-        result = await db.execute(
+        summary_result = await db.execute(
             select(WeeklySummary).where(
                 WeeklySummary.user_id == user_id,
                 WeeklySummary.year == iso_year,
                 WeeklySummary.week == iso_week,
             )
         )
-        existing = result.scalar_one_or_none()
+        existing = summary_result.scalar_one_or_none()
         if existing:
             return _weekly_summary_to_dict(existing)
 
@@ -586,7 +586,7 @@ async def generate_weekly_summary(
         })
 
     # --- Top 3 transaksi terbesar minggu ini ---
-    result = await db.execute(
+    tx_result = await db.execute(
         select(Transaction)
         .options(joinedload(Transaction.category))
         .where(
@@ -598,7 +598,7 @@ async def generate_weekly_summary(
         .limit(3)
     )
     top_tx = []
-    for tx in result.unique().scalars().all():
+    for tx in tx_result.unique().scalars().all():
         top_tx.append({
             "id": tx.id,
             "amount": tx.amount,
@@ -628,14 +628,14 @@ async def generate_weekly_summary(
         pct_change = 0
 
     # --- Simpan ke database ---
-    result = await db.execute(
+    save_result = await db.execute(
         select(WeeklySummary).where(
             WeeklySummary.user_id == user_id,
             WeeklySummary.year == iso_year,
             WeeklySummary.week == iso_week,
         )
     )
-    existing = result.scalar_one_or_none()
+    existing = save_result.scalar_one_or_none()
 
     if existing:
         existing.total_amount = total_amount
