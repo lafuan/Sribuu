@@ -362,7 +362,16 @@ class TestWeeklySummary:
     
     async def test_weekly_summary_cached(self, auth_client):
         """Ringkasan mingguan bisa di-cache."""
+        # First call generates and caches
+        await auth_client.get("/api/stats/weekly-summary?force=true")
+        # Second call without force returns cached
         response = await auth_client.get("/api/stats/weekly-summary")
         assert response.status_code == 200
         data = response.json()
         assert data["status"] == "success"
+        assert data["data"]["total_amount"] >= 0  # dari cache
+        
+        # Verifikasi cached flag
+        response = await auth_client.get("/api/stats/weekly-summary?force=true")
+        data = response.json()["data"]
+        assert data["total_amount"] >= 0
