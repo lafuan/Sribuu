@@ -88,7 +88,13 @@ MINIMAL_CONTEXT = {
         "total_pages": 0, "has_next": False, "has_prev": False,
     },
     "summary": {"total_amount": 0, "total_amount_formatted": "Rp 0",
-                 "total_filtered": 0, "total": 0, "avg_per_day": 0, "highest": 0},
+                 "total_filtered": 0, "total": 0, "avg_per_day": 0, "highest": 0,
+                 "week": 25, "transaction_count": 0, "daily_average": 0,
+                 "daily_average_formatted": "Rp 0",
+                 "categories": [], "top_transactions": [],
+                 "prev_week_total": 0, "prev_week_total_formatted": "Rp 0",
+                 "percentage_change": 0, "generated_at": None,
+                 "monday": "2026-06-15", "sunday": "2026-06-21"},
     "total_amount": 0,
     "mc": {"amount": 0, "label": "Juni 2026", "count": 0},
     "diff": 0,
@@ -168,6 +174,7 @@ class TestTemplateExtendsBase:
                 "components/pagination.html",
                 "budgets/partials/summary.html",
                 "stats/partials/spending_pace.html",
+                "stats/partials/weekly_summary.html",
                 "transactions/partials/transaction_list.html",
                 "transactions/partials/transaction_row.html",
                 "transactions/partials/manage_templates_modal.html",
@@ -182,12 +189,13 @@ class TestTemplateExtendsBase:
                 f"Template {tpl} tidak extend base.html (tidak ada '{{% extends'"
 
     def test_templates_have_block_title(self):
-        """Template yang extend base harus mengisi block title."""
+        """Semua template yang extend base harus mengisi block title."""
         skip = {"base.html", "components/flash_messages.html",
                 "components/navbar.html", "components/footer.html",
                 "components/pagination.html",
                 "budgets/partials/summary.html",
                 "stats/partials/spending_pace.html",
+                "stats/partials/weekly_summary.html",
                 "transactions/partials/transaction_list.html",
                 "transactions/partials/transaction_row.html",
                 "transactions/partials/manage_templates_modal.html",

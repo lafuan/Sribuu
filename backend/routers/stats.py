@@ -12,6 +12,7 @@ from ..models import User
 from ..schemas.auth import StandardResponse
 from ..services.auth_service import get_current_user
 from ..services.stats_service import (
+    generate_weekly_summary,
     get_daily_trend,
     get_dashboard,
     get_monthly_comparison,
@@ -128,6 +129,31 @@ async def monthly_comparison(
     result = await get_monthly_comparison(
         db, current_user.id, months
     )
+    return StandardResponse(
+        status="success",
+        data=result,
+    ).model_dump()
+
+
+@router.get("/weekly-summary")
+async def weekly_summary(
+    request: Request,
+    force: bool = Query(False, description="Force regenerate summary"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Ringkasan mingguan: total, breakdown kategori, perbandingan minggu lalu."""
+    result = await generate_weekly_summary(db, current_user.id, force=force)
+
+    # HTMX: return HTML fragment
+    if request.headers.get("HX-Request") == "true":
+        from ..main import templates
+        return templates.TemplateResponse(
+            request,
+            "stats/partials/weekly_summary.html",
+            {"summary": result},
+        )
+
     return StandardResponse(
         status="success",
         data=result,

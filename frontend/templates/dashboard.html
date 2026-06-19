@@ -84,6 +84,13 @@ document.addEventListener('click', function(e) {
 
   <!-- Dashboard Summary (replaced by HTMX) -->
   <div id="dashboard-summary">
+    <!-- 💡 Weekly Summary -->
+    <div id="weekly-summary" class="card" hx-get="/api/stats/weekly-summary?force=true" hx-trigger="load" hx-swap="innerHTML">
+      <div class="flex items-center justify-center py-4">
+        <div class="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    </div>
+
     <!-- ⏱️ Spending Pace Indicator -->
     <div id="spending-pace" class="card" hx-get="/api/stats/spending-pace" hx-trigger="load" hx-swap="innerHTML">
       <div class="flex items-center justify-center py-4">
