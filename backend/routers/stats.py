@@ -12,14 +12,13 @@ from ..models import User
 from ..schemas.auth import StandardResponse
 from ..services.auth_service import get_current_user
 from ..services.stats_service import (
+    generate_weekly_summary,
     get_daily_trend,
     get_dashboard,
     get_monthly_comparison,
     get_monthly_stats,
     get_spending_pace,
     get_stats_by_category,
-    get_weekly_summary,
-    generate_weekly_summary,
 )
 
 router = APIRouter(prefix="/api/stats", tags=["Stats"])
