@@ -1,0 +1,38 @@
+<div id="template-manage-list">
+  {% if templates and templates|length > 0 %}
+  <div class="space-y-2">
+    {% for t in templates %}
+    <div class="flex items-center justify-between p-2.5 bg-white border border-stone-100 rounded-xl hover:border-stone-200 transition-colors" id="template-row-{{ t.id }}">
+      <div class="flex items-center gap-2 min-w-0 flex-1">
+        <div class="w-8 h-8 bg-stone-50 rounded-lg flex items-center justify-center text-sm">
+          {{ t.category.icon if t.category else '📦' }}
+        </div>
+        <div class="min-w-0">
+          <p class="text-sm font-medium text-stone-700 truncate">{{ t.label }}</p>
+          <p class="text-xs text-stone-400">Rp {{ "{:,.0f}".format(t.amount) }}{% if t.notes %} · {{ t.notes }}{% endif %}</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-1 flex-shrink-0 ml-2">
+        <button type="button"
+                class="w-7 h-7 flex items-center justify-center text-stone-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors text-xs"
+                hx-delete="/api/templates/{{ t.id }}"
+                hx-target="#template-manage-list"
+                hx-swap="outerHTML"
+                hx-confirm="Hapus template '{{ t.label }}'?"
+                title="Hapus">
+          <i class="fas fa-trash-can"></i>
+        </button>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="text-center py-8">
+    <div class="w-12 h-12 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-2">
+      <i class="fas fa-star text-stone-300"></i>
+    </div>
+    <p class="text-sm text-stone-400">Belum ada template</p>
+    <p class="text-xs text-stone-300 mt-1">Buat template pertama kamu di atas</p>
+  </div>
+  {% endif %}
+</div>

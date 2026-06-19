@@ -86,7 +86,7 @@ def _start_app():
     env = os.environ.copy()
     env["DATABASE_URL"] = f"sqlite+aiosqlite:///{TEST_DB_PATH}"
     env["SECRET_KEY"] = "e2e-test-secret-key"
-    env["DEBUG"] = "true"
+    env["SKIP_ALEMBIC"] = "true"
 
     proc = subprocess.Popen(
         [sys.executable, "-m", "uvicorn", "backend.main:app",

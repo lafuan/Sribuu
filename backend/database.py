@@ -55,6 +55,7 @@ async def init_db():
         Category,
         PaymentMethod,
         Transaction,
+        TransactionTemplate,
         User,
     )
 
