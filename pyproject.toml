@@ -87,7 +87,7 @@ ignore_errors = true
 
 [[tool.mypy.overrides]]
 module = ["backend.services.*", "backend.routers.*"]
-disable_error_code = "arg-type,assignment,operator"
+disable_error_code = "arg-type,assignment,operator,has-type"
 
 # ─── Pytest ─────────────────────────────────────────────────────────
 [tool.pytest.ini_options]

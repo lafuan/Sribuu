@@ -169,14 +169,17 @@ class TestTemplateExtendsBase:
                 "budgets/partials/summary.html",
                 "stats/partials/spending_pace.html",
                 "transactions/partials/transaction_list.html",
-                "transactions/partials/transaction_row.html"}
+                "transactions/partials/transaction_row.html",
+                "transactions/partials/manage_templates_modal.html",
+                "transactions/partials/template_buttons.html",
+                "transactions/partials/template_manage_list.html"}
 
         for tpl in ALL_TEMPLATES:
             if tpl in skip:
                 continue
             content = self._read_template(tpl)
             assert "{% extends" in content, \
-                f"Template {tpl} tidak extend base.html (tidak ada '{{% extends')"
+                f"Template {tpl} tidak extend base.html (tidak ada '{{% extends'"
 
     def test_templates_have_block_title(self):
         """Template yang extend base harus mengisi block title."""
@@ -186,7 +189,10 @@ class TestTemplateExtendsBase:
                 "budgets/partials/summary.html",
                 "stats/partials/spending_pace.html",
                 "transactions/partials/transaction_list.html",
-                "transactions/partials/transaction_row.html"}
+                "transactions/partials/transaction_row.html",
+                "transactions/partials/manage_templates_modal.html",
+                "transactions/partials/template_buttons.html",
+                "transactions/partials/template_manage_list.html"}
 
         for tpl in ALL_TEMPLATES:
             if tpl in skip:
