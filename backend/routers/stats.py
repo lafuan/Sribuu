@@ -18,6 +18,8 @@ from ..services.stats_service import (
     get_monthly_stats,
     get_spending_pace,
     get_stats_by_category,
+    get_weekly_summary,
+    generate_weekly_summary,
 )
 
 router = APIRouter(prefix="/api/stats", tags=["Stats"])
@@ -128,6 +130,31 @@ async def monthly_comparison(
     result = await get_monthly_comparison(
         db, current_user.id, months
     )
+    return StandardResponse(
+        status="success",
+        data=result,
+    ).model_dump()
+
+
+@router.get("/weekly-summary")
+async def weekly_summary(
+    request: Request,
+    force: bool = Query(False, description="Force regenerate summary"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Ringkasan mingguan: total, breakdown kategori, perbandingan minggu lalu."""
+    result = await generate_weekly_summary(db, current_user.id, force=force)
+
+    # HTMX: return HTML fragment
+    if request.headers.get("HX-Request") == "true":
+        from ..main import templates
+        return templates.TemplateResponse(
+            request,
+            "stats/partials/weekly_summary.html",
+            {"summary": result},
+        )
+
     return StandardResponse(
         status="success",
         data=result,

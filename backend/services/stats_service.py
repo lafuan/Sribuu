@@ -2,13 +2,14 @@
 Service layer untuk statistik: dashboard, by-category, daily-trend, monthly.
 """
 
+import json
 from datetime import date, datetime, timedelta, timezone
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
-from ..models import Category, Transaction
+from ..models import Category, Transaction, WeeklySummary
 from ..utils.formatting import (
     format_rupiah,
     get_day_name_id,
@@ -495,4 +496,216 @@ async def get_monthly_comparison(
     return {
         "months": months_data,
         "max_amount": max_amount,
+    }
+
+
+async def generate_weekly_summary(
+    db: AsyncSession,
+    user_id: int,
+    force: bool = False,
+) -> dict:
+    """Generate atau refresh ringkasan mingguan untuk minggu ini.
+
+    Args:
+        db: Database session
+        user_id: ID user
+        force: True = generate ulang meskipun sudah ada
+
+    Returns:
+        dict dengan data ringkasan mingguan
+    """
+    today = _today_wib()
+    iso_year, iso_week, _ = today.isocalendar()
+
+    # Cek apakah sudah ada summary untuk minggu ini
+    if not force:
+        result = await db.execute(
+            select(WeeklySummary).where(
+                WeeklySummary.user_id == user_id,
+                WeeklySummary.year == iso_year,
+                WeeklySummary.week == iso_week,
+            )
+        )
+        existing = result.scalar_one_or_none()
+        if existing:
+            return _weekly_summary_to_dict(existing)
+
+    # Hitung rentang minggu ini (Senin - Minggu)
+    monday = today - timedelta(days=today.weekday())  # Senin
+    sunday = monday + timedelta(days=6)  # Minggu
+
+    # --- Total minggu ini ---
+    result = await db.execute(
+        select(
+            func.coalesce(func.sum(Transaction.amount), 0),
+            func.count(Transaction.id),
+        ).where(
+            Transaction.user_id == user_id,
+            Transaction.transaction_date >= monday,
+            Transaction.transaction_date <= sunday,
+        )
+    )
+    total_amount, tx_count = result.one()
+    total_amount = int(total_amount)
+    tx_count = int(tx_count)
+
+    # Daily average
+    days_so_far = max((today - monday).days + 1, 1)
+    daily_average = total_amount // days_so_far if days_so_far > 0 else 0
+
+    # --- Breakdown per kategori ---
+    result = await db.execute(
+        select(
+            Category.id,
+            Category.name,
+            Category.icon,
+            Category.color,
+            func.sum(Transaction.amount).label("total"),
+            func.count(Transaction.id).label("count"),
+        )
+        .join(Transaction, Transaction.category_id == Category.id)
+        .where(
+            Transaction.user_id == user_id,
+            Transaction.transaction_date >= monday,
+            Transaction.transaction_date <= sunday,
+        )
+        .group_by(Category.id)
+        .order_by(func.sum(Transaction.amount).desc())
+    )
+    categories = []
+    for row in result.all():
+        categories.append({
+            "category_id": row.id,
+            "name": row.name,
+            "icon": row.icon,
+            "color": row.color,
+            "total": row.total,
+            "total_formatted": format_rupiah(row.total),
+            "transaction_count": row.count,
+            "percentage": round(row.total / total_amount * 100, 1) if total_amount > 0 else 0,
+        })
+
+    # --- Top 3 transaksi terbesar minggu ini ---
+    result = await db.execute(
+        select(Transaction)
+        .options(joinedload(Transaction.category))
+        .where(
+            Transaction.user_id == user_id,
+            Transaction.transaction_date >= monday,
+            Transaction.transaction_date <= sunday,
+        )
+        .order_by(Transaction.amount.desc())
+        .limit(3)
+    )
+    top_tx = []
+    for tx in result.unique().scalars().all():
+        top_tx.append({
+            "id": tx.id,
+            "amount": tx.amount,
+            "amount_formatted": format_rupiah(tx.amount),
+            "notes": tx.notes,
+            "category_name": tx.category.name if tx.category else "Tanpa kategori",
+            "category_icon": tx.category.icon if tx.category else "📦",
+            "date": tx.transaction_date.isoformat(),
+        })
+
+    # --- Minggu sebelumnya ---
+    prev_monday = monday - timedelta(days=7)
+    prev_sunday = monday - timedelta(days=1)
+    result = await db.execute(
+        select(func.coalesce(func.sum(Transaction.amount), 0)).where(
+            Transaction.user_id == user_id,
+            Transaction.transaction_date >= prev_monday,
+            Transaction.transaction_date <= prev_sunday,
+        )
+    )
+    prev_week_total = int(result.scalar() or 0)
+
+    # Percentage change
+    if prev_week_total > 0 and total_amount > 0:
+        pct_change = round(((total_amount - prev_week_total) / prev_week_total) * 100)
+    else:
+        pct_change = 0
+
+    # --- Simpan ke database ---
+    result = await db.execute(
+        select(WeeklySummary).where(
+            WeeklySummary.user_id == user_id,
+            WeeklySummary.year == iso_year,
+            WeeklySummary.week == iso_week,
+        )
+    )
+    existing = result.scalar_one_or_none()
+
+    if existing:
+        existing.total_amount = total_amount
+        existing.transaction_count = tx_count
+        existing.daily_average = daily_average
+        existing.category_breakdown = json.dumps(categories, ensure_ascii=False)
+        existing.top_transactions = json.dumps(top_tx, ensure_ascii=False)
+        existing.prev_week_total = prev_week_total
+        existing.percentage_change = pct_change
+        existing.generated_at = datetime.now(timezone.utc)
+    else:
+        ws = WeeklySummary(
+            user_id=user_id,
+            year=iso_year,
+            week=iso_week,
+            total_amount=total_amount,
+            transaction_count=tx_count,
+            daily_average=daily_average,
+            category_breakdown=json.dumps(categories, ensure_ascii=False),
+            top_transactions=json.dumps(top_tx, ensure_ascii=False),
+            prev_week_total=prev_week_total,
+            percentage_change=pct_change,
+        )
+        db.add(ws)
+
+    await db.commit()
+
+    return {
+        "year": iso_year,
+        "week": iso_week,
+        "total_amount": total_amount,
+        "total_amount_formatted": format_rupiah(total_amount),
+        "transaction_count": tx_count,
+        "daily_average": daily_average,
+        "daily_average_formatted": format_rupiah(daily_average),
+        "categories": categories,
+        "top_transactions": top_tx,
+        "prev_week_total": prev_week_total,
+        "prev_week_total_formatted": format_rupiah(prev_week_total),
+        "percentage_change": pct_change,
+        "monday": monday.isoformat(),
+        "sunday": sunday.isoformat(),
+        "generated": True,
+    }
+
+
+async def get_weekly_summary(
+    db: AsyncSession,
+    user_id: int,
+) -> dict:
+    """Dapatkan ringkasan mingguan. Generate otomatis jika belum ada."""
+    return await generate_weekly_summary(db, user_id, force=False)
+
+
+def _weekly_summary_to_dict(ws: WeeklySummary) -> dict:
+    """Convert model WeeklySummary ke dict."""
+    return {
+        "year": ws.year,
+        "week": ws.week,
+        "total_amount": ws.total_amount,
+        "total_amount_formatted": format_rupiah(ws.total_amount),
+        "transaction_count": ws.transaction_count,
+        "daily_average": ws.daily_average,
+        "daily_average_formatted": format_rupiah(ws.daily_average),
+        "categories": json.loads(ws.category_breakdown) if ws.category_breakdown else [],
+        "top_transactions": json.loads(ws.top_transactions) if ws.top_transactions else [],
+        "prev_week_total": ws.prev_week_total,
+        "prev_week_total_formatted": format_rupiah(ws.prev_week_total),
+        "percentage_change": ws.percentage_change,
+        "generated_at": ws.generated_at.isoformat(),
+        "generated": False,
+        "cached": True,
     }

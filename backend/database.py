@@ -57,6 +57,7 @@ async def init_db():
         Transaction,
         TransactionTemplate,
         User,
+        WeeklySummary,
     )
 
     async with engine.begin() as conn:

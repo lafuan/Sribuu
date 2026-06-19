@@ -122,6 +122,29 @@ class TransactionTemplate(Base):
     payment_method = relationship("PaymentMethod")
 
 
+class WeeklySummary(Base):
+    """Cache ringkasan mingguan."""
+    __tablename__ = "weekly_summaries"
+    __table_args__ = (
+        Index("idx_weekly_user_week", "user_id", "year", "week", unique=True),
+    )
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    year = Column(Integer, nullable=False)
+    week = Column(Integer, nullable=False)  # 1-53 (ISO week)
+    total_amount = Column(Integer, nullable=False, default=0)
+    transaction_count = Column(Integer, nullable=False, default=0)
+    daily_average = Column(Integer, nullable=False, default=0)
+    category_breakdown = Column(Text, nullable=True)  # JSON string: [{cat_id, name, icon, color, total}]
+    top_transactions = Column(Text, nullable=True)    # JSON string: [{amount, notes, category_name, date}]
+    prev_week_total = Column(Integer, nullable=False, default=0)
+    percentage_change = Column(Integer, nullable=False, default=0)  # dalam % (0 = no prev data)
+    generated_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+    user = relationship("User", backref="weekly_summaries")
+
+
 class Budget(Base):
     __tablename__ = "budgets"
     __table_args__ = (
