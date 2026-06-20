@@ -54,5 +54,161 @@
             });
         }
     </script>
-</body>
-</html>
+
+    <!-- Notification Scheduler -->
+    <script>
+    // ── Global Notification Scheduler ──
+    let _reminderInterval = null;
+    let _budgetCheckInterval = null;
+    let _lastReminderDay = -1;
+
+    /**
+     * Kirim notifikasi melalui Service Worker
+     */
+    function sendNotification(title, body, tag, data) {
+        if (Notification.permission !== 'granted') return;
+        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+            navigator.serviceWorker.controller.postMessage({
+                type: 'SHOW_NOTIFICATION',
+                payload: { title, body, tag, data },
+            });
+        } else {
+            // Fallback: show directly
+            try { new Notification(title, { body, icon: '/static/pwa/icon-192.png', tag, data }); } catch(e) {}
+        }
+    }
+
+    /**
+     * Schedule daily reminder based on user's preferred time
+     */
+    function scheduleDailyReminder(reminderTime) {
+        if (_reminderInterval) {
+            clearInterval(_reminderInterval);
+            _reminderInterval = null;
+        }
+
+        if (!reminderTime) return;
+
+        const parts = reminderTime.split(':');
+        if (parts.length !== 2) return;
+        const targetHour = parseInt(parts[0], 10);
+        const targetMin = parseInt(parts[1], 10);
+        if (isNaN(targetHour) || isNaN(targetMin)) return;
+
+        // Check every 30 seconds if it's time
+        _reminderInterval = setInterval(() => {
+            const now = new Date();
+            const today = now.getDate();
+
+            // Only remind once per day
+            if (_lastReminderDay === today) return;
+
+            // Check if current time matches reminder time (within 30 sec window)
+            if (now.getHours() === targetHour && now.getMinutes() === targetMin) {
+                _lastReminderDay = today;
+                sendNotification(
+                    '📒 Pengingat Sribuu',
+                    'Jangan lupa catat pengeluaran hari ini!',
+                    'daily-reminder',
+                    { url: '/', type: 'daily_reminder' }
+                );
+            }
+        }, 30000); // Check every 30 seconds
+    }
+
+    /**
+     * Check budget alerts periodically
+     */
+    function startBudgetAlertChecker() {
+        if (_budgetCheckInterval) {
+            clearInterval(_budgetCheckInterval);
+            _budgetCheckInterval = null;
+        }
+
+        // Check immediately on page load
+        checkBudgets();
+
+        // Then check every 5 minutes
+        _budgetCheckInterval = setInterval(checkBudgets, 300000);
+    }
+
+    async function checkBudgets() {
+        try {
+            const resp = await fetch('/api/notifications/check-budgets');
+            if (!resp.ok) return;
+            const data = await resp.json();
+            if (!data.alerts || data.alerts.length === 0) return;
+
+            // Track which alerts we've already shown
+            const shownTags = JSON.parse(sessionStorage.getItem('sribuu_alerted_tags') || '[]');
+
+            for (const alert of data.alerts) {
+                const tag = `budget-${alert.category_id}-${alert.type}`;
+                if (shownTags.includes(tag)) continue; // Already alerted this session
+
+                sendNotification(
+                    alert.urgent ? '🔴 Anggaran Terlewati!' : '🟡 Peringatan Anggaran',
+                    alert.message,
+                    tag,
+                    { url: '/budgets', type: 'budget_alert', category_id: alert.category_id }
+                );
+
+                // Mark as shown
+                shownTags.push(tag);
+            }
+
+            sessionStorage.setItem('sribuu_alerted_tags', JSON.stringify(shownTags));
+        } catch (e) {
+            console.warn('Budget check failed', e);
+        }
+    }
+
+    // ── Resume scheduler after page navigation (HTMX-friendly) ──
+    document.addEventListener('htmx:afterSettle', () => {
+        // Re-trigger budget check after any HTMX update
+        if (Notification.permission === 'granted') {
+            checkBudgets();
+        }
+    });
+
+    // ── Load preferences and start schedulers on page load ──
+    document.addEventListener('DOMContentLoaded', async () => {
+        if (Notification.permission !== 'granted') return;
+
+        try {
+            const resp = await fetch('/api/notifications/preferences');
+            if (!resp.ok) return;
+            const data = await resp.json();
+
+            if (data.notification_enabled) {
+                scheduleDailyReminder(data.reminder_time || '20:00');
+                startBudgetAlertChecker();
+            }
+        } catch (e) {
+            console.warn('Failed to init notification scheduler', e);
+        }
+    });
+
+    // ── Notification Badge Alpine Component ──
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('notifBadge', () => ({
+            notifActive: false,
+
+            async init() {
+                try {
+                    const resp = await fetch('/api/notifications/preferences');
+                    if (resp.ok) {
+                        const data = await resp.json();
+                        this.notifActive = data.notification_enabled && Notification.permission === 'granted';
+                    }
+                } catch (e) {}
+            },
+
+            openNotifPanel() {
+                // For now, navigate to settings. Future: slide-out panel.
+                window.location.href = '/settings';
+            },
+        }));
+    });
+    </script>
+</body></html>

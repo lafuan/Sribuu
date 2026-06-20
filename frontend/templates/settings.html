@@ -107,6 +107,80 @@
     </form>
   </div>
 
+  <!-- Notifikasi Browser -->
+  <div class="settings-section"
+       x-data="notificationManager()"
+       x-init="init()">
+    <h2><i class="fas fa-bell text-emerald-500 mr-2"></i> Notifikasi Browser</h2>
+    <p class="text-xs text-stone-400 mb-3">Dapatkan pengingat harian dan notifikasi anggaran langsung di browser.</p>
+
+    <!-- Permission Status -->
+    <div class="flex items-center justify-between p-3 bg-stone-50 rounded-lg mb-3">
+      <div class="flex items-center gap-2">
+        <i class="fas fa-shield-alt text-stone-400"></i>
+        <span class="text-sm text-stone-600">Status Izin</span>
+      </div>
+      <span class="text-xs font-medium px-2 py-1 rounded-full"
+            :class="permission === 'granted' ? 'bg-emerald-100 text-emerald-700' : permission === 'denied' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'"
+            x-text="permission === 'granted' ? '✓ Diizinkan' : permission === 'denied' ? '✗ Diblokir' : '? Belum Ditanyakan'">
+      </span>
+    </div>
+
+    <template x-if="permission === 'granted'">
+      <form class="space-y-3"
+            x-ref="notifForm"
+            hx-post="/api/notifications/preferences"
+            hx-target="#notification-status"
+            hx-swap="innerHTML">
+        <!-- Enable/Disable Notifications -->
+        <div class="flex items-center justify-between">
+          <div>
+            <label class="text-sm font-medium text-stone-700 cursor-pointer" for="notification-toggle">
+              <i class="fas fa-toggle-on text-emerald-500 mr-1"></i> Notifikasi Aktif
+            </label>
+            <p class="text-xs text-stone-400">Terima pengingat harian dan notifikasi budget</p>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" name="notification_enabled" value="1"
+                   x-model="notifEnabled"
+                   @change="savePrefs()"
+                   class="sr-only peer">
+            <div class="w-11 h-6 bg-stone-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-emerald-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+          </label>
+        </div>
+
+        <!-- Reminder Time -->
+        <template x-if="notifEnabled">
+          <div>
+            <label class="block text-sm font-medium text-stone-700 mb-1">
+              <i class="fas fa-clock text-stone-400 mr-1"></i> Jam Pengingat Harian
+            </label>
+            <input type="time" name="reminder_time" x-model="reminderTime"
+                   @change="savePrefs()"
+                   class="setting-input max-w-[200px]">
+            <p class="text-xs text-stone-400 mt-1">Setiap hari pada jam ini kamu akan diingatkan untuk mencatat pengeluaran</p>
+          </div>
+        </template>
+      </form>
+    </template>
+
+    <!-- Request Permission Button -->
+    <template x-if="permission !== 'granted'">
+      <div>
+        <button @click="requestPermission()"
+                class="btn-sm btn-sm-primary">
+          <i class="fas fa-bell mr-1"></i> Aktifkan Notifikasi
+        </button>
+        <p class="text-xs text-stone-400 mt-2">
+          Notifikasi digunakan untuk pengingat harian dan peringatan anggaran.
+          Data kamu tetap aman — notifikasi hanya dari Sribuu.
+        </p>
+      </div>
+    </template>
+
+    <div id="notification-status" class="mt-2"></div>
+  </div>
+
   <!-- Kelola Kategori -->
   <div class="settings-section"
        x-data="categoryManager()">
@@ -251,6 +325,75 @@
 {% block scripts %}
 <script>
 document.addEventListener('alpine:init', () => {
+  // Notification manager
+  Alpine.data('notificationManager', () => ({
+    permission: Notification.permission,
+    notifEnabled: false,
+    reminderTime: '20:00',
+
+    async init() {
+      this.permission = Notification.permission;
+
+      // Load preferences from server
+      try {
+        const resp = await fetch('/api/notifications/preferences');
+        if (resp.ok) {
+          const data = await resp.json();
+          this.notifEnabled = data.notification_enabled;
+          this.reminderTime = data.reminder_time || '20:00';
+        }
+      } catch (e) {
+        console.warn('Failed to load notification preferences', e);
+      }
+    },
+
+    async requestPermission() {
+      try {
+        this.permission = await Notification.requestPermission();
+        if (this.permission === 'granted') {
+          // Register SW for push notifications
+          if ('serviceWorker' in navigator) {
+            const reg = await navigator.serviceWorker.ready;
+            console.log('📒 Notifikasi Sribuu diaktifkan');
+
+            // Auto-enable notifications when permission granted
+            await fetch('/api/notifications/preferences', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+              body: new URLSearchParams({
+                notification_enabled: '1',
+                reminder_time: '20:00',
+              }),
+            });
+            this.notifEnabled = true;
+          }
+        }
+      } catch (e) {
+        console.warn('Notification permission request failed', e);
+      }
+    },
+
+    async savePrefs() {
+      try {
+        await fetch('/api/notifications/preferences', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            notification_enabled: this.notifEnabled ? '1' : '0',
+            reminder_time: this.reminderTime,
+          }),
+        });
+
+        // If enabled, schedule the daily reminder check
+        if (this.notifEnabled) {
+          scheduleDailyReminder(this.reminderTime);
+        }
+      } catch (e) {
+        console.warn('Failed to save notification preferences', e);
+      }
+    },
+  }));
+
   // Settings page global state
   Alpine.data('settingsPage', () => ({
     showDeleteModal: false,

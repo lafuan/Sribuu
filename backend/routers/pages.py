@@ -838,12 +838,25 @@ async def settings_page(
     current_user: User = Depends(get_current_user),
 ):
     """Halaman pengaturan."""
-    templates = _get_templates()
-    return templates.TemplateResponse(
-        request,
-        "settings.html",
-        {"current_user": current_user},
-    )
+    from ..database import get_db_session
+    from ..services.category_service import list_categories
+
+    db = get_db_session()
+    try:
+        categories = await list_categories(db, current_user.id)
+        templates = _get_templates()
+        return templates.TemplateResponse(
+            request,
+            "settings.html",
+            {
+                "current_user": current_user,
+                "categories": categories,
+                "notification_enabled": bool(current_user.notification_enabled),
+                "reminder_time": current_user.reminder_time or "20:00",
+            },
+        )
+    finally:
+        await db.close()
 
 
 @router.get("/settings/password", name="settings_password")
