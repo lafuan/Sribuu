@@ -1,7 +1,7 @@
 """
 Router untuk notifikasi browser — preferences dan budget alerts.
 """
-from datetime import date, datetime
+from datetime import date
 
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy import select
@@ -114,7 +114,7 @@ async def check_budget_alerts(
         cat_result = await db.execute(
             select(Category).where(Category.is_active == 1)
         )
-        categories = {c.id: c for c in cat_result.scalars().all()}
+        categories = {int(c.id): c for c in cat_result.scalars().all()}
 
         alerts = []
         for budget in budgets:

@@ -97,6 +97,7 @@ class TestCheckBudgets:
         from backend.utils.security import verify_access_token
         token = auth_client.cookies.get("access_token")
         payload = verify_access_token(token)
+        assert payload is not None
         user_id = int(payload["sub"])
 
         # Create a budget with very high amount
