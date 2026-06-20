@@ -25,6 +25,7 @@ from ..utils.formatting import (
     format_date_id_short,
     format_datetime_id,
     format_rupiah,
+    parse_tags,
 )
 
 WIB = timezone(timedelta(hours=7))
@@ -42,6 +43,7 @@ def _build_transaction_response(tx, cat, pm) -> TransactionResponse:
         amount=tx.amount,
         amount_formatted=format_rupiah(tx.amount),
         notes=tx.notes,
+        tags=parse_tags(tx.notes),
         transaction_date=tx.transaction_date.isoformat() if tx.transaction_date else None,
         transaction_date_formatted=format_date_id_short(tx.transaction_date) if tx.transaction_date else None,
         category=CategoryBrief(
@@ -233,6 +235,7 @@ async def list_transactions(
     category_id: int | None = None,
     payment_method_id: int | None = None,
     search: str | None = None,
+    tag: str | None = None,
     page: int = 1,
     per_page: int = 25,
 ) -> dict:
@@ -256,7 +259,8 @@ async def list_transactions(
         conditions.append(Transaction.payment_method_id == payment_method_id)
     if search:
         conditions.append(Transaction.notes.ilike(f"%{search}%"))
-
+    if tag:
+        conditions.append(Transaction.notes.ilike(f"%#{tag}%"))
     where_clause = and_(*conditions)
 
     # Hitung total (untuk pagination dan summary)
@@ -320,6 +324,7 @@ async def get_transactions_for_export(
     category_id: int | None = None,
     payment_method_id: int | None = None,
     search: str | None = None,
+    tag: str | None = None,
 ) -> list[Transaction]:
     """Dapatkan semua transaksi (tanpa pagination) untuk export."""
     conditions = [Transaction.user_id == user_id]
@@ -334,6 +339,8 @@ async def get_transactions_for_export(
         conditions.append(Transaction.payment_method_id == payment_method_id)
     if search:
         conditions.append(Transaction.notes.ilike(f"%{search}%"))
+    if tag:
+        conditions.append(Transaction.notes.ilike(f"%#{tag}%"))
 
     where_clause = and_(*conditions)
 

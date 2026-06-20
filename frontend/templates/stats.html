@@ -173,6 +173,26 @@
     {% endif %}
   </div>
 
+  <!-- Top Tags -->
+  <div class="card">
+    <h2 class="font-semibold text-stone-700 text-sm uppercase tracking-wide mb-3">
+      <i class="fas fa-hashtag text-emerald-500 mr-1"></i> Tag Terpopuler Bulan Ini
+    </h2>
+    {% if top_tags %}
+    <div class="flex flex-wrap gap-2">
+      {% for tt in top_tags %}
+      <a href="{{ url_for('transactions_list') }}?tag={{ tt.tag }}"
+         class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 text-sm rounded-full hover:bg-emerald-100 transition">
+        <i class="fas fa-hashtag text-xs"></i> {{ tt.tag }}
+        <span class="text-xs text-emerald-400 font-medium ml-0.5">({{ tt.count }})</span>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-sm text-stone-400 text-center py-4">Belum ada tag bulan ini. Gunakan #tag di catatan transaksi.</p>
+    {% endif %}
+  </div>
+
 </main>
 {% endblock %}
 
