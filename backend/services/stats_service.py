@@ -14,6 +14,7 @@ from ..utils.formatting import (
     format_rupiah,
     get_day_name_id,
     get_month_label,
+    parse_tags,
 )
 
 WIB = timezone(timedelta(hours=7))
@@ -709,3 +710,47 @@ def _weekly_summary_to_dict(ws: WeeklySummary) -> dict:
         "generated": False,
         "cached": True,
     }
+
+
+async def get_top_tags(
+    db: AsyncSession,
+    user_id: int,
+    year: int | None = None,
+    month: int | None = None,
+    limit: int = 10,
+) -> list[dict]:
+    """Dapatkan top N tag yang paling sering dipakai bulan ini."""
+    from calendar import monthrange
+
+    today = date.today()
+    year = year or today.year
+    month = month or today.month
+    _, last_day = monthrange(year, month)
+    start_date = date(year, month, 1)
+    end_date = date(year, month, last_day)
+
+    result = await db.execute(
+        select(Transaction.notes)
+        .where(
+            Transaction.user_id == user_id,
+            Transaction.transaction_date >= start_date,
+            Transaction.transaction_date <= end_date,
+            Transaction.notes.isnot(None),
+            Transaction.notes != "",
+        )
+        .order_by(Transaction.transaction_date.desc())
+    )
+    rows = result.scalars().all()
+
+    # Count tag frequency
+    tag_count: dict[str, int] = {}
+    for notes in rows:
+        for tag in parse_tags(notes):
+            tag_count[tag] = tag_count.get(tag, 0) + 1
+
+    # Sort by frequency, return top N
+    sorted_tags = sorted(tag_count.items(), key=lambda x: (-x[1], x[0]))
+    return [
+        {"tag": tag, "count": count}
+        for tag, count in sorted_tags[:limit]
+    ]

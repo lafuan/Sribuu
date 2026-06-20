@@ -2,6 +2,7 @@
 Formatting utilities: Rupiah, tanggal Indonesia.
 """
 
+import re
 from datetime import date, datetime
 
 # Nama bulan dalam Bahasa Indonesia
@@ -67,3 +68,22 @@ def format_datetime_id(dt: datetime | None) -> str | None:
     if dt is None:
         return None
     return dt.replace(microsecond=0).isoformat()
+
+
+_TAG_RE = re.compile(r"#(\w+)")
+
+
+def parse_tags(text: str | None) -> list[str]:
+    """Extract #hashtags from text. Returns unique, lowercased tags."""
+    if not text:
+        return []
+    tags = _TAG_RE.findall(text)
+    # Deduplicate while preserving order
+    seen: set[str] = set()
+    result: list[str] = []
+    for tag in tags:
+        lower = tag.lower()
+        if lower not in seen:
+            seen.add(lower)
+            result.append(lower)
+    return result

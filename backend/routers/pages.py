@@ -325,6 +325,7 @@ async def transactions_page(
     category_id: int | None = Query(None),
     payment_method_id: int | None = Query(None),
     search: str | None = Query(None),
+    tag: str | None = Query(None),
     page: int = Query(1, ge=1),
     per_page: int = Query(25, ge=1, le=100),
     current_user: User = Depends(get_current_user),
@@ -349,6 +350,7 @@ async def transactions_page(
             category_id=category_id,
             payment_method_id=payment_method_id,
             search=search,
+            tag=tag,
             page=page,
             per_page=per_page,
         )
@@ -370,6 +372,7 @@ async def transactions_page(
                 "id": tx["id"],
                 "amount": tx["amount"],
                 "notes": tx["notes"],
+                "tags": tx["tags"],
                 "transaction_date": tx["transaction_date"],
                 "created_at": tx["created_at"],
                 "category_name": tx["category"]["name"] if tx["category"] else "",
@@ -389,6 +392,7 @@ async def transactions_page(
             "category_id": category_id or "",
             "payment_method_id": payment_method_id or "",
             "search": search or "",
+            "tag": tag or "",
         }
         query_string = urlencode({k: v for k, v in filters.items() if v})
 
@@ -402,6 +406,7 @@ async def transactions_page(
                 "categories": categories,
                 "payment_methods": payment_methods,
                 "filters": filters,
+                "active_tag": tag,
                 "query_string": query_string,
                 "total_amount": summary["total_amount"],
                 "total_items": pagination["total_items"],
@@ -705,6 +710,7 @@ async def stats_page(
         get_monthly_comparison,
         get_monthly_stats,
         get_stats_by_category,
+        get_top_tags,
     )
 
     today = date.today()
@@ -726,6 +732,7 @@ async def stats_page(
             db, current_user.id, date_from=month_start, date_to=month_end
         )
         comparison = await get_monthly_comparison(db, current_user.id, months=3)
+        top_tags = await get_top_tags(db, current_user.id, year=year, month=month, limit=10)
 
         highest_tx = monthly.get("highest_transaction")
         summary = {
@@ -768,6 +775,7 @@ async def stats_page(
                 "category_stats": category_stats,
                 "daily_trend": daily_trend,
                 "month_comparisons": month_comparisons,
+                "top_tags": top_tags,
             },
         )
     finally:

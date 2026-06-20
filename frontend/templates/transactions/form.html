@@ -144,8 +144,18 @@
 
       <!-- Catatan -->
       <div class="form-group">
-        <label>Catatan <span class="text-stone-300 font-normal text-xs">(opsional)</span></label>
-        <textarea name="notes" rows="2" placeholder="Misal: beli nasi padang + es teh">{{ form_data.notes if form_data else '' }}</textarea>
+        <label>Catatan <span class="text-stone-300 font-normal text-xs">(opsional)</span>
+          <span class="text-xs text-emerald-500 ml-2">💡 Gunakan #tag untuk label</span>
+        </label>
+        <textarea name="notes" rows="2" placeholder="Misal: beli nasi padang + es teh #makan #kerja"
+                  x-data
+                  x-init="$el.addEventListener('input', function() {
+                    const preview = document.getElementById('notes-preview');
+                    if (!preview) return;
+                    preview.innerHTML = this.value.replace(/#(\w+)/g,
+                      '<span class=\"text-emerald-600 font-semibold\">#$1</span>');
+                  })">{{ form_data.notes if form_data else '' }}</textarea>
+        <p id="notes-preview" class="text-xs text-stone-400 mt-1 min-h-[1rem]"></p>
       </div>
 
       <!-- Buttons -->

@@ -32,6 +32,7 @@ async def list_tx(
     category_id: int | None = Query(None, description="Filter kategori"),
     payment_method_id: int | None = Query(None, description="Filter metode bayar"),
     search: str | None = Query(None, description="Pencarian teks pada catatan"),
+    tag: str | None = Query(None, description="Filter tag (contoh: kerja)"),
     page: int = Query(1, ge=1, description="Nomor halaman"),
     per_page: int = Query(25, ge=1, le=100, description="Item per halaman"),
     db: AsyncSession = Depends(get_db),
@@ -46,6 +47,7 @@ async def list_tx(
         category_id=category_id,
         payment_method_id=payment_method_id,
         search=search,
+        tag=tag,
         page=page,
         per_page=per_page,
     )

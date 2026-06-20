@@ -62,6 +62,7 @@ class TransactionResponse(BaseModel):
     amount: int
     amount_formatted: str
     notes: str | None = None
+    tags: list[str] = Field(default_factory=list, description="Tags yang di-parse dari notes")
     transaction_date: str  # YYYY-MM-DD
     transaction_date_formatted: str | None = None
     category: CategoryBrief | None = None
