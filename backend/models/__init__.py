@@ -27,6 +27,8 @@ class User(Base):
     name = Column(String(100), nullable=False)
     email = Column(String(255), nullable=False, unique=True, index=True)
     password_hash = Column(String(128), nullable=False)
+    notification_enabled = Column(Integer, nullable=False, default=0)
+    reminder_time = Column(String(5), nullable=True, default="20:00")
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
 
