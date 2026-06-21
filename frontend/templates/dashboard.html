@@ -33,11 +33,11 @@ document.addEventListener('click', function(e) {
 {% endblock %}
 
 {% block body %}
-<main class="max-w-2xl mx-auto px-4 py-6 space-y-6">
+<main class="max-w-2xl mx-auto px-4 py-8 space-y-8">
 
   <!-- Quick Add Section -->
   <div class="card quick-add" id="quick-add-section">
-    <div class="flex items-center gap-2 mb-4">
+    <div class="flex items-center gap-2 mb-5">
       <i class="fas fa-plus-circle text-emerald-500"></i>
       <h2 class="font-semibold text-stone-700 dark:text-gray-200 text-sm uppercase tracking-wide">Catat Cepat</h2>
     </div>
@@ -99,7 +99,7 @@ document.addEventListener('click', function(e) {
     </div>
 
     <!-- Stats Cards -->
-    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-5">
       <!-- Hari Ini -->
       <div class="card stat-card text-center">
         <p class="text-xs text-stone-400 dark:text-gray-400 uppercase tracking-wide mb-1">Hari Ini</p>
@@ -128,7 +128,7 @@ document.addEventListener('click', function(e) {
     </div>
 
     <!-- ✅ Budget Progress -->
-    <div id="budget-summary" class="card mt-5" hx-get="/api/budgets/summary" hx-trigger="load delay:300ms" hx-swap="innerHTML">
+    <div id="budget-summary" class="card mt-7" hx-get="/api/budgets/summary" hx-trigger="load delay:300ms" hx-swap="innerHTML">
       <div class="flex items-center gap-2 mb-3">
         <i class="fas fa-coins text-emerald-500"></i>
         <h2 class="font-semibold text-stone-700 dark:text-gray-200 text-sm uppercase tracking-wide">Anggaran Bulan Ini</h2>
@@ -139,7 +139,7 @@ document.addEventListener('click', function(e) {
     </div>
 
     <!-- Kategori Terbesar Bulan Ini -->
-    <div class="card mt-5">
+    <div class="card mt-7">
       <h2 class="font-semibold text-stone-700 dark:text-gray-200 text-sm uppercase tracking-wide mb-3">Kategori Terbesar Bulan Ini</h2>
       {% if top_categories %}
       <div class="space-y-3">
