@@ -2,17 +2,17 @@
 {% macro render_pagination(page, total_pages, filters={}) %}
 {% if total_pages > 1 %}
 <div class="card flex items-center justify-between flex-wrap gap-3">
-  <span class="text-xs text-stone-400">
+  <span class="text-xs text-stone-400 dark:text-gray-500">
     Halaman {{ page }} dari {{ total_pages }}
   </span>
   <div class="flex gap-1">
     {% if page > 1 %}
     <a href="?page={{ page - 1 }}{% for k, v in filters.items() %}&{{ k }}={{ v }}{% endfor %}"
-       class="w-9 h-9 border border-stone-200 rounded-lg flex items-center justify-center text-sm text-stone-500 hover:bg-stone-50 transition">
+       class="w-9 h-9 border border-stone-200 dark:border-gray-600 rounded-lg flex items-center justify-center text-sm text-stone-500 dark:text-gray-400 hover:bg-stone-50 dark:hover:bg-gray-700 transition">
       <i class="fas fa-chevron-left text-xs"></i>
     </a>
     {% else %}
-    <span class="w-9 h-9 border border-stone-100 rounded-lg flex items-center justify-center text-sm text-stone-300 cursor-not-allowed">
+    <span class="w-9 h-9 border border-stone-100 dark:border-gray-800 rounded-lg flex items-center justify-center text-sm text-stone-300 dark:text-gray-600 cursor-not-allowed">
       <i class="fas fa-chevron-left text-xs"></i>
     </span>
     {% endif %}
@@ -24,21 +24,21 @@
       </span>
       {% elif p <= 3 or p > total_pages - 3 or (p >= page - 1 and p <= page + 1) %}
       <a href="?page={{ p }}{% for k, v in filters.items() %}&{{ k }}={{ v }}{% endfor %}"
-         class="w-9 h-9 border border-stone-200 rounded-lg flex items-center justify-center text-sm text-stone-500 hover:bg-stone-50 transition">
+         class="w-9 h-9 border border-stone-200 dark:border-gray-600 rounded-lg flex items-center justify-center text-sm text-stone-500 dark:text-gray-400 hover:bg-stone-50 dark:hover:bg-gray-700 transition">
         {{ p }}
       </a>
       {% elif p == 4 or p == total_pages - 3 %}
-      <span class="w-9 h-9 flex items-center justify-center text-sm text-stone-300">...</span>
+      <span class="w-9 h-9 flex items-center justify-center text-sm text-stone-300 dark:text-gray-600">...</span>
       {% endif %}
     {% endfor %}
 
     {% if page < total_pages %}
     <a href="?page={{ page + 1 }}{% for k, v in filters.items() %}&{{ k }}={{ v }}{% endfor %}"
-       class="w-9 h-9 border border-stone-200 rounded-lg flex items-center justify-center text-sm text-stone-500 hover:bg-stone-50 transition">
+       class="w-9 h-9 border border-stone-200 dark:border-gray-600 rounded-lg flex items-center justify-center text-sm text-stone-500 dark:text-gray-400 hover:bg-stone-50 dark:hover:bg-gray-700 transition">
       <i class="fas fa-chevron-right text-xs"></i>
     </a>
     {% else %}
-    <span class="w-9 h-9 border border-stone-100 rounded-lg flex items-center justify-center text-sm text-stone-300 cursor-not-allowed">
+    <span class="w-9 h-9 border border-stone-100 dark:border-gray-800 rounded-lg flex items-center justify-center text-sm text-stone-300 dark:text-gray-600 cursor-not-allowed">
       <i class="fas fa-chevron-right text-xs"></i>
     </span>
     {% endif %}

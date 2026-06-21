@@ -16,8 +16,8 @@
   <!-- Header -->
   <div class="flex items-center justify-between">
     <div>
-      <h1 class="text-xl font-bold text-stone-800">📊 Anggaran</h1>
-      <p class="text-sm text-stone-400 mt-1">Atur batas pengeluaran per kategori</p>
+      <h1 class="text-xl font-bold text-stone-800 dark:text-gray-100">📊 Anggaran</h1>
+      <p class="text-sm text-stone-400 dark:text-gray-500 mt-1">Atur batas pengeluaran per kategori</p>
     </div>
     <button onclick="openBudgetModal()"
             class="btn-primary flex items-center gap-2 text-sm">
@@ -27,11 +27,11 @@
 
   <!-- Month Selector -->
   <div class="flex items-center gap-3">
-    <a href="?month={{ prev_month }}&year={{ prev_year }}" class="btn bg-stone-100 hover:bg-stone-200 text-stone-600 px-3 py-1.5 rounded-lg text-sm transition">
+    <a href="?month={{ prev_month }}&year={{ prev_year }}" class="btn bg-stone-100 dark:bg-gray-800 hover:bg-stone-200 dark:hover:bg-gray-700 text-stone-600 dark:text-gray-300 px-3 py-1.5 rounded-lg text-sm transition">
       <i class="fas fa-chevron-left"></i>
     </a>
-    <span class="font-semibold text-stone-700 text-sm">{{ month_name }}</span>
-    <a href="?month={{ next_month }}&year={{ next_year }}" class="btn bg-stone-100 hover:bg-stone-200 text-stone-600 px-3 py-1.5 rounded-lg text-sm transition">
+    <span class="font-semibold text-stone-700 dark:text-gray-200 text-sm">{{ month_name }}</span>
+    <a href="?month={{ next_month }}&year={{ next_year }}" class="btn bg-stone-100 dark:bg-gray-800 hover:bg-stone-200 dark:hover:bg-gray-700 text-stone-600 dark:text-gray-300 px-3 py-1.5 rounded-lg text-sm transition">
       <i class="fas fa-chevron-right"></i>
     </a>
   </div>
@@ -40,23 +40,23 @@
   {% set total_budget = budgets | sum(attribute='amount') %}
   {% set total_spent = budgets | sum(attribute='spent') %}
   {% set total_pct = (total_spent / total_budget * 100) if total_budget > 0 else 0 %}
-  <div class="card bg-gradient-to-r from-emerald-50 to-stone-50 border border-emerald-100">
+  <div class="card bg-gradient-to-r from-emerald-50 dark:from-emerald-900/20 to-stone-50 dark:to-gray-800 border border-emerald-100 dark:border-emerald-900/30">
     <div class="flex items-center justify-between mb-2">
       <div>
-        <p class="text-xs text-stone-500 font-medium uppercase tracking-wide">Total Anggaran</p>
-        <p class="text-lg font-bold text-stone-800">Rp {{ "{:,.0f}".format(total_budget) }}</p>
+        <p class="text-xs text-stone-500 dark:text-gray-400 font-medium uppercase tracking-wide">Total Anggaran</p>
+        <p class="text-lg font-bold text-stone-800 dark:text-gray-100">Rp {{ "{:,.0f}".format(total_budget) }}</p>
       </div>
       <div class="text-right">
-        <p class="text-xs text-stone-500 font-medium uppercase tracking-wide">Terpakai</p>
+        <p class="text-xs text-stone-500 dark:text-gray-400 font-medium uppercase tracking-wide">Terpakai</p>
         <p class="text-lg font-bold {{ 'text-red-500' if total_pct >= 80 else ('text-amber-500' if total_pct >= 50 else 'text-emerald-600') }}">
           Rp {{ "{:,.0f}".format(total_spent) }}
         </p>
       </div>
     </div>
-    <div class="w-full h-3 bg-stone-100 rounded-full overflow-hidden {{ 'progress-danger' if total_pct >= 80 else ('progress-warning' if total_pct >= 50 else 'progress-safe') }}">
+    <div class="w-full h-3 bg-stone-100 dark:bg-gray-700 rounded-full overflow-hidden {{ 'progress-danger' if total_pct >= 80 else ('progress-warning' if total_pct >= 50 else 'progress-safe') }}">
       <div class="progress-bar h-full rounded-full" style="width: {{ [total_pct, 100]|min }}%; {{ 'background: #ef4444' if total_pct >= 80 else ('background: #f59e0b' if total_pct >= 50 else 'background: #10b981') }}"></div>
     </div>
-    <div class="flex justify-between text-xs text-stone-400 mt-1.5">
+    <div class="flex justify-between text-xs text-stone-400 dark:text-gray-500 mt-1.5">
       <span>{{ "%.1f"|format(total_pct) }}% dari total anggaran</span>
       <span>
         <strong class="{{ 'text-red-500' if total_pct >= 80 else 'text-emerald-600' }}">
@@ -76,8 +76,8 @@
         <div class="flex items-center gap-2">
           <span class="text-lg">{{ b.category_icon }}</span>
           <div>
-            <span class="font-semibold text-stone-700 text-sm">{{ b.category_name }}</span>
-            <span class="text-xs text-stone-400 ml-2">Rp {{ "{:,.0f}".format(b.amount) }}</span>
+            <span class="font-semibold text-stone-700 dark:text-gray-200 text-sm">{{ b.category_name }}</span>
+            <span class="text-xs text-stone-400 dark:text-gray-500 ml-2">Rp {{ "{:,.0f}".format(b.amount) }}</span>
           </div>
         </div>
         <div class="flex items-center gap-2">
@@ -90,7 +90,7 @@
           {% else %}
           <span class="text-xs text-emerald-600">🟢 {{ "%.0f"|format(b.percentage) }}%</span>
           {% endif %}
-          <button onclick="deleteBudget({{ b.id }})" class="text-stone-300 hover:text-red-500 transition text-xs p-1">
+          <button onclick="deleteBudget({{ b.id }})" class="text-stone-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 transition text-xs p-1">
             <i class="fas fa-trash"></i>
           </button>
         </div>
@@ -99,12 +99,12 @@
       <!-- Progress Bar -->
       {% set pct = b.percentage %}
       {% set bar_class = 'progress-danger' if pct >= 80 else ('progress-warning' if pct >= 50 else 'progress-safe') %}
-      <div class="w-full h-3 bg-stone-100 rounded-full overflow-hidden {{ bar_class }}">
+      <div class="w-full h-3 bg-stone-100 dark:bg-gray-700 rounded-full overflow-hidden {{ bar_class }}">
         <div class="progress-bar h-full rounded-full" style="width: {{ [pct, 100]|min }}%; {{ 'background: #ef4444' if pct >= 80 else ('background: #f59e0b' if pct >= 50 else 'background: #10b981') }}"></div>
       </div>
 
-      <div class="flex justify-between text-xs text-stone-400 mt-1.5">
-        <span>Terpakai: <strong class="text-stone-600">Rp {{ "{:,.0f}".format(b.spent) }}</strong></span>
+      <div class="flex justify-between text-xs text-stone-400 dark:text-gray-500 mt-1.5">
+        <span>Terpakai: <strong class="text-stone-600 dark:text-gray-300">Rp {{ "{:,.0f}".format(b.spent) }}</strong></span>
         <span>Sisa: <strong class="{{ 'text-red-500' if b.percentage >= 80 else 'text-emerald-600' }}">
           {% if b.percentage >= 100 %}Lebih Rp {{ "{:,.0f}".format(b.spent - b.amount) }}{% else %}Rp {{ "{:,.0f}".format(b.amount - b.spent) }}{% endif %}
         </strong></span>
@@ -113,11 +113,11 @@
     {% endfor %}
     {% else %}
     <div class="card text-center py-8">
-      <div class="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-3">
-        <i class="fas fa-coins text-stone-300 text-2xl"></i>
+      <div class="w-16 h-16 bg-stone-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-3">
+        <i class="fas fa-coins text-stone-300 dark:text-gray-600 text-2xl"></i>
       </div>
-      <p class="text-sm text-stone-400">Belum ada anggaran bulan ini</p>
-      <p class="text-xs text-stone-300 mt-1">Klik "Tambah" untuk mulai atur batas pengeluaran</p>
+      <p class="text-sm text-stone-400 dark:text-gray-500">Belum ada anggaran bulan ini</p>
+      <p class="text-xs text-stone-300 dark:text-gray-600 mt-1">Klik "Tambah" untuk mulai atur batas pengeluaran</p>
     </div>
     {% endif %}
   </div>
@@ -125,11 +125,11 @@
   <!-- Add Budget Modal -->
   <div id="addBudgetModal" class="hidden fixed inset-0 z-50 bg-black/30 flex items-center justify-center p-4"
        onclick="if(event.target===this)closeBudgetModal()">
-    <div class="bg-white rounded-2xl w-full max-w-md shadow-xl">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-md shadow-xl">
       <!-- Modal Header -->
-      <div class="flex items-center justify-between p-5 border-b border-stone-100">
-        <h2 class="font-bold text-stone-700 text-lg">➕ Tambah Anggaran</h2>
-        <button onclick="closeBudgetModal()" class="w-9 h-9 flex items-center justify-center rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 hover:text-stone-700 transition">
+      <div class="flex items-center justify-between p-5 border-b border-stone-100 dark:border-gray-700">
+        <h2 class="font-bold text-stone-700 dark:text-gray-200 text-lg">➕ Tambah Anggaran</h2>
+        <button onclick="closeBudgetModal()" class="w-9 h-9 flex items-center justify-center rounded-full bg-stone-100 dark:bg-gray-700 hover:bg-stone-200 dark:hover:bg-gray-600 text-stone-500 dark:text-gray-300 hover:text-stone-700 dark:hover:text-gray-100 transition">
           <i class="fas fa-times"></i>
         </button>
       </div>
@@ -141,8 +141,8 @@
             class="p-5 space-y-4">
 
         <div>
-          <label class="block text-sm font-medium text-stone-600 mb-1">Kategori</label>
-          <select name="category_id" required class="w-full px-3 py-2.5 border border-stone-200 rounded-xl text-sm outline-none focus:border-emerald-400">
+          <label class="block text-sm font-medium text-stone-600 dark:text-gray-300 mb-1">Kategori</label>
+          <select name="category_id" required class="w-full px-3 py-2.5 border border-stone-200 dark:border-gray-600 rounded-xl text-sm outline-none focus:border-emerald-400 bg-white dark:bg-gray-800 text-stone-700 dark:text-gray-200">
             <option value="">Pilih kategori</option>
             {% for cat in categories %}
             <option value="{{ cat.id }}">{{ cat.icon }} {{ cat.name }}</option>
@@ -151,23 +151,23 @@
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-stone-600 mb-1">Batas Anggaran (Rp)</label>
+          <label class="block text-sm font-medium text-stone-600 dark:text-gray-300 mb-1">Batas Anggaran (Rp)</label>
           <input type="number" name="amount" placeholder="500000" required min="1"
-                 class="w-full px-3 py-2.5 border border-stone-200 rounded-xl text-sm outline-none focus:border-emerald-400">
+                 class="w-full px-3 py-2.5 border border-stone-200 dark:border-gray-600 rounded-xl text-sm outline-none focus:border-emerald-400 bg-white dark:bg-gray-800 text-stone-700 dark:text-gray-200">
         </div>
 
         <div class="flex gap-4">
           <div class="flex-1">
-            <label class="block text-sm font-medium text-stone-600 mb-1">Bulan</label>
-            <select name="month" required class="w-full px-3 py-2.5 border border-stone-200 rounded-xl text-sm outline-none focus:border-emerald-400">
+            <label class="block text-sm font-medium text-stone-600 dark:text-gray-300 mb-1">Bulan</label>
+            <select name="month" required class="w-full px-3 py-2.5 border border-stone-200 dark:border-gray-600 rounded-xl text-sm outline-none focus:border-emerald-400 bg-white dark:bg-gray-800 text-stone-700 dark:text-gray-200">
               {% for m in range(1, 13) %}
               <option value="{{ m }}" {% if m == current_month %}selected{% endif %}>{{ ["", "Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"][m] }}</option>
               {% endfor %}
             </select>
           </div>
           <div class="flex-1">
-            <label class="block text-sm font-medium text-stone-600 mb-1">Tahun</label>
-            <select name="year" required class="w-full px-3 py-2.5 border border-stone-200 rounded-xl text-sm outline-none focus:border-emerald-400">
+            <label class="block text-sm font-medium text-stone-600 dark:text-gray-300 mb-1">Tahun</label>
+            <select name="year" required class="w-full px-3 py-2.5 border border-stone-200 dark:border-gray-600 rounded-xl text-sm outline-none focus:border-emerald-400 bg-white dark:bg-gray-800 text-stone-700 dark:text-gray-200">
               {% for y in range(current_year - 1, current_year + 3) %}
               <option value="{{ y }}" {% if y == current_year %}selected{% endif %}>{{ y }}</option>
               {% endfor %}
