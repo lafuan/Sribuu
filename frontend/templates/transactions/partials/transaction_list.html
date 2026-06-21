@@ -1,7 +1,7 @@
 {# transaction_list.html — HTMX partial for refreshing the full transaction table + pagination #}
 <div class="card p-0 overflow-hidden">
   <!-- Table Header -->
-  <div class="hidden sm:grid grid-cols-12 gap-2 px-5 py-3 bg-stone-50 text-xs text-stone-400 uppercase tracking-wide font-semibold border-b border-stone-100">
+  <div class="hidden sm:grid grid-cols-12 gap-2 px-5 py-3 bg-stone-50 dark:bg-gray-800 text-xs text-stone-400 dark:text-gray-500 uppercase tracking-wide font-semibold border-b border-stone-100 dark:border-gray-700">
     <div class="col-span-3">Tanggal</div>
     <div class="col-span-4">Kategori / Catatan</div>
     <div class="col-span-2">Metode</div>
@@ -17,11 +17,11 @@
   </div>
   {% else %}
   <div class="text-center py-12">
-    <div class="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-3">
-      <i class="fas fa-search text-stone-300 text-2xl"></i>
+    <div class="w-16 h-16 bg-stone-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-3">
+      <i class="fas fa-search text-stone-300 dark:text-gray-600 text-2xl"></i>
     </div>
-    <p class="text-sm text-stone-500 font-medium">Tidak ada transaksi ditemukan</p>
-    <p class="text-xs text-stone-400 mt-1">Coba ubah filter atau kata kunci pencarian</p>
+    <p class="text-sm text-stone-500 dark:text-gray-400 font-medium">Tidak ada transaksi ditemukan</p>
+    <p class="text-xs text-stone-400 dark:text-gray-500 mt-1">Coba ubah filter atau kata kunci pencarian</p>
   </div>
   {% endif %}
 </div>
@@ -29,7 +29,7 @@
 <!-- Pagination -->
 {% if total_pages > 1 %}
 <div class="card flex items-center justify-between mt-4">
-  <span class="text-xs text-stone-400">
+  <span class="text-xs text-stone-400 dark:text-gray-500">
     Menampilkan {{ ((page - 1) * page_size) + 1 }}–{{ [page * page_size, total_items] | min }} dari {{ total_items }} transaksi
   </span>
   <div class="flex gap-1">
@@ -37,11 +37,11 @@
     <button hx-get="{{ url_for('transactions_list') }}?page={{ page - 1 }}{% for k, v in filters.items() %}{% if v %}&{{ k }}={{ v }}{% endif %}{% endfor %}"
             hx-target="#transaction-list-container"
             hx-swap="innerHTML"
-            class="w-9 h-9 border border-stone-200 rounded-lg flex items-center justify-center text-sm text-stone-500 hover:bg-stone-50 transition">
+            class="w-9 h-9 border border-stone-200 dark:border-gray-600 rounded-lg flex items-center justify-center text-sm text-stone-500 dark:text-gray-400 hover:bg-stone-50 dark:hover:bg-gray-700 transition">
       <i class="fas fa-chevron-left text-xs"></i>
     </button>
     {% else %}
-    <span class="w-9 h-9 border border-stone-100 rounded-lg flex items-center justify-center text-sm text-stone-300 cursor-not-allowed">
+    <span class="w-9 h-9 border border-stone-100 dark:border-gray-800 rounded-lg flex items-center justify-center text-sm text-stone-300 dark:text-gray-600 cursor-not-allowed">
       <i class="fas fa-chevron-left text-xs"></i>
     </span>
     {% endif %}
@@ -53,9 +53,9 @@
       <button hx-get="{{ url_for('transactions_list') }}?page={{ p }}{% for k, v in filters.items() %}{% if v %}&{{ k }}={{ v }}{% endif %}{% endfor %}"
               hx-target="#transaction-list-container"
               hx-swap="innerHTML"
-              class="w-9 h-9 border border-stone-200 rounded-lg flex items-center justify-center text-sm text-stone-500 hover:bg-stone-50 transition">{{ p }}</button>
+              class="w-9 h-9 border border-stone-200 dark:border-gray-600 rounded-lg flex items-center justify-center text-sm text-stone-500 dark:text-gray-400 hover:bg-stone-50 dark:hover:bg-gray-700 transition">{{ p }}</button>
       {% elif p == 4 or p == total_pages - 3 %}
-      <span class="w-9 h-9 flex items-center justify-center text-sm text-stone-300">...</span>
+      <span class="w-9 h-9 flex items-center justify-center text-sm text-stone-300 dark:text-gray-600">...</span>
       {% endif %}
     {% endfor %}
 
@@ -63,11 +63,11 @@
     <button hx-get="{{ url_for('transactions_list') }}?page={{ page + 1 }}{% for k, v in filters.items() %}{% if v %}&{{ k }}={{ v }}{% endif %}{% endfor %}"
             hx-target="#transaction-list-container"
             hx-swap="innerHTML"
-            class="w-9 h-9 border border-stone-200 rounded-lg flex items-center justify-center text-sm text-stone-500 hover:bg-stone-50 transition">
+            class="w-9 h-9 border border-stone-200 dark:border-gray-600 rounded-lg flex items-center justify-center text-sm text-stone-500 dark:text-gray-400 hover:bg-stone-50 dark:hover:bg-gray-700 transition">
       <i class="fas fa-chevron-right text-xs"></i>
     </button>
     {% else %}
-    <span class="w-9 h-9 border border-stone-100 rounded-lg flex items-center justify-center text-sm text-stone-300 cursor-not-allowed">
+    <span class="w-9 h-9 border border-stone-100 dark:border-gray-800 rounded-lg flex items-center justify-center text-sm text-stone-300 dark:text-gray-600 cursor-not-allowed">
       <i class="fas fa-chevron-right text-xs"></i>
     </span>
     {% endif %}

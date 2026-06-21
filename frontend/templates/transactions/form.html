@@ -9,6 +9,7 @@
         padding: 24px;
         box-shadow: 0 1px 3px rgba(0,0,0,0.06);
     }
+    .dark .form-card { background: #1c1917; }
     .form-group { margin-bottom: 16px; }
     .form-group label {
         display: block;
@@ -17,6 +18,7 @@
         color: #44403c;
         margin-bottom: 6px;
     }
+    .dark .form-group label { color: #e7e5e4; }
     .form-group input, .form-group select, .form-group textarea {
         width: 100%;
         padding: 10px 14px;
@@ -28,11 +30,13 @@
         transition: all 0.2s;
         background: #fafaf9;
     }
+    .dark .form-group input, .dark .form-group select, .dark .form-group textarea { background: #292524; border-color: #57534e; color: #e7e5e4; }
     .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
         border-color: #10b981;
         box-shadow: 0 0 0 3px rgba(16,185,129,0.08);
         background: white;
     }
+    .dark .form-group input:focus, .dark .form-group select:focus, .dark .form-group textarea:focus { background: #44403c; }
     .required::after { content: " *"; color: #ef4444; }
     .btn-save {
         background: #10b981;
@@ -58,7 +62,9 @@
         cursor: pointer;
         transition: all 0.2s;
     }
+    .dark .btn-cancel { background: #292524; color: #a8a29e; border-color: #57534e; }
     .btn-cancel:hover { background: #f5f5f4; }
+    .dark .btn-cancel:hover { background: #44403c; }
     .payment-radio input[type="radio"] { display: none; }
     .payment-radio input[type="radio"]:checked + .payment-label {
         border-color: #10b981;
@@ -66,6 +72,7 @@
         color: #059669;
         font-weight: 600;
     }
+    .dark .payment-radio input[type="radio"]:checked + .payment-label { background: #064e3b; color: #6ee7b7; border-color: #10b981; }
     .payment-label {
         display: flex;
         align-items: center;
@@ -78,7 +85,9 @@
         font-size: 13px;
         color: #78716c;
     }
+    .dark .payment-label { border-color: #57534e; color: #a8a29e; }
     .payment-label:hover { background: #f5f5f4; }
+    .dark .payment-label:hover { background: #44403c; }
 </style>
 {% endblock %}
 
@@ -87,10 +96,10 @@
 
   <!-- Page Header -->
   <div class="flex items-center gap-3 mb-5">
-    <a href="{{ url_for('transactions_list') }}" class="text-stone-500 hover:text-stone-700">
+    <a href="{{ url_for('transactions_list') }}" class="text-stone-500 dark:text-gray-400 hover:text-stone-700 dark:hover:text-gray-200">
       <i class="fas fa-arrow-left text-lg"></i>
     </a>
-    <h1 class="text-xl font-bold text-stone-800">Tambah Transaksi</h1>
+    <h1 class="text-xl font-bold text-stone-800 dark:text-gray-100">Tambah Transaksi</h1>
   </div>
 
   <div class="form-card">
@@ -99,13 +108,13 @@
       <div class="form-group">
         <label class="required">Jumlah</label>
         <div class="relative">
-          <span class="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400 font-medium text-lg">Rp</span>
+          <span class="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400 dark:text-gray-400 font-medium text-lg">Rp</span>
           <input type="number" name="amount" placeholder="0" required min="1"
                  class="pl-12 text-lg font-semibold"
                  style="appearance: none; -moz-appearance: textfield;"
                  value="{{ form_data.amount if form_data else '' }}">
         </div>
-        <p class="text-xs text-stone-400 mt-1">Masukkan nominal pengeluaran</p>
+        <p class="text-xs text-stone-400 dark:text-gray-500 mt-1">Masukkan nominal pengeluaran</p>
       </div>
 
       <!-- Kategori -->
@@ -144,7 +153,7 @@
 
       <!-- Catatan -->
       <div class="form-group">
-        <label>Catatan <span class="text-stone-300 font-normal text-xs">(opsional)</span>
+        <label>Catatan <span class="text-stone-300 dark:text-gray-500 font-normal text-xs">(opsional)</span>
           <span class="text-xs text-emerald-500 ml-2">💡 Gunakan #tag untuk label</span>
         </label>
         <textarea name="notes" rows="2" placeholder="Misal: beli nasi padang + es teh #makan #kerja"
@@ -155,7 +164,7 @@
                     preview.innerHTML = this.value.replace(/#(\w+)/g,
                       '<span class=\"text-emerald-600 font-semibold\">#$1</span>');
                   })">{{ form_data.notes if form_data else '' }}</textarea>
-        <p id="notes-preview" class="text-xs text-stone-400 mt-1 min-h-[1rem]"></p>
+        <p id="notes-preview" class="text-xs text-stone-400 dark:text-gray-500 mt-1 min-h-[1rem]"></p>
       </div>
 
       <!-- Buttons -->

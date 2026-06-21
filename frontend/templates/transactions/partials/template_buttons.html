@@ -1,9 +1,9 @@
 <div id="template-buttons-container">
   {% if templates and templates|length > 0 %}
   <div class="flex items-center justify-between mb-1">
-    <p class="text-xs text-stone-400 uppercase tracking-wide font-medium">⚡ Favorit Transaksi</p>
+    <p class="text-xs text-stone-400 dark:text-gray-500 uppercase tracking-wide font-medium">⚡ Favorit Transaksi</p>
     <button type="button"
-            class="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
+            class="text-xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 font-medium"
             hx-get="/api/templates/manage-modal"
             hx-target="#template-manage-modal"
             hx-swap="innerHTML"
@@ -14,7 +14,7 @@
   <div id="template-buttons" class="flex flex-wrap gap-1.5">
     {% for t in templates[:12] %}
     <button type="button"
-            class="template-quick-btn text-xs px-3 py-1.5 rounded-lg border border-stone-200 hover:bg-emerald-50 hover:border-emerald-300 transition-colors flex items-center gap-1 cursor-pointer"
+            class="template-quick-btn text-xs px-3 py-1.5 rounded-lg border border-stone-200 dark:border-gray-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 hover:border-emerald-300 dark:hover:border-emerald-700 transition-colors flex items-center gap-1 cursor-pointer text-stone-700 dark:text-gray-200"
             data-amount="{{ t.amount }}"
             data-category-id="{{ t.category.id if t.category else '' }}"
             data-notes="{{ t.notes or '' }}"
