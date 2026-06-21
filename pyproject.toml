@@ -76,6 +76,7 @@ module = [
     "jose.*",
     "passlib.*",
     "bcrypt.*",
+    "asyncpg.*",
     "aiosqlite.*",
     "jinja2.*",
 ]

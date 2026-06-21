@@ -2,8 +2,6 @@
 Konfigurasi aplikasi Sribuu.
 """
 
-import os
-
 from pydantic_settings import BaseSettings
 
 
@@ -14,7 +12,10 @@ class Settings(BaseSettings):
     DEBUG: bool = True
 
     # Database
-    DATABASE_URL: str = f"sqlite+aiosqlite:///{os.path.expanduser('~/.hermes/data/sribuu.db')}"
+    # Format: postgresql+asyncpg://user:password@host:port/dbname
+    # Untuk development/testing tetap bisa pakai SQLite via env var:
+    #   DATABASE_URL=sqlite+aiosqlite:///test.db
+    DATABASE_URL: str = "postgresql+asyncpg://sribuu:sribuu_dev_2026@localhost:5432/sribuu"
 
     # Keamanan
     SECRET_KEY: str = "dev-secret-change-in-production"
