@@ -1,0 +1,38 @@
+# =============================================================================
+# Sribuu — Docker Compose (Hybrid Mode)
+# =============================================================================
+#
+# Arsitektur Hybrid:
+#   - App → Docker container (services.app)
+#   - PostgreSQL → NATIVE di host (bukan container)
+#   - Nginx → NATIVE di host (reverse proxy + SSL)
+#
+# Cara pakai:
+#   1. Pastikan PostgreSQL sudah berjalan di host (localhost:5432)
+#   2. Build & jalankan:
+#        docker compose build
+#        docker compose up -d
+#   3. Verifikasi:
+#        curl http://localhost:8000/health
+#
+# Catatan:
+#   - network_mode: host → container bisa akses PostgreSQL di localhost
+#   - Environment variable dikirim via .env atau docker compose -e
+#   - Untuk deployment gunakan image dari GHCR:
+#        docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+# =============================================================================
+
+services:
+  app:
+    image: ghcr.io/lafuan/sribuu:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sribuu
+    network_mode: host
+    restart: always
+    env_file:
+      - .env
+    # Volume untuk log (opsional)
+    # volumes:
+    #   - /var/log/sribuu:/var/log/sribuu

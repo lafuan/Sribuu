@@ -1,0 +1,42 @@
+# ─── Git ──────────────────────────────────────────────────────────────────
+.git/
+.gitignore
+.gitattributes
+.github/
+
+# ─── Python ───────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+coverage.xml
+
+# ─── Environment ──────────────────────────────────────────────────────────
+.env
+.env.local
+*.db
+.sqlite3
+
+# ─── IDE / OS ────────────────────────────────────────────────────────────
+.idea/
+.vscode/
+.DS_Store
+*.log
+.cache/
+
+# ─── Docker ────────────────────────────────────────────────────────────────
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# ─── Lainnya ──────────────────────────────────────────────────────────────
+*.tar.gz
+node_modules/
