@@ -3,9 +3,10 @@ Router untuk modul transaksi: CRUD, filter, pagination.
 """
 
 from datetime import date
+from pathlib import Path
 
-from fastapi import APIRouter, Depends, Query, Request
-from fastapi.responses import HTMLResponse
+from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile, status
+from fastapi.responses import FileResponse, HTMLResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database import get_db
@@ -16,12 +17,18 @@ from ..services.auth_service import get_current_user
 from ..services.transaction_service import (
     create_transaction,
     delete_transaction,
+    get_transaction_by_id,
     get_transaction_detail,
     list_transactions,
     update_transaction,
 )
 
 router = APIRouter(prefix="/api/transactions", tags=["Transactions"])
+
+# Allowed file extensions and max size
+ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
+MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
+UPLOAD_DIR = Path(__file__).resolve().parent.parent.parent / "frontend" / "static" / "uploads"
 
 
 @router.get("")
@@ -167,6 +174,12 @@ async def delete_tx(
     current_user: User = Depends(get_current_user),
 ):
     """Hapus transaksi."""
+    tx = await get_transaction_by_id(db, tx_id, current_user.id)
+
+    # Delete attachment file if exists
+    if tx.attachment_path:
+        _delete_attachment_file(tx.attachment_path)
+
     await delete_transaction(db, tx_id, current_user.id)
     await db.commit()
 
@@ -174,3 +187,138 @@ async def delete_tx(
         status="success",
         message="Transaksi berhasil dihapus",
     ).model_dump()
+
+
+@router.post("/{tx_id}/attachment")
+async def upload_attachment(
+    tx_id: int,
+    request: Request,
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Upload lampiran foto untuk transaksi."""
+    tx = await get_transaction_by_id(db, tx_id, current_user.id)
+
+    # Validate file type
+    ext = Path(file.filename or "").suffix.lower()
+    if ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "status": "error",
+                "message": f"Tipe file tidak diizinkan. Gunakan: {', '.join(ALLOWED_EXTENSIONS)}",
+            },
+        )
+
+    # Read and validate file size
+    contents = await file.read()
+    if len(contents) > MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "status": "error",
+                "message": "Ukuran file maksimal 5MB",
+            },
+        )
+
+    # Delete existing attachment if any
+    if tx.attachment_path:
+        _delete_attachment_file(tx.attachment_path)
+
+    # Build storage path: uploads/{user_id}/{tx_id}.{ext}
+    user_dir = UPLOAD_DIR / str(current_user.id)
+    user_dir.mkdir(parents=True, exist_ok=True)
+    storage_path = user_dir / f"{tx_id}{ext}"
+    relative_path = f"uploads/{current_user.id}/{tx_id}{ext}"
+
+    # Write file
+    with open(storage_path, "wb") as f:
+        f.write(contents)
+
+    # Update database
+    tx.attachment_path = relative_path
+    await db.commit()
+
+    return StandardResponse(
+        status="success",
+        data={"attachment_url": f"/api/transactions/{tx_id}/attachment"},
+        message="Lampiran berhasil diunggah",
+    ).model_dump()
+
+
+@router.get("/{tx_id}/attachment")
+async def get_attachment(
+    tx_id: int,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Ambil lampiran transaksi."""
+    tx = await get_transaction_by_id(db, tx_id, current_user.id)
+
+    if not tx.attachment_path:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"status": "error", "message": "Lampiran tidak ditemukan"},
+        )
+
+    file_path = Path(__file__).resolve().parent.parent.parent / "frontend" / "static" / tx.attachment_path
+    if not file_path.exists():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"status": "error", "message": "File lampiran tidak ditemukan"},
+        )
+
+    # Determine media type
+    ext = file_path.suffix.lower()
+    media_types = {
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".png": "image/png",
+        ".webp": "image/webp",
+    }
+    media_type = media_types.get(ext, "application/octet-stream")
+
+    return FileResponse(
+        str(file_path),
+        media_type=media_type,
+        filename=file_path.name,
+    )
+
+
+@router.delete("/{tx_id}/attachment")
+async def delete_attachment(
+    tx_id: int,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Hapus lampiran transaksi."""
+    tx = await get_transaction_by_id(db, tx_id, current_user.id)
+
+    if not tx.attachment_path:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"status": "error", "message": "Lampiran tidak ditemukan"},
+        )
+
+    _delete_attachment_file(tx.attachment_path)
+
+    tx.attachment_path = None
+    await db.commit()
+
+    return StandardResponse(
+        status="success",
+        message="Lampiran berhasil dihapus",
+    ).model_dump()
+
+
+def _delete_attachment_file(attachment_path: str) -> None:
+    """Delete attachment file from disk."""
+    try:
+        file_path = Path(__file__).resolve().parent.parent.parent / "frontend" / "static" / attachment_path
+        if file_path.exists():
+            file_path.unlink()
+    except OSError:
+        pass  # Ignore errors during file deletion (file may already be gone)

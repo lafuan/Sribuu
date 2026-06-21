@@ -92,6 +92,7 @@ class Transaction(Base):
     payment_method_id = Column(Integer, ForeignKey("payment_methods.id", ondelete="SET NULL"), nullable=True)
     amount = Column(Integer, nullable=False)  # dalam Rupiah (integer)
     notes = Column(Text, nullable=True)
+    attachment_path = Column(String(255), nullable=True)
     transaction_date = Column(Date, nullable=False)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)

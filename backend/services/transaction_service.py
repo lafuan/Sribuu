@@ -38,6 +38,11 @@ def _today_wib() -> date:
 
 def _build_transaction_response(tx, cat, pm) -> TransactionResponse:
     """Bangun TransactionResponse dari model + relasi."""
+    # Build attachment URL if exists
+    attachment_url = None
+    if tx.attachment_path:
+        # attachment_path format: uploads/{user_id}/{tx_id}.{ext}
+        attachment_url = f"/api/transactions/{tx.id}/attachment"
     return TransactionResponse(
         id=tx.id,
         amount=tx.amount,
@@ -52,6 +57,7 @@ def _build_transaction_response(tx, cat, pm) -> TransactionResponse:
         payment_method=PaymentMethodBrief(
             id=pm.id, name=pm.name, icon=pm.icon
         ) if pm else None,
+        attachment_url=attachment_url,
         created_at=format_datetime_id(tx.created_at),
         updated_at=format_datetime_id(tx.updated_at),
     )

@@ -379,6 +379,7 @@ async def transactions_page(
                 "category_icon": tx["category"]["icon"] if tx["category"] else "",
                 "payment_name": tx["payment_method"]["name"] if tx["payment_method"] else "",
                 "payment_icon": tx["payment_method"]["icon"] if tx["payment_method"] else "",
+                "attachment_url": tx.get("attachment_url"),
             }
             for tx in result["transactions"]
         ]
@@ -610,13 +611,14 @@ async def transactions_edit_page(
         templates = _get_templates()
         return templates.TemplateResponse(
             request,
-            "transactions/form.html",
+            "transactions/edit.html",
             {
                 "current_user": current_user,
                 "tx_id": tx_id,
                 "categories": categories,
                 "payment_methods": payment_methods,
                 "form_data": form_data,
+                "tx": tx_detail,
             },
         )
     finally:

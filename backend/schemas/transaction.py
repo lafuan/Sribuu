@@ -67,6 +67,7 @@ class TransactionResponse(BaseModel):
     transaction_date_formatted: str | None = None
     category: CategoryBrief | None = None
     payment_method: PaymentMethodBrief | None = None
+    attachment_url: str | None = Field(None, description="URL ke lampiran transaksi")
     created_at: str | None = None
     updated_at: str | None = None
 
