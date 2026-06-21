@@ -9,7 +9,7 @@ Group=sribuu
 WorkingDirectory=/opt/sribuu/backend
 Environment="PATH=/opt/sribuu/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 Environment="PYTHONPATH=/opt/sribuu"
-Environment="DATABASE_URL=sqlite+aiosqlite:////var/lib/sribuu/sribuu.db"
+Environment="DATABASE_URL=postgresql+asyncpg://sribuu:sribuu_dev_2026@localhost:5432/sribuu"
 Environment="SECRET_KEY=change-me-in-production-to-random-string"
 ExecStart=/opt/sribuu/venv/bin/uvicorn backend.main:app --host 127.0.0.1 --port 8000 --workers 4
 Restart=always

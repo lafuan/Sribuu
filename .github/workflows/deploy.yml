@@ -1,8 +1,10 @@
 name: Deploy
 
 on:
-  push:
-    branches: [main]
+  workflow_run:
+    workflows: ["Docker Build & Push"]
+    types:
+      - completed
 
 concurrency:
   group: deploy
@@ -13,12 +15,11 @@ jobs:
     name: "🚀 Deploy to VPS"
     runs-on: ubuntu-latest
     environment: production
-    if: github.ref == 'refs/heads/main'
+    if: >
+      github.ref == 'refs/heads/main' &&
+      github.event.workflow_run.conclusion == 'success'
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.2.5
         with:
@@ -30,62 +31,47 @@ jobs:
           script: |
             set -e
 
-            # ─── Konfigurasi ────────────────────────────────────────────────
-            APP_DIR="/home/ubuntu/Sribuu"
-            APP_SERVICE="sribuu"
-            MAX_RETRIES=5
-            RETRY_DELAY=3
-            HEALTHCHECK_URL="http://localhost:8000/health"
+            echo "=== Pulling latest Docker image ==="
+            docker pull ghcr.io/lafuan/sribuu:latest
 
-            cd "$APP_DIR"
+            echo "=== Stopping old container ==="
+            docker stop sribuu 2>/dev/null || true
+            docker rm sribuu 2>/dev/null || true
 
-            # Simpan commit saat ini untuk rollback
-            CURRENT_COMMIT=$(git rev-parse HEAD)
-            echo "$CURRENT_COMMIT" > /tmp/sribuu_last_deploy
+            echo "=== Starting new container ==="
+            docker run -d --name sribuu --network host --restart always \
+              -e DATABASE_URL="postgresql+asyncpg://sribuu:sribuu_dev_2026@localhost:5432/sribuu" \
+              -e SECRET_KEY="${{ secrets.SECRET_KEY }}" \
+              -e DEBUG="false" \
+              ghcr.io/lafuan/sribuu:latest
 
-            echo "=== Pulling latest code ==="
-            git fetch origin main
-            git checkout main
-            git pull origin main
-
-            echo "=== Installing dependencies ==="
-            source venv/bin/activate
-            pip install --upgrade pip
-            pip install -r requirements.txt --quiet
-
-            echo "=== Running database migrations ==="
-            if [ -f backend/alembic.ini ]; then
-                cd backend
-                alembic upgrade head
-                cd ..
-            else
-                echo "(alembic not setup yet, skipping)"
-            fi
-
-            echo "=== Restarting service ==="
-            sudo systemctl restart "$APP_SERVICE"
+            echo "=== Cleaning up old images ==="
+            docker image prune -f
 
             echo "=== Health check ==="
+            MAX_RETRIES=5
+            RETRY_DELAY=3
             for i in $(seq 1 $MAX_RETRIES); do
-                sleep "$RETRY_DELAY"
-                STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$HEALTHCHECK_URL" || echo "000")
-                if [ "$STATUS" = "200" ]; then
-                    echo "✅ Health check passed (attempt $i/$MAX_RETRIES)"
-                    exit 0
-                fi
-                echo "⏳ Attempt $i/$MAX_RETRIES: got status $STATUS, retrying..."
+              sleep "$RETRY_DELAY"
+              STATUS=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:8000/health" || echo "000")
+              if [ "$STATUS" = "200" ]; then
+                echo "✅ Health check passed (attempt $i/$MAX_RETRIES)"
+                exit 0
+              fi
+              echo "⏳ Attempt $i/$MAX_RETRIES: got status $STATUS, retrying..."
             done
 
-            # Health check gagal — rollback
-            echo "❌ Health check failed after $MAX_RETRIES attempts. Rolling back..."
-            ROLLBACK_COMMIT=$(cat /tmp/sribuu_last_deploy)
-            git checkout "$ROLLBACK_COMMIT"
-            source venv/bin/activate
-            pip install --upgrade pip
-            pip install -r requirements.txt --quiet
-            if [ -f backend/alembic.ini ]; then
-                cd backend && alembic downgrade -1 && cd ..
+            # Health check gagal — rollback to previous tag
+            echo "❌ Health check failed after $MAX_RETRIES attempts."
+            echo "Rolling back to previous container..."
+            docker rm sribuu 2>/dev/null || true
+            IMAGE_TAG=$(docker images ghcr.io/lafuan/sribuu --format "{{.Tag}}" | grep -v latest | tail -1)
+            if [ -n "$IMAGE_TAG" ]; then
+              docker run -d --name sribuu --network host --restart always \
+                -e DATABASE_URL="postgresql+asyncpg://sribuu:sribuu_dev_2026@localhost:5432/sribuu" \
+                -e SECRET_KEY="${{ secrets.SECRET_KEY }}" \
+                -e DEBUG="false" \
+                "ghcr.io/lafuan/sribuu:$IMAGE_TAG"
+              echo "🔄 Rollback completed to tag $IMAGE_TAG"
             fi
-            sudo systemctl restart "$APP_SERVICE"
-            echo "🔄 Rollback completed to commit $ROLLBACK_COMMIT"
             exit 1
