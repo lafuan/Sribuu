@@ -31,22 +31,26 @@ jobs:
           script: |
             set -e
 
+            echo "=== Stopping old native systemd service ==="
+            sudo systemctl stop sribuu 2>/dev/null || true
+            sudo systemctl disable sribuu 2>/dev/null || true
+
             echo "=== Pulling latest Docker image ==="
-            docker pull ghcr.io/lafuan/sribuu:latest
+            sudo docker pull ghcr.io/lafuan/sribuu:latest
 
             echo "=== Stopping old container ==="
-            docker stop sribuu 2>/dev/null || true
-            docker rm sribuu 2>/dev/null || true
+            sudo docker stop sribuu 2>/dev/null || true
+            sudo docker rm sribuu 2>/dev/null || true
 
             echo "=== Starting new container ==="
-            docker run -d --name sribuu --network host --restart always \
+            sudo docker run -d --name sribuu --network host --restart always \
               -e DATABASE_URL="postgresql+asyncpg://sribuu:sribuu_dev_2026@localhost:5432/sribuu" \
               -e SECRET_KEY="${{ secrets.SECRET_KEY }}" \
               -e DEBUG="false" \
               ghcr.io/lafuan/sribuu:latest
 
             echo "=== Cleaning up old images ==="
-            docker image prune -f
+            sudo docker image prune -f
 
             echo "=== Health check ==="
             MAX_RETRIES=5
@@ -64,10 +68,10 @@ jobs:
             # Health check gagal — rollback to previous tag
             echo "❌ Health check failed after $MAX_RETRIES attempts."
             echo "Rolling back to previous container..."
-            docker rm sribuu 2>/dev/null || true
-            IMAGE_TAG=$(docker images ghcr.io/lafuan/sribuu --format "{{.Tag}}" | grep -v latest | tail -1)
+            sudo docker rm sribuu 2>/dev/null || true
+            IMAGE_TAG=$(sudo docker images ghcr.io/lafuan/sribuu --format "{{.Tag}}" | grep -v latest | tail -1)
             if [ -n "$IMAGE_TAG" ]; then
-              docker run -d --name sribuu --network host --restart always \
+              sudo docker run -d --name sribuu --network host --restart always \
                 -e DATABASE_URL="postgresql+asyncpg://sribuu:sribuu_dev_2026@localhost:5432/sribuu" \
                 -e SECRET_KEY="${{ secrets.SECRET_KEY }}" \
                 -e DEBUG="false" \
