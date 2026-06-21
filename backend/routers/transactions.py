@@ -2,8 +2,6 @@
 Router untuk modul transaksi: CRUD, filter, pagination.
 """
 
-import os
-import shutil
 from datetime import date
 from pathlib import Path
 
@@ -220,7 +218,7 @@ async def upload_attachment(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={
                 "status": "error",
-                "message": f"Ukuran file maksimal 5MB",
+                "message": "Ukuran file maksimal 5MB",
             },
         )
 
@@ -322,5 +320,5 @@ def _delete_attachment_file(attachment_path: str) -> None:
         file_path = Path(__file__).resolve().parent.parent.parent / "frontend" / "static" / attachment_path
         if file_path.exists():
             file_path.unlink()
-    except Exception:
-        pass  # Ignore errors during file deletion
+    except OSError:
+        pass  # Ignore errors during file deletion (file may already be gone)
