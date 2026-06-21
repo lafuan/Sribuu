@@ -36,7 +36,15 @@ jobs:
             sudo systemctl disable sribuu 2>/dev/null || true
 
             echo "=== Pulling latest Docker image ==="
-            sudo docker pull ghcr.io/lafuan/sribuu:latest
+            sudo docker pull ghcr.io/lafuan/sribuu:latest || true
+
+            echo "=== Checking if image changed ==="
+            NEW_DIGEST=$(sudo docker inspect --format='{{index .RepoDigests 0}}' ghcr.io/lafuan/sribuu:latest 2>/dev/null || echo "unknown")
+            OLD_DIGEST=$(sudo docker inspect --format='{{index .RepoDigests 0}}' sribuu 2>/dev/null || echo "none")
+            if [ "$NEW_DIGEST" = "$OLD_DIGEST" ]; then
+              echo "=== Image unchanged, forcing re-pull ==="
+              sudo docker pull --disable-content-trust ghcr.io/lafuan/sribuu:latest
+            fi
 
             echo "=== Stopping old container ==="
             sudo docker stop sribuu 2>/dev/null || true
