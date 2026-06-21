@@ -55,6 +55,15 @@
 
   <!-- Actions (Edit / Delete) -->
   <div class="sm:col-span-1 flex gap-1 sm:justify-center">
+    <!-- Attachment Thumbnail -->
+    {% if tx.attachment_url %}
+    <button
+      @click="showAttachmentModal('{{ tx.attachment_url }}')"
+      class="text-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-400 transition p-1"
+      title="Lihat Lampiran">
+      <i class="fas fa-paperclip text-xs"></i>
+    </button>
+    {% endif %}
     <!-- Edit -->
     <a href="{{ url_for('transactions_edit', tx_id=tx.id) }}"
        class="text-stone-300 dark:text-gray-600 hover:text-emerald-500 dark:hover:text-emerald-400 transition p-1" title="Edit">
