@@ -33,11 +33,11 @@ document.addEventListener('click', function(e) {
 {% endblock %}
 
 {% block body %}
-<main class="max-w-2xl mx-auto px-4 py-5 space-y-5">
+<main class="max-w-2xl mx-auto px-4 py-6 space-y-6">
 
   <!-- Quick Add Section -->
   <div class="card quick-add" id="quick-add-section">
-    <div class="flex items-center gap-2 mb-3">
+    <div class="flex items-center gap-2 mb-4">
       <i class="fas fa-plus-circle text-emerald-500"></i>
       <h2 class="font-semibold text-stone-700 dark:text-gray-200 text-sm uppercase tracking-wide">Catat Cepat</h2>
     </div>
@@ -85,21 +85,21 @@ document.addEventListener('click', function(e) {
   <!-- Dashboard Summary (replaced by HTMX) -->
   <div id="dashboard-summary">
     <!-- 💡 Weekly Summary -->
-    <div id="weekly-summary" class="card" hx-get="/api/stats/weekly-summary?force=true" hx-trigger="load" hx-swap="innerHTML">
-      <div class="flex items-center justify-center py-4">
-        <div class="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+    <div id="weekly-summary" class="card" hx-get="/api/stats/weekly-summary?force=true" hx-trigger="load delay:100ms" hx-swap="innerHTML">
+      <div class="flex items-center justify-center py-3">
+        <div class="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
       </div>
     </div>
 
     <!-- ⏱️ Spending Pace Indicator -->
-    <div id="spending-pace" class="card" hx-get="/api/stats/spending-pace" hx-trigger="load" hx-swap="innerHTML">
-      <div class="flex items-center justify-center py-4">
-        <div class="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+    <div id="spending-pace" class="card" hx-get="/api/stats/spending-pace" hx-trigger="load delay:200ms" hx-swap="innerHTML">
+      <div class="flex items-center justify-center py-3">
+        <div class="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
       </div>
     </div>
 
     <!-- Stats Cards -->
-    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
       <!-- Hari Ini -->
       <div class="card stat-card text-center">
         <p class="text-xs text-stone-400 dark:text-gray-400 uppercase tracking-wide mb-1">Hari Ini</p>
@@ -128,18 +128,18 @@ document.addEventListener('click', function(e) {
     </div>
 
     <!-- ✅ Budget Progress -->
-    <div id="budget-summary" class="card mt-4" hx-get="/api/budgets/summary" hx-trigger="load" hx-swap="innerHTML">
+    <div id="budget-summary" class="card mt-5" hx-get="/api/budgets/summary" hx-trigger="load delay:300ms" hx-swap="innerHTML">
       <div class="flex items-center gap-2 mb-3">
         <i class="fas fa-coins text-emerald-500"></i>
         <h2 class="font-semibold text-stone-700 dark:text-gray-200 text-sm uppercase tracking-wide">Anggaran Bulan Ini</h2>
       </div>
-      <div class="flex items-center justify-center py-4">
-        <div class="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+      <div class="flex items-center justify-center py-3">
+        <div class="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
       </div>
     </div>
 
     <!-- Kategori Terbesar Bulan Ini -->
-    <div class="card mt-4">
+    <div class="card mt-5">
       <h2 class="font-semibold text-stone-700 dark:text-gray-200 text-sm uppercase tracking-wide mb-3">Kategori Terbesar Bulan Ini</h2>
       {% if top_categories %}
       <div class="space-y-3">
