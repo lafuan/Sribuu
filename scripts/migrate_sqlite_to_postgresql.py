@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# ruff: noqa: PLR0912, PLR0915, I001
+# ruff: noqa: PLR0912, PLR0915, I001, F401, F541
 """
 Sribuu — Data Migration: SQLite → PostgreSQL
 =============================================
