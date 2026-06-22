@@ -17,6 +17,7 @@ from ..services.stats_service import (
     get_dashboard,
     get_monthly_comparison,
     get_monthly_stats,
+    get_period_comparison,
     get_spending_pace,
     get_stats_by_category,
 )
@@ -152,6 +153,35 @@ async def weekly_summary(
             request,
             "stats/partials/weekly_summary.html",
             {"summary": result},
+        )
+
+    return StandardResponse(
+        status="success",
+        data=result,
+    ).model_dump()
+
+
+@router.get("/period-comparison")
+async def period_comparison(
+    request: Request,
+    period: str = Query("month", description="'month' atau 'week'"),
+    compare: str = Query("previous", description="'previous' atau 'average'"),
+    anomaly_threshold: float = Query(20.0, ge=0, description="Threshold % untuk anomaly detection"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Period-over-Period comparison: analisis tren vs periode sebelumnya."""
+    result = await get_period_comparison(
+        db, current_user.id, period=period, compare=compare, anomaly_threshold=anomaly_threshold
+    )
+
+    # HTMX: return HTML fragment
+    if request.headers.get("HX-Request") == "true":
+        from ..main import templates
+        return templates.TemplateResponse(
+            request,
+            "stats/partials/period_comparison.html",
+            {"comparison": result},
         )
 
     return StandardResponse(
