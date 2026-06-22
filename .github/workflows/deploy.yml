@@ -107,7 +107,6 @@ jobs:
       - name: Run smoke tests against production
         run: |
           python << 'EOF'
-          import asyncio
           import httpx
           import time
 
@@ -115,54 +114,63 @@ jobs:
           EMAIL = f"smoke-{int(time.time())}@test.com"
           PASSWORD = "SmokeTest123!"
 
-          async def smoke_test():
-              errors = []
-              
-              async with httpx.AsyncClient() as client:
-                  # 0. Register a test user (with retry — app may still be initializing)
-                  attempt = 0
-                  while attempt < 3:
-                      try:
-                          r = await client.post(f"{BASE_URL}/api/auth/register", json={
-                              "name": "Smoke Test",
-                              "email": EMAIL,
-                              "password": PASSWORD,
-                              "password_confirm": PASSWORD,
-                          }, timeout=15)
-                          if r.status_code in (200, 201):
-                              print("✅ Register OK")
-                              break
-                          elif r.status_code == 422 and "already" in r.text.lower():
-                              print("✅ Register OK (user exists)")
-                              break
-                          else:
-                              attempt += 1
-                              if attempt >= 3:
-                                  errors.append(f"Register failed: {r.status_code} - {r.text}")
-                              else:
-                                  await asyncio.sleep(2)
-                      except Exception as e:
-                          attempt += 1
-                          if attempt >= 3:
-                              errors.append(f"Register error: {e}")
-                          else:
-                              await asyncio.sleep(2)
+          errors = []
 
-                  # 1. Health check
+          with httpx.Client(timeout=15) as client:
+              # 0. Wait for app to be fully ready (up to 30s)
+              print("⏳ Waiting for app to be ready...")
+              for i in range(10):
                   try:
-                      r = await client.get(f"{BASE_URL}/health", timeout=10)
-                      if r.status_code != 200:
-                          errors.append(f"Health check failed: {r.status_code}")
+                      r = client.get(f"{BASE_URL}/health")
+                      if r.status_code == 200:
+                          print(f"✅ App ready after {i*3}s")
+                          break
+                  except Exception:
+                      pass
+                  time.sleep(3)
+              else:
+                  errors.append("App never became ready")
+                  print("\n❌ Smoke test failures:")
+                  for e in errors:
+                      print(f"  - {e}")
+                  exit(1)
+
+              # 1. Register a test user (with retry for app-init delay)
+              registered = False
+              for attempt in range(3):
+                  try:
+                      r = client.post(f"{BASE_URL}/api/auth/register", json={
+                          "name": "Smoke Test",
+                          "email": EMAIL,
+                          "password": PASSWORD,
+                          "password_confirm": PASSWORD,
+                      })
+                      if r.status_code in (200, 201):
+                          print("✅ Register OK")
+                          registered = True
+                          break
+                      elif r.status_code == 422 and "already" in r.text.lower():
+                          print("✅ Register OK (user exists)")
+                          registered = True
+                          break
+                      elif attempt < 2:
+                          time.sleep(3)
+                          continue
                       else:
-                          print("✅ Health check OK")
+                          errors.append(f"Register failed: {r.status_code} - {r.text}")
                   except Exception as e:
-                      errors.append(f"Health check error: {e}")
+                      if attempt < 2:
+                          time.sleep(3)
+                          continue
+                      else:
+                          errors.append(f"Register error: {e}")
 
-                  # 2. Login
+              # 2. Login
+              if registered:
                   try:
-                      r = await client.post(f"{BASE_URL}/api/auth/login", json={
+                      r = client.post(f"{BASE_URL}/api/auth/login", json={
                           "email": EMAIL, "password": PASSWORD
-                      }, timeout=10)
+                      })
                       if r.status_code != 200:
                           errors.append(f"Login failed: {r.status_code} - {r.text}")
                       else:
@@ -171,16 +179,15 @@ jobs:
                           if not token:
                               errors.append("No token in login response")
                           else:
-                              # 3. Dashboard stats
                               headers = {"Authorization": f"Bearer {token}"}
-                              r2 = await client.get(f"{BASE_URL}/api/stats/summary", headers=headers, timeout=10)
+                              # 3. Dashboard stats
+                              r2 = client.get(f"{BASE_URL}/api/stats/summary", headers=headers)
                               if r2.status_code != 200:
                                   errors.append(f"Dashboard stats failed: {r2.status_code}")
                               else:
                                   print("✅ Dashboard stats OK")
-                              
                               # 4. Transactions list
-                              r3 = await client.get(f"{BASE_URL}/api/transactions", headers=headers, timeout=10)
+                              r3 = client.get(f"{BASE_URL}/api/transactions", headers=headers)
                               if r3.status_code != 200:
                                   errors.append(f"Transactions list failed: {r3.status_code}")
                               else:
@@ -188,14 +195,12 @@ jobs:
                   except Exception as e:
                       errors.append(f"Login/test error: {e}")
 
-              if errors:
-                  print("\n❌ Smoke test failures:")
-                  for e in errors:
-                      print(f"  - {e}")
-                  exit(1)
-              else:
-                  print("\n✅ All smoke tests passed!")
-
-          asyncio.run(smoke_test())
+          if errors:
+              print("\n❌ Smoke test failures:")
+              for e in errors:
+                  print(f"  - {e}")
+              exit(1)
+          else:
+              print("\n✅ All smoke tests passed!")
           EOF
 
