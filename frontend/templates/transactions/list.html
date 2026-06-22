@@ -72,7 +72,11 @@
     <div class="flex gap-2">
       <a href="/api/export/csv{% if query_string %}?{{ query_string }}{% endif %}"
          class="flex items-center gap-1.5 px-3 py-2 border border-stone-200 dark:border-gray-600 rounded-lg text-sm text-stone-600 dark:text-gray-300 hover:bg-stone-50 dark:hover:bg-gray-700 transition">
-        <i class="fas fa-download text-xs"></i> Export CSV
+        <i class="fas fa-download text-xs"></i> CSV
+      </a>
+      <a href="/api/export/json{% if query_string %}?{{ query_string }}{% endif %}"
+         class="flex items-center gap-1.5 px-3 py-2 border border-stone-200 dark:border-gray-600 rounded-lg text-sm text-stone-600 dark:text-gray-300 hover:bg-stone-50 dark:hover:bg-gray-700 transition">
+        <i class="fas fa-code text-xs"></i> JSON
       </a>
     </div>
   </div>

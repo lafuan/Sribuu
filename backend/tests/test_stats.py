@@ -354,7 +354,7 @@ class TestWeeklySummary:
         # Assert all dates are in the past (schema requirement)
         assert all(d < today for d in dates), f"Some dates are not past: {dates}"
 
-        for amount, d in zip([50000, 25000, 100000], dates):
+        for amount, d in zip([50000, 25000, 100000], dates, strict=True):
             resp = await auth_client.post(
                 "/api/transactions",
                 json={"amount": amount, "category_id": cat_id, "transaction_date": d.isoformat()},
@@ -371,8 +371,7 @@ class TestWeeklySummary:
         # Previous week: 3 transactions (validated via daily_breakdown count or daily_average > 0)
         # The service computes prev_week_total by summing transactions from prev week's range
         # We can verify via stats/daily endpoint for the previous week's range
-        from datetime import date, datetime
-        import calendar
+        from datetime import date
         # Verify transactions were saved: sum the daily array with non-zero amounts
         prev_sunday = prev_week_monday + timedelta(days=6)
         trend_resp = await auth_client.get(
