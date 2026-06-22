@@ -35,20 +35,12 @@ jobs:
             sudo systemctl stop sribuu 2>/dev/null || true
             sudo systemctl disable sribuu 2>/dev/null || true
 
-            echo "=== Pulling latest Docker image ==="
-            sudo docker pull ghcr.io/lafuan/sribuu:latest || true
-
-            echo "=== Checking if image changed ==="
-            NEW_DIGEST=$(sudo docker inspect --format='{{index .RepoDigests 0}}' ghcr.io/lafuan/sribuu:latest 2>/dev/null || echo "unknown")
-            OLD_DIGEST=$(sudo docker inspect --format='{{index .RepoDigests 0}}' sribuu 2>/dev/null || echo "none")
-            if [ "$NEW_DIGEST" = "$OLD_DIGEST" ]; then
-              echo "=== Image unchanged, forcing re-pull ==="
-              sudo docker pull --disable-content-trust ghcr.io/lafuan/sribuu:latest
-            fi
-
-            echo "=== Stopping old container ==="
+            echo "=== Stopping old Docker container FIRST (prevent smoke-test race) ==="
             sudo docker stop sribuu 2>/dev/null || true
             sudo docker rm sribuu 2>/dev/null || true
+
+            echo "=== Pulling latest Docker image ==="
+            sudo docker pull ghcr.io/lafuan/sribuu:latest || true
 
             echo "=== Starting new container ==="
             sudo docker run -d --name sribuu --network host --restart always \
@@ -106,101 +98,93 @@ jobs:
         run: playwright install --with-deps chromium
       - name: Run smoke tests against production
         run: |
-          python << 'EOF'
-          import httpx
-          import time
-
+          python - << 'PYEOF'
+          import httpx, time
           BASE_URL = "https://sribuu.duckdns.org"
           EMAIL = f"smoke-{int(time.time())}@test.com"
           PASSWORD = "SmokeTest123!"
-
           errors = []
+          c = httpx.Client(timeout=15)
 
-          with httpx.Client(timeout=15) as client:
-              # 0. Wait for app to be fully ready (up to 30s)
-              print("⏳ Waiting for app to be ready...")
-              for i in range(10):
-                  try:
-                      r = client.get(f"{BASE_URL}/health")
-                      if r.status_code == 200:
-                          print(f"✅ App ready after {i*3}s")
-                          break
-                  except Exception:
-                      pass
-                  time.sleep(3)
-              else:
-                  errors.append("App never became ready")
-                  print("\n❌ Smoke test failures:")
-                  for e in errors:
-                      print(f"  - {e}")
-                  exit(1)
+          # Wait for app to stabilize (up to 30s)
+          for i in range(10):
+              try:
+                  r = c.get(f"{BASE_URL}/health")
+                  if r.status_code == 200:
+                      if i > 0:
+                          print(f"✅ App stable after {i*3}s")
+                      break
+              except Exception:
+                  pass
+              time.sleep(3)
+          else:
+              print("❌ App never stabilized")
+              exit(1)
 
-              # 1. Register a test user (with retry for app-init delay)
-              registered = False
-              for attempt in range(3):
-                  try:
-                      r = client.post(f"{BASE_URL}/api/auth/register", json={
-                          "name": "Smoke Test",
-                          "email": EMAIL,
-                          "password": PASSWORD,
-                          "password_confirm": PASSWORD,
-                      })
-                      if r.status_code in (200, 201):
-                          print("✅ Register OK")
-                          registered = True
-                          break
-                      elif r.status_code == 422 and "already" in r.text.lower():
-                          print("✅ Register OK (user exists)")
-                          registered = True
-                          break
-                      elif attempt < 2:
-                          time.sleep(3)
-                          continue
-                      else:
-                          errors.append(f"Register failed: {r.status_code} - {r.text}")
-                  except Exception as e:
-                      if attempt < 2:
-                          time.sleep(3)
-                          continue
-                      else:
-                          errors.append(f"Register error: {e}")
+          # Register (with retry)
+          ok = False
+          for attempt in range(3):
+              try:
+                  r = c.post(f"{BASE_URL}/api/auth/register", json={
+                      "name": "Smoke Test",
+                      "email": EMAIL,
+                      "password": PASSWORD,
+                      "password_confirm": PASSWORD,
+                  })
+                  if r.status_code in (200, 201):
+                      print("✅ Register OK")
+                      ok = True
+                      break
+                  elif r.status_code == 422 and "already" in r.text.lower():
+                      print("✅ Register OK (user exists)")
+                      ok = True
+                      break
+                  elif attempt < 2:
+                      time.sleep(3)
+                      continue
+                  else:
+                      errors.append(f"Register failed: {r.status_code}")
+              except Exception as e:
+                  if attempt < 2:
+                      time.sleep(3)
+                      continue
+                  else:
+                      errors.append(f"Register error: {e}")
 
-              # 2. Login
-              if registered:
-                  try:
-                      r = client.post(f"{BASE_URL}/api/auth/login", json={
-                          "email": EMAIL, "password": PASSWORD
-                      })
-                      if r.status_code != 200:
-                          errors.append(f"Login failed: {r.status_code} - {r.text}")
-                      else:
-                          print("✅ Login OK")
-                          token = r.json().get("data", {}).get("token")
-                          if not token:
-                              errors.append("No token in login response")
+          # Login + Dashboard + Transactions
+          if ok:
+              try:
+                  r = c.post(f"{BASE_URL}/api/auth/login", json={
+                      "email": EMAIL, "password": PASSWORD
+                  })
+                  if r.status_code != 200:
+                      errors.append(f"Login failed: {r.status_code}")
+                  else:
+                      print("✅ Login OK")
+                      token = r.json().get("data", {}).get("token")
+                      if token:
+                          h = {"Authorization": f"Bearer {token}"}
+                          r2 = c.get(f"{BASE_URL}/api/stats/summary", headers=h)
+                          if r2.status_code != 200:
+                              errors.append(f"Dashboard failed: {r2.status_code}")
                           else:
-                              headers = {"Authorization": f"Bearer {token}"}
-                              # 3. Dashboard stats
-                              r2 = client.get(f"{BASE_URL}/api/stats/summary", headers=headers)
-                              if r2.status_code != 200:
-                                  errors.append(f"Dashboard stats failed: {r2.status_code}")
-                              else:
-                                  print("✅ Dashboard stats OK")
-                              # 4. Transactions list
-                              r3 = client.get(f"{BASE_URL}/api/transactions", headers=headers)
-                              if r3.status_code != 200:
-                                  errors.append(f"Transactions list failed: {r3.status_code}")
-                              else:
-                                  print("✅ Transactions list OK")
-                  except Exception as e:
-                      errors.append(f"Login/test error: {e}")
+                              print("✅ Dashboard stats OK")
+                          r3 = c.get(f"{BASE_URL}/api/transactions", headers=h)
+                          if r3.status_code != 200:
+                              errors.append(f"Transactions failed: {r3.status_code}")
+                          else:
+                              print("✅ Transactions list OK")
+                      else:
+                          errors.append("No token in login response")
+              except Exception as e:
+                  errors.append(f"Login error: {e}")
+          c.close()
 
           if errors:
               print("\n❌ Smoke test failures:")
               for e in errors:
                   print(f"  - {e}")
               exit(1)
-          else:
-              print("\n✅ All smoke tests passed!")
-          EOF
+          print("\n✅ All smoke tests passed!")
+          PYEOF
 
