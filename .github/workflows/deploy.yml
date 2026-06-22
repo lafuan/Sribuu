@@ -125,6 +125,7 @@ jobs:
                           "name": "Smoke Test",
                           "email": EMAIL,
                           "password": PASSWORD,
+                          "password_confirm": PASSWORD,
                       }, timeout=10)
                       if r.status_code not in (200, 201):
                           errors.append(f"Register failed: {r.status_code} - {r.text}")
