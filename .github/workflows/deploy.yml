@@ -119,20 +119,34 @@ jobs:
               errors = []
               
               async with httpx.AsyncClient() as client:
-                  # 0. Register a test user
-                  try:
-                      r = await client.post(f"{BASE_URL}/api/auth/register", json={
-                          "name": "Smoke Test",
-                          "email": EMAIL,
-                          "password": PASSWORD,
-                          "password_confirm": PASSWORD,
-                      }, timeout=10)
-                      if r.status_code not in (200, 201):
-                          errors.append(f"Register failed: {r.status_code} - {r.text}")
-                      else:
-                          print("✅ Register OK")
-                  except Exception as e:
-                      errors.append(f"Register error: {e}")
+                  # 0. Register a test user (with retry — app may still be initializing)
+                  attempt = 0
+                  while attempt < 3:
+                      try:
+                          r = await client.post(f"{BASE_URL}/api/auth/register", json={
+                              "name": "Smoke Test",
+                              "email": EMAIL,
+                              "password": PASSWORD,
+                              "password_confirm": PASSWORD,
+                          }, timeout=15)
+                          if r.status_code in (200, 201):
+                              print("✅ Register OK")
+                              break
+                          elif r.status_code == 422 and "already" in r.text.lower():
+                              print("✅ Register OK (user exists)")
+                              break
+                          else:
+                              attempt += 1
+                              if attempt >= 3:
+                                  errors.append(f"Register failed: {r.status_code} - {r.text}")
+                              else:
+                                  await asyncio.sleep(2)
+                      except Exception as e:
+                          attempt += 1
+                          if attempt >= 3:
+                              errors.append(f"Register error: {e}")
+                          else:
+                              await asyncio.sleep(2)
 
                   # 1. Health check
                   try:
