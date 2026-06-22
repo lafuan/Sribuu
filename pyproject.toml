@@ -44,6 +44,7 @@ select = [
 ]
 ignore = [
     "E501",   # line too long (handled by formatter)
+    "PLR0912", # too many branches (complex branching logic)
     "PLR0913", # too many arguments
     "PLR0915", # too many statements (complex analytics functions)
     "B008",   # FastAPI Depends() in defaults (standard pattern)

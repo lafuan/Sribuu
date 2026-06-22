@@ -588,8 +588,15 @@ async def get_period_comparison(
         .group_by(Category.id)
         .order_by(func.sum(Transaction.amount).desc())
     )
-    curr_cats = {row.id: {"total": int(row.total), "count": int(row.count), "name": row.name, "icon": row.icon, "color": row.color}
-                 for row in curr_cat_result.all()}
+    curr_cats: dict[int, dict] = {}
+    for row in curr_cat_result.all():
+        curr_cats[row.id] = {
+            "total": row.total,
+            "count": row.count,
+            "name": row.name,
+            "icon": row.icon,
+            "color": row.color,
+        }
 
     # Previous period by category
     prev_cat_result = await db.execute(
@@ -605,7 +612,9 @@ async def get_period_comparison(
         )
         .group_by(Category.id)
     )
-    prev_cats = {row.id: {"total": int(row.total)} for row in prev_cat_result.all()}
+    prev_cats: dict[int, dict] = {}
+    for row in prev_cat_result.all():
+        prev_cats[row.id] = {"total": row.total}
 
     # All category IDs seen
     all_cat_ids = set(curr_cats.keys()) | set(prev_cats.keys())
@@ -649,7 +658,7 @@ async def get_period_comparison(
     category_comparisons.sort(key=lambda x: (-abs(x["percentage_change"]) if x["is_anomaly"] else -999, -abs(x["percentage_change"])))
 
     # --- 6-month sparkline per category ---
-    sparkline_data = {}
+    sparkline_data: dict[int, list[dict]] = {}
     if period == "month":
         sparkline_query_months = 6
         for i in range(sparkline_query_months - 1, -1, -1):
