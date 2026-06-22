@@ -20,8 +20,10 @@ if config.config_file_name is not None:
 import sys
 from pathlib import Path
 
-# Add parent directory (backend/) to path so we can import backend.*
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+# Add project root (/app) to path so we can import backend.*
+# backend/ is a namespace package (no __init__.py), so we need to add
+# the parent directory that contains the backend/ namespace package.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from backend.database import Base
 from backend.config import settings
