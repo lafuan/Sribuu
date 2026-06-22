@@ -87,3 +87,85 @@ jobs:
               echo "🔄 Rollback completed to tag $IMAGE_TAG"
             fi
             exit 1
+
+  smoke-test:
+    name: "🎭 Post-Deploy Smoke Test"
+    runs-on: ubuntu-latest
+    needs: [deploy]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install playwright httpx
+      - name: Install Playwright browser
+        run: playwright install --with-deps chromium
+      - name: Run smoke tests against production
+        run: |
+          python << 'EOF'
+          import asyncio
+          import httpx
+
+          BASE_URL = "https://sribuu.duckdns.org"
+          EMAIL = "naufal@nusabot.com"
+          PASSWORD = "Sribuu123!"
+
+          async def smoke_test():
+              errors = []
+              
+              # 1. Health check
+              async with httpx.AsyncClient() as client:
+                  try:
+                      r = await client.get(f"{BASE_URL}/health", timeout=10)
+                      if r.status_code != 200:
+                          errors.append(f"Health check failed: {r.status_code}")
+                      else:
+                          print("✅ Health check OK")
+                  except Exception as e:
+                      errors.append(f"Health check error: {e}")
+
+                  # 2. Login
+                  try:
+                      r = await client.post(f"{BASE_URL}/api/auth/login", json={
+                          "email": EMAIL, "password": PASSWORD
+                      }, timeout=10)
+                      if r.status_code != 200:
+                          errors.append(f"Login failed: {r.status_code} - {r.text}")
+                      else:
+                          print("✅ Login OK")
+                          token = r.json().get("data", {}).get("token")
+                          if not token:
+                              errors.append("No token in login response")
+                          else:
+                              # 3. Dashboard stats
+                              headers = {"Authorization": f"Bearer {token}"}
+                              r2 = await client.get(f"{BASE_URL}/api/stats/summary", headers=headers, timeout=10)
+                              if r2.status_code != 200:
+                                  errors.append(f"Dashboard stats failed: {r2.status_code}")
+                              else:
+                                  print("✅ Dashboard stats OK")
+                              
+                              # 4. Transactions list
+                              r3 = await client.get(f"{BASE_URL}/api/transactions", headers=headers, timeout=10)
+                              if r3.status_code != 200:
+                                  errors.append(f"Transactions list failed: {r3.status_code}")
+                              else:
+                                  print("✅ Transactions list OK")
+                  except Exception as e:
+                      errors.append(f"Login/test error: {e}")
+
+              if errors:
+                  print("\n❌ Smoke test failures:")
+                  for e in errors:
+                      print(f"  - {e}")
+                  exit(1)
+              else:
+                  print("\n✅ All smoke tests passed!")
+
+          asyncio.run(smoke_test())
+          EOF
+
