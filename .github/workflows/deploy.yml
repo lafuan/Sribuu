@@ -39,6 +39,9 @@ jobs:
             sudo docker stop sribuu 2>/dev/null || true
             sudo docker rm sribuu 2>/dev/null || true
 
+            echo "=== Waiting 15s for old container to fully terminate ==="
+            sleep 15
+
             echo "=== Pulling latest Docker image ==="
             sudo docker pull ghcr.io/lafuan/sribuu:latest || true
 
@@ -106,8 +109,8 @@ jobs:
           errors = []
           c = httpx.Client(timeout=15)
 
-          # Wait for app to stabilize (up to 30s)
-          for i in range(10):
+          # Wait for app to stabilize (up to 20s initial + retries)
+          for i in range(7):
               try:
                   r = c.get(f"{BASE_URL}/health")
                   if r.status_code == 200:
