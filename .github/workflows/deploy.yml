@@ -109,16 +109,31 @@ jobs:
           python << 'EOF'
           import asyncio
           import httpx
+          import time
 
           BASE_URL = "https://sribuu.duckdns.org"
-          EMAIL = "naufal@nusabot.com"
-          PASSWORD = "Sribuu123!"
+          EMAIL = f"smoke-{int(time.time())}@test.com"
+          PASSWORD = "SmokeTest123!"
 
           async def smoke_test():
               errors = []
               
-              # 1. Health check
               async with httpx.AsyncClient() as client:
+                  # 0. Register a test user
+                  try:
+                      r = await client.post(f"{BASE_URL}/api/auth/register", json={
+                          "name": "Smoke Test",
+                          "email": EMAIL,
+                          "password": PASSWORD,
+                      }, timeout=10)
+                      if r.status_code not in (200, 201):
+                          errors.append(f"Register failed: {r.status_code} - {r.text}")
+                      else:
+                          print("✅ Register OK")
+                  except Exception as e:
+                      errors.append(f"Register error: {e}")
+
+                  # 1. Health check
                   try:
                       r = await client.get(f"{BASE_URL}/health", timeout=10)
                       if r.status_code != 200:
