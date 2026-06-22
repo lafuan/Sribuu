@@ -530,9 +530,6 @@ async def get_period_comparison(
         prev_year = today.year if today.month > 1 else today.year - 1
         prev_start = date(prev_year, prev_month, 1)
         prev_end = _end_of_month(prev_year, prev_month)
-
-        # Sparkline: 6 months back
-        sparkline_months = 6
     else:  # week
         curr_monday = today - timedelta(days=today.weekday())
         curr_sunday = curr_monday + timedelta(days=6)
@@ -541,9 +538,6 @@ async def get_period_comparison(
         prev_monday = curr_monday - timedelta(days=7)
         prev_sunday = curr_monday - timedelta(days=1)
         prev_start, prev_end = prev_monday, prev_sunday
-
-        # Sparkline: 6 weeks back
-        sparkline_months = 6
 
     # --- Current period totals ---
     curr_result = await db.execute(
@@ -573,12 +567,6 @@ async def get_period_comparison(
 
     curr_total = int(curr_total)
     prev_total = int(prev_total)
-
-    # Overall change
-    if prev_total > 0:
-        overall_pct = round(((curr_total - prev_total) / prev_total) * 100, 1)
-    else:
-        overall_pct = 0 if curr_total == 0 else 100
 
     # --- Per-category breakdown for both periods ---
     # Current period by category
@@ -700,17 +688,17 @@ async def get_period_comparison(
         cat_comp["sparkline"] = sparkline_data.get(cat_id, [])
 
     # Overall summary
-    if prev_total > 0:
-        curr_vs_prev_pct = round(((curr_total - prev_total) / prev_total) * 100, 1)
-    else:
-        curr_vs_prev_pct = 0 if curr_total == 0 else 100
+    curr_vs_prev_pct = round(((curr_total - prev_total) / prev_total) * 100, 1) if prev_total > 0 else (0 if curr_total == 0 else 100)
 
     # Highest change categories
-    biggest_increase = [c for c in category_comparisons if c["trend"] == "up" and c["percentage_change"] > 0]
-    biggest_decrease = [c for c in category_comparisons if c["trend"] == "down" and c["percentage_change"] < 0]
-
-    biggest_increase.sort(key=lambda x: -x["percentage_change"])
-    biggest_decrease.sort(key=lambda x: x["percentage_change"])
+    biggest_increase = sorted(
+        [c for c in category_comparisons if c["trend"] == "up" and c["percentage_change"] > 0],
+        key=lambda x: -x["percentage_change"]
+    )
+    biggest_decrease = sorted(
+        [c for c in category_comparisons if c["trend"] == "down" and c["percentage_change"] < 0],
+        key=lambda x: x["percentage_change"]
+    )
 
     return {
         "period": period,

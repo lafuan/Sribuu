@@ -45,6 +45,7 @@ select = [
 ignore = [
     "E501",   # line too long (handled by formatter)
     "PLR0913", # too many arguments
+    "PLR0915", # too many statements (complex analytics functions)
     "B008",   # FastAPI Depends() in defaults (standard pattern)
     "PLR2004", # magic values in tests (HTTP codes are fine)
     "PLC0415", # local imports in FastAPI lazy-loading pattern
