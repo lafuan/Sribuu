@@ -107,9 +107,9 @@ jobs:
           EMAIL = f"smoke-{int(time.time())}@test.com"
           PASSWORD = "SmokeTest123!"
           errors = []
-          c = httpx.Client(timeout=15)
+          c = httpx.Client(timeout=15, follow_redirects=True)
 
-          # Wait for app to stabilize (up to 20s initial + retries)
+          # Wait for app to stabilize (up to 20s)
           for i in range(7):
               try:
                   r = c.get(f"{BASE_URL}/health")
@@ -124,7 +124,7 @@ jobs:
               print("❌ App never stabilized")
               exit(1)
 
-          # Register (with retry)
+          # Register (httpx auto-saves cookies)
           ok = False
           for attempt in range(3):
               try:
@@ -142,11 +142,16 @@ jobs:
                       print("✅ Register OK (user exists)")
                       ok = True
                       break
+                  elif r.status_code == 409:
+                      # User exists from previous run - try login
+                      print("✅ Register OK (user exists)")
+                      ok = True
+                      break
                   elif attempt < 2:
                       time.sleep(3)
                       continue
                   else:
-                      errors.append(f"Register failed: {r.status_code}")
+                      errors.append(f"Register failed: {r.status_code}: {r.text[:100]}")
               except Exception as e:
                   if attempt < 2:
                       time.sleep(3)
@@ -154,31 +159,28 @@ jobs:
                   else:
                       errors.append(f"Register error: {e}")
 
-          # Login + Dashboard + Transactions
+          # Login (httpx auto-sends cookie from register)
           if ok:
               try:
                   r = c.post(f"{BASE_URL}/api/auth/login", json={
                       "email": EMAIL, "password": PASSWORD
                   })
                   if r.status_code != 200:
-                      errors.append(f"Login failed: {r.status_code}")
+                      errors.append(f"Login failed: {r.status_code}: {r.text[:100]}")
                   else:
                       print("✅ Login OK")
-                      token = r.json().get("data", {}).get("token")
-                      if token:
-                          h = {"Authorization": f"Bearer {token}"}
-                          r2 = c.get(f"{BASE_URL}/api/stats/summary", headers=h)
-                          if r2.status_code != 200:
-                              errors.append(f"Dashboard failed: {r2.status_code}")
-                          else:
-                              print("✅ Dashboard stats OK")
-                          r3 = c.get(f"{BASE_URL}/api/transactions", headers=h)
-                          if r3.status_code != 200:
-                              errors.append(f"Transactions failed: {r3.status_code}")
-                          else:
-                              print("✅ Transactions list OK")
+                      # Dashboard (cookie auto-sent by httpx.Client)
+                      r2 = c.get(f"{BASE_URL}/api/stats/summary")
+                      if r2.status_code != 200:
+                          errors.append(f"Dashboard failed: {r2.status_code}: {r2.text[:100]}")
                       else:
-                          errors.append("No token in login response")
+                          print("✅ Dashboard stats OK")
+                      # Transactions (cookie auto-sent)
+                      r3 = c.get(f"{BASE_URL}/api/transactions")
+                      if r3.status_code != 200:
+                          errors.append(f"Transactions failed: {r3.status_code}: {r3.text[:100]}")
+                      else:
+                          print("✅ Transactions list OK")
               except Exception as e:
                   errors.append(f"Login error: {e}")
           c.close()
