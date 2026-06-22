@@ -500,6 +500,243 @@ async def get_monthly_comparison(
     }
 
 
+async def get_period_comparison(
+    db: AsyncSession,
+    user_id: int,
+    period: str = "month",
+    compare: str = "previous",
+    anomaly_threshold: float = 20.0,
+) -> dict:
+    """Period-over-Period comparison: bandingkan spending antar periode.
+
+    Args:
+        period: 'month' atau 'week'
+        compare: 'previous' (vs periode sebelumnya) atau 'average' (vs rata-rata)
+        anomaly_threshold: persen perubahan untuk dianggap anomaly (default 20%)
+
+    Returns:
+        dict dengan overall comparison dan per-category breakdown + sparkline
+    """
+    today = _today_wib()
+    ANOMALY_THRESHOLD = anomaly_threshold
+
+    if period == "month":
+        # Current month
+        curr_start = today.replace(day=1)
+        curr_end = _end_of_month(today.year, today.month)
+
+        # Previous month
+        prev_month = today.month - 1 or 12
+        prev_year = today.year if today.month > 1 else today.year - 1
+        prev_start = date(prev_year, prev_month, 1)
+        prev_end = _end_of_month(prev_year, prev_month)
+    else:  # week
+        curr_monday = today - timedelta(days=today.weekday())
+        curr_sunday = curr_monday + timedelta(days=6)
+        curr_start, curr_end = curr_monday, curr_sunday
+
+        prev_monday = curr_monday - timedelta(days=7)
+        prev_sunday = curr_monday - timedelta(days=1)
+        prev_start, prev_end = prev_monday, prev_sunday
+
+    # --- Current period totals ---
+    curr_result = await db.execute(
+        select(
+            func.coalesce(func.sum(Transaction.amount), 0),
+            func.count(Transaction.id),
+        ).where(
+            Transaction.user_id == user_id,
+            Transaction.transaction_date >= curr_start,
+            Transaction.transaction_date <= curr_end,
+        )
+    )
+    curr_total, curr_count = curr_result.one()
+
+    # --- Previous period totals ---
+    prev_result = await db.execute(
+        select(
+            func.coalesce(func.sum(Transaction.amount), 0),
+            func.count(Transaction.id),
+        ).where(
+            Transaction.user_id == user_id,
+            Transaction.transaction_date >= prev_start,
+            Transaction.transaction_date <= prev_end,
+        )
+    )
+    prev_total, prev_count = prev_result.one()
+
+    curr_total = int(curr_total)
+    prev_total = int(prev_total)
+
+    # --- Per-category breakdown for both periods ---
+    # Current period by category
+    curr_cat_result = await db.execute(
+        select(
+            Category.id,
+            Category.name,
+            Category.icon,
+            Category.color,
+            func.coalesce(func.sum(Transaction.amount), 0).label("total"),
+            func.count(Transaction.id).label("count"),
+        )
+        .join(Transaction, Transaction.category_id == Category.id, isouter=True)
+        .where(
+            Transaction.user_id == user_id,
+            Transaction.transaction_date >= curr_start,
+            Transaction.transaction_date <= curr_end,
+        )
+        .group_by(Category.id)
+        .order_by(func.sum(Transaction.amount).desc())
+    )
+    curr_cats: dict[int, dict] = {}
+    for row in curr_cat_result.all():
+        curr_cats[row.id] = {
+            "total": row.total,
+            "count": row.count,
+            "name": row.name,
+            "icon": row.icon,
+            "color": row.color,
+        }
+
+    # Previous period by category
+    prev_cat_result = await db.execute(
+        select(
+            Category.id,
+            func.coalesce(func.sum(Transaction.amount), 0).label("total"),
+        )
+        .join(Transaction, Transaction.category_id == Category.id, isouter=True)
+        .where(
+            Transaction.user_id == user_id,
+            Transaction.transaction_date >= prev_start,
+            Transaction.transaction_date <= prev_end,
+        )
+        .group_by(Category.id)
+    )
+    prev_cats: dict[int, dict] = {}
+    for row in prev_cat_result.all():
+        prev_cats[row.id] = {"total": row.total}
+
+    # All category IDs seen
+    all_cat_ids = set(curr_cats.keys()) | set(prev_cats.keys())
+
+    # Build category comparison list
+    category_comparisons = []
+    all_category_names = {}
+
+    for cat_id in all_cat_ids:
+        curr_data = curr_cats.get(cat_id, {"total": 0, "count": 0, "name": "", "icon": "📦", "color": "#888"})
+        prev_data = prev_cats.get(cat_id, {"total": 0})
+
+        cat_name = curr_data["name"] or (prev_data.get("name", "Unknown") if isinstance(prev_data, dict) else "Unknown")
+        cat_icon = curr_data["icon"]
+        cat_color = curr_data["color"]
+
+        if prev_data["total"] > 0:
+            pct_change = round(((curr_data["total"] - prev_data["total"]) / prev_data["total"]) * 100, 1)
+        else:
+            pct_change = 100 if curr_data["total"] > 0 else 0
+
+        is_anomaly = abs(pct_change) >= ANOMALY_THRESHOLD
+
+        category_comparisons.append({
+            "category_id": cat_id,
+            "name": cat_name,
+            "icon": cat_icon,
+            "color": cat_color,
+            "current_total": curr_data["total"],
+            "current_total_formatted": format_rupiah(curr_data["total"]),
+            "previous_total": prev_data["total"],
+            "previous_total_formatted": format_rupiah(prev_data["total"]),
+            "percentage_change": pct_change,
+            "is_anomaly": is_anomaly,
+            "trend": "up" if pct_change > 0 else ("down" if pct_change < 0 else "flat"),
+        })
+
+        all_category_names[cat_id] = cat_name
+
+    # Sort: anomalies first, then by absolute % change descending
+    category_comparisons.sort(key=lambda x: (-abs(x["percentage_change"]) if x["is_anomaly"] else -999, -abs(x["percentage_change"])))
+
+    # --- 6-month sparkline per category ---
+    sparkline_data: dict[int, list[dict]] = {}
+    if period == "month":
+        sparkline_query_months = 6
+        for i in range(sparkline_query_months - 1, -1, -1):
+            m = today.month - i
+            y = today.year
+            while m <= 0:
+                m += 12
+                y -= 1
+            month_start = _start_of_month(y, m)
+            month_end = _end_of_month(y, m)
+
+            for cat_id in all_cat_ids:
+                if cat_id not in sparkline_data:
+                    sparkline_data[cat_id] = []
+
+                cat_total_result = await db.execute(
+                    select(func.coalesce(func.sum(Transaction.amount), 0))
+                    .where(
+                        Transaction.user_id == user_id,
+                        Transaction.category_id == cat_id,
+                        Transaction.transaction_date >= month_start,
+                        Transaction.transaction_date <= month_end,
+                    )
+                )
+                cat_total = int(cat_total_result.scalar() or 0)
+                sparkline_data[cat_id].append({
+                    "month": m,
+                    "year": y,
+                    "label": get_month_label(y, m),
+                    "total": cat_total,
+                })
+
+    # Attach sparkline to category comparisons
+    for cat_comp in category_comparisons:
+        cat_id = cat_comp["category_id"]
+        cat_comp["sparkline"] = sparkline_data.get(cat_id, [])
+
+    # Overall summary
+    curr_vs_prev_pct = round(((curr_total - prev_total) / prev_total) * 100, 1) if prev_total > 0 else (0 if curr_total == 0 else 100)
+
+    # Highest change categories
+    biggest_increase = sorted(
+        [c for c in category_comparisons if c["trend"] == "up" and c["percentage_change"] > 0],
+        key=lambda x: -x["percentage_change"]
+    )
+    biggest_decrease = sorted(
+        [c for c in category_comparisons if c["trend"] == "down" and c["percentage_change"] < 0],
+        key=lambda x: x["percentage_change"]
+    )
+
+    return {
+        "period": period,
+        "compare_mode": compare,
+        "current_period": {
+            "start": curr_start.isoformat(),
+            "end": curr_end.isoformat(),
+            "total_amount": curr_total,
+            "total_amount_formatted": format_rupiah(curr_total),
+            "transaction_count": curr_count,
+        },
+        "previous_period": {
+            "start": prev_start.isoformat(),
+            "end": prev_end.isoformat(),
+            "total_amount": prev_total,
+            "total_amount_formatted": format_rupiah(prev_total),
+            "transaction_count": prev_count,
+        },
+        "overall_change_pct": curr_vs_prev_pct,
+        "anomaly_threshold": ANOMALY_THRESHOLD,
+        "categories": category_comparisons,
+        "highlights": {
+            "biggest_increase": biggest_increase[:3],
+            "biggest_decrease": biggest_decrease[:3],
+            "anomalies": [c for c in category_comparisons if c["is_anomaly"]],
+        },
+    }
+
+
 async def generate_weekly_summary(
     db: AsyncSession,
     user_id: int,
