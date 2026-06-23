@@ -404,3 +404,89 @@ class TestWeeklySummary:
         response = await auth_client.get("/api/stats/weekly-summary?force=true")
         data = response.json()["data"]
         assert data["total_amount"] >= 0
+
+
+class TestAnnualSummary:
+    """Test GET /api/stats/annual-summary"""
+
+    async def test_annual_summary_empty(self, auth_client):
+        """Annual summary tanpa data transaksi."""
+        from datetime import date
+        year = date.today().year
+        response = await auth_client.get(f"/api/stats/annual-summary?year={year}")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "success"
+        summary = data["data"]
+        assert summary["year"] == year
+        assert summary["total_expense"] == 0
+        assert summary["total_transactions"] == 0
+        assert summary["average_monthly_spending"] == 0
+        assert summary["total_income"] == 0
+        assert summary["top_categories"] == []
+        # monthly_breakdown returns all 12 months even when empty
+        assert len(summary["monthly_breakdown"]) == 12
+        for month in summary["monthly_breakdown"]:
+            assert month["total_amount"] == 0
+
+    async def test_annual_summary_with_data(self, auth_client):
+        """Annual summary dengan transaksi."""
+        cat_resp = await auth_client.get("/api/categories")
+        cats = cat_resp.json()["data"]["categories"]
+        cat_id = cats[0]["id"]
+
+        from datetime import date, timedelta
+        today = date.today()
+        year = today.year
+
+        # Buat transaksi di bulan berjalan
+        await auth_client.post(
+            "/api/transactions",
+            json={"amount": 50000, "category_id": cat_id, "transaction_date": today.isoformat()},
+        )
+        await auth_client.post(
+            "/api/transactions",
+            json={"amount": 30000, "category_id": cat_id, "transaction_date": today.isoformat()},
+        )
+
+        response = await auth_client.get(f"/api/stats/annual-summary?year={year}")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "success"
+        summary = data["data"]
+        assert summary["year"] == year
+        assert summary["total_expense"] == 80000
+        assert summary["total_transactions"] == 2
+        assert summary["average_monthly_spending"] == 80000 // 12
+
+    async def test_annual_summary_year_default_to_current(self, auth_client):
+        """Annual summary default year ke tahun berjalan."""
+        response = await auth_client.get("/api/stats/annual-summary")
+        assert response.status_code == 200
+        data = response.json()
+        from datetime import date
+        assert data["data"]["year"] == date.today().year
+
+    async def test_annual_summary_year_over_year(self, auth_client):
+        """Annual summary dengan data year-over-year."""
+        cat_resp = await auth_client.get("/api/categories")
+        cats = cat_resp.json()["data"]["categories"]
+        cat_id = cats[0]["id"]
+
+        from datetime import date
+        today = date.today()
+        year = today.year
+
+        # Buat transaksi di tahun berjalan
+        await auth_client.post(
+            "/api/transactions",
+            json={"amount": 100000, "category_id": cat_id, "transaction_date": today.isoformat()},
+        )
+
+        response = await auth_client.get(f"/api/stats/annual-summary?year={year}")
+        assert response.status_code == 200
+        data = response.json()
+        summary = data["data"]
+        assert "year_over_year" in summary
+        assert "previous_year" in summary["year_over_year"]
+        assert "change_pct" in summary["year_over_year"]
