@@ -811,7 +811,7 @@ async def annual_summary_page(
             {
                 "current_user": current_user,
                 "year": year,
-                "summary": summary,
+                "annual_summary": summary,
             },
         )
     finally:

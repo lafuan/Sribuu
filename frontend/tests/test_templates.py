@@ -133,6 +133,34 @@ MINIMAL_CONTEXT = {
         "remaining_days": 15,
         "daily_remaining_budget_formatted": "Rp 0",
     },
+    # Annual summary context
+    "year": 2026,
+    "annual_summary": {
+        "year": 2026,
+        "total_income": 0,
+        "total_income_formatted": "Rp 0",
+        "total_expense": 0,
+        "total_expense_formatted": "Rp 0",
+        "savings_rate": 0.0,
+        "savings_rate_formatted": "0.0%",
+        "top_categories": [],
+        "monthly_breakdown": [],
+        "biggest_spending_month": None,
+        "biggest_savings_month": None,
+        "average_monthly_spending": 0,
+        "average_monthly_spending_formatted": "Rp 0",
+        "total_transactions": 0,
+        "streak": 0,
+        "year_over_year": {
+            "previous_year": 2025,
+            "previous_year_total": 0,
+            "previous_year_total_formatted": "Rp 0",
+            "current_year_total": 0,
+            "current_year_total_formatted": "Rp 0",
+            "change_pct": 0.0,
+            "has_previous_year_data": False,
+        },
+    },
 }
 
 

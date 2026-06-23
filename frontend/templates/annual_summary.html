@@ -69,7 +69,7 @@
   </div>
 
   <!-- No Data State -->
-  {% if summary.total_transactions == 0 %}
+  {% if annual_summary.total_transactions == 0 %}
   <div class="card text-center py-12">
     <i class="fas fa-inbox text-5xl text-stone-300 dark:text-gray-600 mb-4"></i>
     <h2 class="text-lg font-semibold text-stone-600 dark:text-gray-300 mb-2">Belum Ada Data untuk Tahun {{ year }}</h2>
@@ -82,27 +82,27 @@
     <div class="flex items-start justify-between">
       <div>
         <p class="text-emerald-100 text-sm font-medium mb-1">Total Pengeluaran {{ year }}</p>
-        <p class="card-value">Rp {{ "{:,.0f}".format(summary.total_expense) }}</p>
+        <p class="card-value">Rp {{ "{:,.0f}".format(annual_summary.total_expense) }}</p>
         <p class="text-emerald-100 text-xs mt-1">
-          <i class="fas fa-receipt mr-1"></i>{{ summary.total_transactions }} transaksi
+          <i class="fas fa-receipt mr-1"></i>{{ annual_summary.total_transactions }} transaksi
         </p>
       </div>
       <div class="text-right">
-        {% if summary.year_over_year.has_previous_year_data %}
-        <div class="text-emerald-100 text-xs mb-1">vs {{ summary.year_over_year.previous_year }}</div>
+        {% if annual_summary.year_over_year.has_previous_year_data %}
+        <div class="text-emerald-100 text-xs mb-1">vs {{ annual_summary.year_over_year.previous_year }}</div>
         <div class="flex items-center gap-1 justify-end">
-          {% if summary.year_over_year.change_pct < 0 %}
+          {% if annual_summary.year_over_year.change_pct < 0 %}
           <i class="fas fa-arrow-down text-emerald-200"></i>
-          <span class="text-emerald-200 font-semibold">{{ summary.year_over_year.change_pct|abs }}% lebih hemat</span>
-          {% elif summary.year_over_year.change_pct > 0 %}
+          <span class="text-emerald-200 font-semibold">{{ annual_summary.year_over_year.change_pct|abs }}% lebih hemat</span>
+          {% elif annual_summary.year_over_year.change_pct > 0 %}
           <i class="fas fa-arrow-up text-amber-200"></i>
-          <span class="text-amber-200 font-semibold">{{ summary.year_over_year.change_pct }}% lebih boros</span>
+          <span class="text-amber-200 font-semibold">{{ annual_summary.year_over_year.change_pct }}% lebih boros</span>
           {% else %}
           <span class="text-emerald-200">Sama seperti tahun lalu</span>
           {% endif %}
         </div>
         {% else %}
-        <p class="text-emerald-100 text-xs">Tidak ada data tahun {{ summary.year_over_year.previous_year }}</p>
+        <p class="text-emerald-100 text-xs">Tidak ada data tahun {{ annual_summary.year_over_year.previous_year }}</p>
         {% endif %}
       </div>
     </div>
@@ -112,19 +112,19 @@
   <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
     <div class="card stat-card text-center">
       <p class="text-xs text-stone-400 dark:text-gray-400 uppercase tracking-wide mb-1">Rata/Bulan</p>
-      <p class="text-xl font-bold text-stone-700 dark:text-gray-100">Rp {{ "{:,.0f}".format(summary.average_monthly_spending) }}</p>
+      <p class="text-xl font-bold text-stone-700 dark:text-gray-100">Rp {{ "{:,.0f}".format(annual_summary.average_monthly_spending) }}</p>
     </div>
     <div class="card stat-card text-center">
       <p class="text-xs text-stone-400 dark:text-gray-400 uppercase tracking-wide mb-1">Streak</p>
       <p class="text-xl font-bold text-stone-700 dark:text-gray-100">
-        {{ summary.streak }} <span class="text-xs font-normal text-stone-400">hari</span>
+        {{ annual_summary.streak }} <span class="text-xs font-normal text-stone-400">hari</span>
       </p>
     </div>
     <div class="card stat-card text-center">
       <p class="text-xs text-stone-400 dark:text-gray-400 uppercase tracking-wide mb-1">Bulan Paling Boros</p>
       <p class="text-xl font-bold text-stone-700 dark:text-gray-100">
-        {% if summary.biggest_spending_month %}
-        {{ summary.biggest_spending_month.month_label }}
+        {% if annual_summary.biggest_spending_month %}
+        {{ annual_summary.biggest_spending_month.month_label }}
         {% else %}
         —
         {% endif %}
@@ -132,7 +132,7 @@
     </div>
     <div class="card stat-card text-center">
       <p class="text-xs text-stone-400 dark:text-gray-400 uppercase tracking-wide mb-1">Transaksi</p>
-      <p class="text-xl font-bold text-stone-700 dark:text-gray-100">{{ summary.total_transactions }}</p>
+      <p class="text-xl font-bold text-stone-700 dark:text-gray-100">{{ annual_summary.total_transactions }}</p>
     </div>
   </div>
 
@@ -141,9 +141,9 @@
     <h2 class="font-semibold text-stone-700 dark:text-gray-200 text-sm uppercase tracking-wide mb-4">
       <i class="fas fa-tag text-emerald-500 mr-1"></i> Top 5 Kategori Terbesar
     </h2>
-    {% if summary.top_categories %}
+    {% if annual_summary.top_categories %}
     <div class="space-y-4">
-      {% for cat in summary.top_categories %}
+      {% for cat in annual_summary.top_categories %}
       <div>
         <div class="flex items-center justify-between mb-1">
           <div class="flex items-center gap-2">
@@ -175,9 +175,9 @@
     <h2 class="font-semibold text-stone-700 dark:text-gray-200 text-sm uppercase tracking-wide mb-4">
       <i class="fas fa-chart-bar text-emerald-500 mr-1"></i> Breakdown Bulanan
     </h2>
-    {% set max_monthly = summary.monthly_breakdown | map(attribute='total_amount') | max %}
+    {% set max_monthly = annual_summary.monthly_breakdown | map(attribute='total_amount') | max %}
     <div class="space-y-3">
-      {% for m in summary.monthly_breakdown %}
+      {% for m in annual_summary.monthly_breakdown %}
       {% if m.total_amount > 0 %}
       <div>
         <div class="flex justify-between text-sm mb-1">
@@ -237,19 +237,19 @@ document.addEventListener('alpine:init', () => {
         const rows = [
           ['Ringkasan Tahunan ' + this.year],
           [],
-          ['Total Pengeluaran', 'Rp ' + Number(summary.total_expense).toLocaleString('id-ID')],
-          ['Total Transaksi', summary.total_transactions],
-          ['Rata-rata Bulanan', 'Rp ' + Number(summary.average_monthly_spending).toLocaleString('id-ID')],
-          ['Streak', summary.streak + ' hari'],
-          ['Bulan Paling Boros', summary.biggest_spending_month ? summary.biggest_spending_month.month_label + ' (Rp ' + Number(summary.biggest_spending_month.total_amount).toLocaleString('id-ID') + ')' : '-'],
+          ['Total Pengeluaran', 'Rp ' + Number(annual_summary.total_expense).toLocaleString('id-ID')],
+          ['Total Transaksi', annual_summary.total_transactions],
+          ['Rata-rata Bulanan', 'Rp ' + Number(annual_summary.average_monthly_spending).toLocaleString('id-ID')],
+          ['Streak', annual_summary.streak + ' hari'],
+          ['Bulan Paling Boros', annual_summary.biggest_spending_month ? annual_summary.biggest_spending_month.month_label + ' (Rp ' + Number(annual_summary.biggest_spending_month.total_amount).toLocaleString('id-ID') + ')' : '-'],
           [],
           ['Top Kategori'],
           ['Kategori', 'Jumlah', 'Persentase'],
-          ...summary.top_categories.map(c => [c.category.icon + ' ' + c.category.name, 'Rp ' + Number(c.total_amount).toLocaleString('id-ID'), c.percentage + '%']),
+          ...annual_summary.top_categories.map(c => [c.category.icon + ' ' + c.category.name, 'Rp ' + Number(c.total_amount).toLocaleString('id-ID'), c.percentage + '%']),
           [],
           ['Breakdown Bulanan'],
           ['Bulan', 'Total', 'Transaksi'],
-          ...summary.monthly_breakdown.filter(m => m.total_amount > 0).map(m => [m.month_label, 'Rp ' + Number(m.total_amount).toLocaleString('id-ID'), m.transaction_count]),
+          ...annual_summary.monthly_breakdown.filter(m => m.total_amount > 0).map(m => [m.month_label, 'Rp ' + Number(m.total_amount).toLocaleString('id-ID'), m.transaction_count]),
         ];
 
         const csvContent = '\ufeff' + rows.map(r => r.join(',')).join('\n');
