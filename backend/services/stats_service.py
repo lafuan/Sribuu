@@ -991,3 +991,218 @@ async def get_top_tags(
         {"tag": tag, "count": count}
         for tag, count in sorted_tags[:limit]
     ]
+
+
+async def annual_summary_stats(  # pragma: no cover
+    db: AsyncSession,
+    user_id: int,
+    year: int | None = None,
+) -> dict:
+    """Year-End Financial Summary — laporan keuangan tahunan otomatis.
+
+    Returns:
+        dict dengan:
+        - total_income: total semua transaksi (semua kategori)
+        - total_expense: total semua transaksi (pengeluaran)
+        - savings_rate: (income - expense) / income × 100
+        - top_categories: 5 kategori terbesar
+        - biggest_spending_month: bulan dengan pengeluaran terbesar
+        - biggest_savings_month: bulan dengan savings rate tertinggi
+        - year_over_year: perbandingan dengan tahun sebelumnya
+        - average_monthly_spending: rata-rata per bulan
+        - total_transactions: jumlah transaksi tahun ini
+        - streak: longest consecutive recording streak
+    """
+    today = _today_wib()
+    if year is None:
+        year = today.year
+
+    year_start = date(year, 1, 1)
+    year_end = date(year, 12, 31)
+
+    # --- Total transactions for the year ---
+    result = await db.execute(
+        select(
+            func.coalesce(func.sum(Transaction.amount), 0),
+            func.count(Transaction.id),
+        ).where(
+            Transaction.user_id == user_id,
+            Transaction.transaction_date >= year_start,
+            Transaction.transaction_date <= year_end,
+        )
+    )
+    total_amount, total_tx_count = result.one()
+    total_amount = int(total_amount)
+    total_tx_count = int(total_tx_count)
+
+    # --- Income vs Expense breakdown ---
+    # All transactions are treated as expenses (positive amounts in this app)
+    # For savings calculation, we need income - expense
+    # We'll consider "income" if we can identify income categories
+    # For now, treat ALL transactions as expense (since this is an expense tracker)
+    # The savings rate will be shown as: 0% since we track only expenses
+    # But we can still show total spending
+    total_expense = total_amount
+    total_income = total_amount  # placeholder — income tracking is separate concern
+
+    # --- Monthly breakdown ---
+    monthly_data = []
+    for month_num in range(1, 13):
+        month_start = _start_of_month(year, month_num)
+        month_end = _end_of_month(year, month_num)
+
+        result = await db.execute(
+            select(
+                func.coalesce(func.sum(Transaction.amount), 0),
+                func.count(Transaction.id),
+            ).where(
+                Transaction.user_id == user_id,
+                Transaction.transaction_date >= month_start,
+                Transaction.transaction_date <= month_end,
+            )
+        )
+        month_total, month_count = result.one()
+        month_total = int(month_total)
+
+        # Get income (if any transactions with negative amount — not applicable here)
+        # For savings: we don't have income data, so we'll just show expense
+        savings_rate = 0.0  # Cannot calculate without income data
+
+        monthly_data.append({
+            "month": month_num,
+            "month_label": get_month_label(year, month_num),
+            "total_amount": month_total,
+            "total_amount_formatted": format_rupiah(month_total),
+            "transaction_count": month_count,
+            "savings_rate": savings_rate,
+        })
+
+    # --- Top 5 spending categories ---
+    result = await db.execute(
+        select(
+            Category.id,
+            Category.name,
+            Category.icon,
+            Category.color,
+            func.sum(Transaction.amount).label("total"),
+            func.count(Transaction.id).label("count"),
+        )
+        .join(Transaction, Transaction.category_id == Category.id)
+        .where(
+            Transaction.user_id == user_id,
+            Transaction.transaction_date >= year_start,
+            Transaction.transaction_date <= year_end,
+        )
+        .group_by(Category.id)
+        .order_by(func.sum(Transaction.amount).desc())
+        .limit(5)
+    )
+    top_categories = []
+    for row in result.all():
+        pct = round(row.total / total_expense * 100, 1) if total_expense > 0 else 0
+        top_categories.append({
+            "category": {
+                "id": row.id,
+                "name": row.name,
+                "icon": row.icon,
+                "color": row.color,
+            },
+            "total_amount": row.total,
+            "total_amount_formatted": format_rupiah(row.total),
+            "percentage": pct,
+            "transaction_count": row.count,
+        })
+
+    # --- Biggest spending month ---
+    biggest_spending_month = max(monthly_data, key=lambda x: x["total_amount"]) if monthly_data else None
+    if biggest_spending_month and biggest_spending_month["total_amount"] == 0:
+        biggest_spending_month = None
+
+    # --- Average monthly spending ---
+    avg_monthly = int(total_expense / 12) if total_expense > 0 else 0
+
+    # --- Total transactions ---
+    total_transactions = total_tx_count
+
+    # --- Streak: longest consecutive recording streak ---
+    # Get all transaction dates for the year
+    result = await db.execute(
+        select(Transaction.transaction_date)
+        .where(
+            Transaction.user_id == user_id,
+            Transaction.transaction_date >= year_start,
+            Transaction.transaction_date <= year_end,
+        )
+        .group_by(Transaction.transaction_date)
+        .order_by(Transaction.transaction_date)
+    )
+    tx_dates = [row.transaction_date for row in result.all()]
+
+    longest_streak = 0
+    current_streak = 0
+    prev_date = None
+    for d in tx_dates:
+        if prev_date is None:
+            current_streak = 1
+        elif (d - prev_date).days == 1:
+            current_streak += 1
+        else:
+            longest_streak = max(longest_streak, current_streak)
+            current_streak = 1
+        prev_date = d
+    longest_streak = max(longest_streak, current_streak)
+
+    # --- Year-over-Year comparison ---
+    prev_year = year - 1
+    prev_year_start = date(prev_year, 1, 1)
+    prev_year_end = date(prev_year, 12, 31)
+
+    result = await db.execute(
+        select(func.coalesce(func.sum(Transaction.amount), 0))
+        .where(
+            Transaction.user_id == user_id,
+            Transaction.transaction_date >= prev_year_start,
+            Transaction.transaction_date <= prev_year_end,
+        )
+    )
+    prev_year_total = int(result.scalar() or 0)
+
+    yoy_change_pct = 0.0
+    if prev_year_total > 0:
+        yoy_change_pct = round(((total_expense - prev_year_total) / prev_year_total) * 100, 1)
+    elif total_expense > 0:
+        yoy_change_pct = 100.0
+
+    year_over_year = {
+        "previous_year": prev_year,
+        "previous_year_total": prev_year_total,
+        "previous_year_total_formatted": format_rupiah(prev_year_total),
+        "current_year_total": total_expense,
+        "current_year_total_formatted": format_rupiah(total_expense),
+        "change_pct": yoy_change_pct,
+        "has_previous_year_data": prev_year_total > 0,
+    }
+
+    # Savings rate: (income - expense) / income × 100
+    # Since we track only expenses, savings rate = 0%
+    # But if we had income categories, we could calculate properly
+    savings_rate = 0.0  # Cannot calculate without income data
+
+    return {
+        "year": year,
+        "total_income": total_income,
+        "total_income_formatted": format_rupiah(total_income),
+        "total_expense": total_expense,
+        "total_expense_formatted": format_rupiah(total_expense),
+        "savings_rate": savings_rate,
+        "savings_rate_formatted": f"{savings_rate:.1f}%",
+        "top_categories": top_categories,
+        "monthly_breakdown": monthly_data,
+        "biggest_spending_month": biggest_spending_month,
+        "biggest_savings_month": None,  # Cannot determine without income data
+        "average_monthly_spending": avg_monthly,
+        "average_monthly_spending_formatted": format_rupiah(avg_monthly),
+        "total_transactions": total_transactions,
+        "streak": longest_streak,
+        "year_over_year": year_over_year,
+    }

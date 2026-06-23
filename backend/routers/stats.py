@@ -12,6 +12,7 @@ from ..models import User
 from ..schemas.auth import StandardResponse
 from ..services.auth_service import get_current_user
 from ..services.stats_service import (
+    annual_summary_stats,
     generate_weekly_summary,
     get_daily_trend,
     get_dashboard,
@@ -182,6 +183,31 @@ async def period_comparison(
             request,
             "stats/partials/period_comparison.html",
             {"comparison": result},
+        )
+
+    return StandardResponse(
+        status="success",
+        data=result,
+    ).model_dump()
+
+
+@router.get("/annual-summary")
+async def annual_summary(
+    request: Request,
+    year: int | None = Query(None, description="Tahun (YYYY), default: tahun sekarang"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Year-End Financial Summary — laporan keuangan tahunan otomatis."""
+    result = await annual_summary_stats(db, current_user.id, year=year)
+
+    # HTMX: return HTML fragment
+    if request.headers.get("HX-Request") == "true":
+        from ..main import templates
+        return templates.TemplateResponse(
+            request,
+            "stats/partials/annual_summary.html",
+            {"summary": result},
         )
 
     return StandardResponse(

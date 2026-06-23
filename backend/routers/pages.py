@@ -784,6 +784,40 @@ async def stats_page(
         await db.close()
 
 
+@router.get("/annual-summary", name="annual_summary")
+async def annual_summary_page(
+    request: Request,
+    year: int | None = None,
+    current_user: User = Depends(get_current_user),
+):
+    """Halaman Year-End Financial Summary — laporan keuangan tahunan."""
+    from datetime import date
+
+    from ..database import get_db_session
+    from ..services.stats_service import annual_summary_stats
+
+    today = date.today()
+    if year is None:
+        year = today.year
+
+    db = get_db_session()
+    try:
+        summary = await annual_summary_stats(db, current_user.id, year=year)
+
+        templates = _get_templates()
+        return templates.TemplateResponse(
+            request,
+            "annual_summary.html",
+            {
+                "current_user": current_user,
+                "year": year,
+                "annual_summary": summary,
+            },
+        )
+    finally:
+        await db.close()
+
+
 @router.get("/budgets", name="budgets_page")
 async def budgets_page(
     request: Request,

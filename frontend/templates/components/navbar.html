@@ -23,6 +23,9 @@
       <a href="{{ url_for('stats') }}" class="text-sm font-medium text-stone-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition {% if '/stats' in request.url.path %}text-emerald-600 dark:text-emerald-400{% endif %}">
         <i class="fas fa-chart-pie mr-1"></i> Statistik
       </a>
+      <a href="{{ url_for('annual_summary') }}" class="text-sm font-medium text-stone-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition {% if '/annual-summary' in request.url.path %}text-emerald-600 dark:text-emerald-400{% endif %}">
+        <i class="fas fa-calendar-check mr-1"></i> Tahunan
+      </a>
       <a href="{{ url_for('settings') }}" class="text-sm font-medium text-stone-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition {% if '/settings' in request.url.path %}text-emerald-600 dark:text-emerald-400{% endif %}">
         <i class="fas fa-cog mr-1"></i> Pengaturan
       </a>
