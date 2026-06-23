@@ -43,6 +43,9 @@ def jinja_env():
     env.filters["format_date_id"] = format_date_id
     env.globals["url_for"] = url_for
     env.globals["get_flashed_messages"] = get_flashed_messages
+    # `now()` is added in backend/main.py; add it here for tests
+    from datetime import datetime, timedelta, timezone
+    env.globals["now"] = lambda: datetime.now(timezone(timedelta(hours=7)))
     return env
 
 

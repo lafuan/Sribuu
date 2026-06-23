@@ -1119,7 +1119,6 @@ async def annual_summary_stats(
         biggest_spending_month = None
 
     # --- Average monthly spending ---
-    months_with_data = [m for m in monthly_data if m["total_amount"] > 0]
     avg_monthly = int(total_expense / 12) if total_expense > 0 else 0
 
     # --- Total transactions ---
