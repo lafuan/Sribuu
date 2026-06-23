@@ -10,9 +10,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ..database import get_db
 from ..models import User
 from ..schemas.auth import StandardResponse
-from ..schemas.budget import BudgetCreate, BudgetUpdate
+from ..schemas.budget import BudgetBulkCreate, BudgetCreate, BudgetUpdate
 from ..services.auth_service import get_current_user
 from ..services.budget_service import (
+    bulk_create_budgets,
+    copy_budgets_from_previous_month,
     create_budget,
     delete_budget,
     get_budgets_summary,
@@ -158,4 +160,107 @@ async def summary_bgt(
     return StandardResponse(
         status="success",
         data={"budgets": budgets},
+    ).model_dump()
+
+
+@router.post("/copy-from-previous")
+async def copy_from_previous(
+    request: Request,
+    month: int = Query(..., ge=1, le=12),
+    year: int = Query(..., ge=2000),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Ambil budgets dari bulan sebelumnya sebagai template.
+
+    Mengembalikan list budget yang bisa di-copy (belum tersimpan).
+    """
+    budgets = await copy_budgets_from_previous_month(db, current_user.id, month, year)
+
+    # HTMX: return modal with list of budgets to copy
+    if request.headers.get("HX-Request") == "true":
+        from ..main import templates as tpl
+        return tpl.TemplateResponse(
+            request,
+            "budgets/partials/copy_modal.html",
+            {
+                "budgets_to_copy": budgets,
+                "current_month": month,
+                "current_year": year,
+            },
+        )
+
+    return StandardResponse(
+        status="success",
+        data={"budgets": budgets},
+    ).model_dump()
+
+
+@router.post("/bulk-create")
+async def bulk_create(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Buat multiple budgets sekaligus."""
+    # Detect HTMX form-data vs JSON
+    if request.headers.get("Content-Type", "").startswith("application/x-www-form-urlencoded") or request.headers.get("HX-Request") == "true":
+        form = await request.form()
+        # Parse budgets from form data (indexed by idx)
+        # Expected format: category_id_0, amount_0, month_0, year_0, category_id_1, ...
+        budgets_raw = []
+        idx = 0
+        while True:
+            cat_key = f"category_id_{idx}"
+            amt_key = f"amount_{idx}"
+            mon_key = f"month_{idx}"
+            yr_key = f"year_{idx}"
+            if cat_key not in form and amt_key not in form:
+                break
+            cat_val = str(form.get(cat_key, "")).strip()
+            amt_val = str(form.get(amt_key, "0")).strip()
+            mon_val = str(form.get(mon_key, "0")).strip()
+            yr_val = str(form.get(yr_key, "0")).strip()
+            if cat_val and cat_val.isdigit() and int(cat_val) > 0:
+                budgets_raw.append({
+                    "category_id": int(cat_val),
+                    "amount": int(amt_val) if amt_val.isdigit() else 0,
+                    "month": int(mon_val) if mon_val.isdigit() else 0,
+                    "year": int(yr_val) if yr_val.isdigit() else 0,
+                })
+            idx += 1
+            if idx > 100:
+                break
+
+        from ..schemas.budget import BudgetBulkCreateItem
+        budgets_data = [BudgetBulkCreateItem(**b) for b in budgets_raw]
+    else:
+        body = await request.json()
+        data = BudgetBulkCreate(**body)
+        budgets_data = data.budgets
+
+    created = await bulk_create_budgets(db, current_user.id, budgets_data)
+    await db.commit()
+
+    # HTMX: return updated budget list
+    if request.headers.get("HX-Request") == "true":
+        now = _now_wib()
+        current_budgets = await list_budgets(db, current_user.id, now.month, now.year)
+        from ..main import templates as tpl
+        from ..services.category_service import list_categories as list_cats
+        categories = await list_cats(db, current_user.id)
+        return tpl.TemplateResponse(
+            request, "budgets/list.html",
+            {
+                "budgets": current_budgets,
+                "categories": categories,
+                "current_month": now.month,
+                "current_year": now.year,
+            },
+        )
+
+    return StandardResponse(
+        status="success",
+        data={"created": created},
+        message=f"{len(created)} budget berhasil dibuat",
     ).model_dump()

@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
 from ..models import Budget, Category, Transaction
-from ..schemas.budget import BudgetCreate, BudgetUpdate
+from ..schemas.budget import BudgetBulkCreateItem, BudgetCreate, BudgetUpdate
 
 
 async def _get_budget_or_404(
@@ -241,3 +241,89 @@ async def get_budgets_summary(
     month, year, amount (budget limit), spent (total transaksi), percentage.
     """
     return await list_budgets(db, user_id, month, year)
+
+
+async def copy_budgets_from_previous_month(
+    db: AsyncSession, user_id: int, month: int, year: int
+) -> list[dict]:
+    """Ambil budgets dari bulan sebelumnya sebagai template untuk bulan baru.
+
+    Menghitung bulan sebelumnya: jika month=1, maka prev_month=12, prev_year=year-1.
+    """
+    if month == 1:
+        prev_month = 12
+        prev_year = year - 1
+    else:
+        prev_month = month - 1
+        prev_year = year
+
+    prev_budgets = await list_budgets(db, user_id, prev_month, prev_year)
+
+    # Kembalikan tanpa id, dengan month/year yang baru
+    return [
+        {
+            "category_id": b["category_id"],
+            "category_name": b["category_name"],
+            "category_icon": b["category_icon"],
+            "category_color": b["category_color"],
+            "month": month,
+            "year": year,
+            "amount": b["amount"],
+        }
+        for b in prev_budgets
+    ]
+
+
+async def bulk_create_budgets(
+    db: AsyncSession, user_id: int, budgets_data: list[BudgetBulkCreateItem]
+) -> list[dict]:
+    """Buat multiple budgets sekaligus.
+
+    Validasi duplikasi per kategori per bulan.
+    Mengembalikan list budget yang berhasil dibuat.
+    """
+    created = []
+    errors = []
+
+    for item in budgets_data:
+        # Cek duplikasi
+        result = await db.execute(
+            select(Budget).where(
+                Budget.user_id == user_id,
+                Budget.category_id == item.category_id,
+                Budget.month == item.month,
+                Budget.year == item.year,
+            )
+        )
+        if result.scalar_one_or_none():
+            errors.append(f"Budget untuk kategori {item.category_id} di bulan {item.month}/{item.year} sudah ada")
+            continue
+
+        # Cek kategori ada dan aktif
+        cat_result = await db.execute(
+            select(Category).where(
+                Category.id == item.category_id,
+                Category.is_active == 1,
+            )
+        )
+        category = cat_result.scalar_one_or_none()
+        if not category:
+            errors.append(f"Kategori {item.category_id} tidak ditemukan atau tidak aktif")
+            continue
+
+        budget = Budget(
+            user_id=user_id,
+            category_id=item.category_id,
+            month=item.month,
+            year=item.year,
+            amount=item.amount,
+        )
+        db.add(budget)
+        await db.flush()
+        await db.refresh(budget, ["category"])
+        spent = await _get_spent_for_category(
+            db, user_id, item.category_id, item.month, item.year
+        )
+        created.append(await _budget_to_response(budget, spent))
+
+    return created
