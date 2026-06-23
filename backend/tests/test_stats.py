@@ -435,7 +435,7 @@ class TestAnnualSummary:
         cats = cat_resp.json()["data"]["categories"]
         cat_id = cats[0]["id"]
 
-        from datetime import date, timedelta
+        from datetime import date
         today = date.today()
         year = today.year
 
