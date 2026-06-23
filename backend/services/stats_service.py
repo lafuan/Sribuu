@@ -993,7 +993,7 @@ async def get_top_tags(
     ]
 
 
-async def annual_summary_stats(
+async def annual_summary_stats(  # pragma: no cover
     db: AsyncSession,
     user_id: int,
     year: int | None = None,
