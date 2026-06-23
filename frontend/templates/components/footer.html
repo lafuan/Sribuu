@@ -1,3 +1,23 @@
+<!-- Year-End Seasonal Banner (Dec–Jan) -->
+{% set now_month = now().month if now is defined else 1 %}
+{% if current_user and (now_month == 12 or now_month == 1) %}
+<div class="bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-4 py-3">
+  <div class="max-w-4xl mx-auto flex items-center justify-between gap-3">
+    <div class="flex items-center gap-2">
+      <i class="fas fa-star text-amber-300"></i>
+      <span class="text-sm font-medium">
+        {% if now_month == 12 %}Akhir Tahun {{ now().year }} —{% endif %}
+        Lihat Laporan Keuangan Tahun Ini!
+      </span>
+    </div>
+    <a href="{{ url_for('annual_summary') }}{% if now_month == 12 %}?year={{ now().year }}{% else %}?year={{ now().year - 1 }}{% endif %}"
+       class="inline-flex items-center gap-1 px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-sm font-semibold transition">
+      <i class="fas fa-chart-line"></i> Lihat Ringkasan
+    </a>
+  </div>
+</div>
+{% endif %}
+
 <!-- Mobile Bottom Spacer (only when logged in / has bottom nav) -->
 {% if current_user %}
 <div class="h-16 sm:hidden"></div>

@@ -1,0 +1,270 @@
+{% extends "base.html" %}
+{% block title %}Ringkasan Tahun {{ year }} — Sribuu{% endblock %}
+
+{% block head %}
+<style>
+    .highlight-card {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+    }
+    .highlight-card .card-value {
+        font-size: 2rem;
+        font-weight: 700;
+    }
+    .stat-card { transition: transform 0.15s; }
+    .stat-card:hover { transform: translateY(-2px); }
+    .category-bar {
+        height: 8px;
+        border-radius: 4px;
+        background: #e7e5e4;
+        overflow: hidden;
+    }
+    .dark .category-bar { background: #44403c; }
+    .month-bar {
+        height: 6px;
+        border-radius: 3px;
+        background: #d1fae5;
+        transition: width 0.5s ease;
+    }
+    .dark .month-bar { background: #064e3b; }
+    .streak-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: #fef3c7;
+        color: #92400e;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: 600;
+    }
+    .dark .streak-badge { background: #78350f; color: #fef3c7; }
+</style>
+{% endblock %}
+
+{% block body %}
+<main class="max-w-3xl mx-auto px-4 py-5 space-y-5"
+      x-data="annualSummaryPage({{ year }})">
+
+  <!-- Page Header -->
+  <div class="flex items-center gap-3">
+    <a href="{{ url_for('stats') }}" class="text-stone-500 dark:text-gray-400 hover:text-stone-700 dark:hover:text-gray-200">
+      <i class="fas fa-arrow-left text-lg"></i>
+    </a>
+    <div class="flex items-center gap-2">
+      <h1 class="text-xl font-bold text-stone-800 dark:text-gray-100">
+        <i class="fas fa-calendar-check text-emerald-500 mr-2"></i>Ringkasan Tahun {{ year }}
+      </h1>
+    </div>
+    <!-- Year Selector -->
+    <div class="ml-auto flex items-center gap-2">
+      <button @click="prevYear()" class="w-8 h-8 bg-stone-100 dark:bg-gray-700 rounded-lg flex items-center justify-center hover:bg-stone-200 dark:hover:bg-gray-600 transition">
+        <i class="fas fa-chevron-left text-sm text-stone-500 dark:text-gray-400"></i>
+      </button>
+      <span class="text-sm font-semibold text-stone-700 dark:text-gray-200 min-w-[40px] text-center" x-text="year"></span>
+      <button @click="nextYear()" class="w-8 h-8 bg-stone-100 dark:bg-gray-700 rounded-lg flex items-center justify-center hover:bg-stone-200 dark:hover:bg-gray-600 transition">
+        <i class="fas fa-chevron-right text-sm text-stone-500 dark:text-gray-400"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- No Data State -->
+  {% if summary.total_transactions == 0 %}
+  <div class="card text-center py-12">
+    <i class="fas fa-inbox text-5xl text-stone-300 dark:text-gray-600 mb-4"></i>
+    <h2 class="text-lg font-semibold text-stone-600 dark:text-gray-300 mb-2">Belum Ada Data untuk Tahun {{ year }}</h2>
+    <p class="text-sm text-stone-400 dark:text-gray-500">Mulai mencatat transaksi untuk melihat ringkasan tahunan.</p>
+  </div>
+  {% else %}
+
+  <!-- Hero: Total Expense -->
+  <div class="highlight-card rounded-2xl p-6">
+    <div class="flex items-start justify-between">
+      <div>
+        <p class="text-emerald-100 text-sm font-medium mb-1">Total Pengeluaran {{ year }}</p>
+        <p class="card-value">Rp {{ "{:,.0f}".format(summary.total_expense) }}</p>
+        <p class="text-emerald-100 text-xs mt-1">
+          <i class="fas fa-receipt mr-1"></i>{{ summary.total_transactions }} transaksi
+        </p>
+      </div>
+      <div class="text-right">
+        {% if summary.year_over_year.has_previous_year_data %}
+        <div class="text-emerald-100 text-xs mb-1">vs {{ summary.year_over_year.previous_year }}</div>
+        <div class="flex items-center gap-1 justify-end">
+          {% if summary.year_over_year.change_pct < 0 %}
+          <i class="fas fa-arrow-down text-emerald-200"></i>
+          <span class="text-emerald-200 font-semibold">{{ summary.year_over_year.change_pct|abs }}% lebih hemat</span>
+          {% elif summary.year_over_year.change_pct > 0 %}
+          <i class="fas fa-arrow-up text-amber-200"></i>
+          <span class="text-amber-200 font-semibold">{{ summary.year_over_year.change_pct }}% lebih boros</span>
+          {% else %}
+          <span class="text-emerald-200">Sama seperti tahun lalu</span>
+          {% endif %}
+        </div>
+        {% else %}
+        <p class="text-emerald-100 text-xs">Tidak ada data tahun {{ summary.year_over_year.previous_year }}</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Key Stats Grid -->
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+    <div class="card stat-card text-center">
+      <p class="text-xs text-stone-400 dark:text-gray-400 uppercase tracking-wide mb-1">Rata/Bulan</p>
+      <p class="text-xl font-bold text-stone-700 dark:text-gray-100">Rp {{ "{:,.0f}".format(summary.average_monthly_spending) }}</p>
+    </div>
+    <div class="card stat-card text-center">
+      <p class="text-xs text-stone-400 dark:text-gray-400 uppercase tracking-wide mb-1">Streak</p>
+      <p class="text-xl font-bold text-stone-700 dark:text-gray-100">
+        {{ summary.streak }} <span class="text-xs font-normal text-stone-400">hari</span>
+      </p>
+    </div>
+    <div class="card stat-card text-center">
+      <p class="text-xs text-stone-400 dark:text-gray-400 uppercase tracking-wide mb-1">Bulan Paling Boros</p>
+      <p class="text-xl font-bold text-stone-700 dark:text-gray-100">
+        {% if summary.biggest_spending_month %}
+        {{ summary.biggest_spending_month.month_label }}
+        {% else %}
+        —
+        {% endif %}
+      </p>
+    </div>
+    <div class="card stat-card text-center">
+      <p class="text-xs text-stone-400 dark:text-gray-400 uppercase tracking-wide mb-1">Transaksi</p>
+      <p class="text-xl font-bold text-stone-700 dark:text-gray-100">{{ summary.total_transactions }}</p>
+    </div>
+  </div>
+
+  <!-- Top Categories -->
+  <div class="card">
+    <h2 class="font-semibold text-stone-700 dark:text-gray-200 text-sm uppercase tracking-wide mb-4">
+      <i class="fas fa-tag text-emerald-500 mr-1"></i> Top 5 Kategori Terbesar
+    </h2>
+    {% if summary.top_categories %}
+    <div class="space-y-4">
+      {% for cat in summary.top_categories %}
+      <div>
+        <div class="flex items-center justify-between mb-1">
+          <div class="flex items-center gap-2">
+            <div class="w-3 h-3 rounded-full" style="background-color: {{ cat.category.color }};"></div>
+            <span class="text-sm font-medium text-stone-600 dark:text-gray-300">
+              {{ cat.category.icon }} {{ cat.category.name }}
+            </span>
+          </div>
+          <div class="text-right">
+            <span class="font-semibold text-stone-700 dark:text-gray-200 tabular-nums">
+              Rp {{ "{:,.0f}".format(cat.total_amount) }}
+            </span>
+            <span class="text-xs text-stone-400 dark:text-gray-500 ml-1">{{ cat.percentage }}%</span>
+          </div>
+        </div>
+        <div class="category-bar">
+          <div class="h-full rounded-full" style="width: {{ cat.percentage }}%; background-color: {{ cat.category.color }};"></div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-sm text-stone-400 dark:text-gray-500 text-center py-4">Belum ada data kategori</p>
+    {% endif %}
+  </div>
+
+  <!-- Monthly Breakdown -->
+  <div class="card">
+    <h2 class="font-semibold text-stone-700 dark:text-gray-200 text-sm uppercase tracking-wide mb-4">
+      <i class="fas fa-chart-bar text-emerald-500 mr-1"></i> Breakdown Bulanan
+    </h2>
+    {% set max_monthly = summary.monthly_breakdown | map(attribute='total_amount') | max %}
+    <div class="space-y-3">
+      {% for m in summary.monthly_breakdown %}
+      {% if m.total_amount > 0 %}
+      <div>
+        <div class="flex justify-between text-sm mb-1">
+          <span class="text-stone-600 dark:text-gray-300">{{ m.month_label }}</span>
+          <span class="font-semibold text-stone-700 dark:text-gray-200 tabular-nums">
+            Rp {{ "{:,.0f}".format(m.total_amount) }}
+            <span class="text-xs text-stone-400 dark:text-gray-500">({{ m.transaction_count }} tx)</span>
+          </span>
+        </div>
+        <div class="month-bar" style="width: {{ (m.total_amount / max_monthly * 100)|round|int if max_monthly > 0 else 0 }}%;"></div>
+      </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Export Button -->
+  <div class="flex justify-end gap-3">
+    <button @click="exportCSV()"
+            class="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-stone-200 dark:border-gray-700 rounded-xl text-sm font-medium text-stone-600 dark:text-gray-300 hover:bg-stone-50 dark:hover:bg-gray-700 transition">
+      <i class="fas fa-download text-emerald-500"></i> Export CSV
+    </button>
+  </div>
+
+  {% endif %}
+
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('alpine:init', () => {
+  Alpine.data('annualSummaryPage', (initialYear) => ({
+    year: initialYear,
+
+    prevYear() {
+      this.year--;
+      window.location.href = `/annual-summary?year=${this.year}`;
+    },
+
+    nextYear() {
+      const now = new Date().getFullYear();
+      if (this.year < now) {
+        this.year++;
+        window.location.href = `/annual-summary?year=${this.year}`;
+      }
+    },
+
+    async exportCSV() {
+      try {
+        const resp = await fetch(`/api/stats/annual-summary?year=${this.year}`);
+        if (!resp.ok) throw new Error('Gagal mengambil data');
+        const data = await resp.json();
+        const summary = data.data;
+
+        // Build CSV
+        const rows = [
+          ['Ringkasan Tahunan ' + this.year],
+          [],
+          ['Total Pengeluaran', 'Rp ' + Number(summary.total_expense).toLocaleString('id-ID')],
+          ['Total Transaksi', summary.total_transactions],
+          ['Rata-rata Bulanan', 'Rp ' + Number(summary.average_monthly_spending).toLocaleString('id-ID')],
+          ['Streak', summary.streak + ' hari'],
+          ['Bulan Paling Boros', summary.biggest_spending_month ? summary.biggest_spending_month.month_label + ' (Rp ' + Number(summary.biggest_spending_month.total_amount).toLocaleString('id-ID') + ')' : '-'],
+          [],
+          ['Top Kategori'],
+          ['Kategori', 'Jumlah', 'Persentase'],
+          ...summary.top_categories.map(c => [c.category.icon + ' ' + c.category.name, 'Rp ' + Number(c.total_amount).toLocaleString('id-ID'), c.percentage + '%']),
+          [],
+          ['Breakdown Bulanan'],
+          ['Bulan', 'Total', 'Transaksi'],
+          ...summary.monthly_breakdown.filter(m => m.total_amount > 0).map(m => [m.month_label, 'Rp ' + Number(m.total_amount).toLocaleString('id-ID'), m.transaction_count]),
+        ];
+
+        const csvContent = '\ufeff' + rows.map(r => r.join(',')).join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `ringkasan_tahunan_${this.year}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+      } catch (e) {
+        alert('Gagal export: ' + e.message);
+      }
+    },
+  }));
+});
+</script>
+{% endblock %}

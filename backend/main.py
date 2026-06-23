@@ -6,7 +6,7 @@ import os
 import subprocess
 import sys
 from contextlib import asynccontextmanager
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -73,6 +73,8 @@ app.add_middleware(LoggingMiddleware)
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 # Add flash messages support (dummy — implement session-based later)
 templates.env.globals["get_flashed_messages"] = lambda with_categories=False: []
+# Add `now` function for templates
+templates.env.globals["now"] = lambda: datetime.now(timezone(timedelta(hours=7)))
 
 # Custom Jinja2 filters (Indonesian locale)
 def _format_date_id(value, fmt="%d %B %Y"):
