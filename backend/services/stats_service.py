@@ -1229,7 +1229,6 @@ async def get_cash_flow_forecast(
     current_month_end = _end_of_month(today.year, today.month)
     days_in_month = (current_month_end - current_month_start).days + 1
     days_remaining = (current_month_end - today).days
-    days_elapsed = (today - current_month_start).days + 1
 
     # --- 1. Get current month spending so far ---
     result = await db.execute(
@@ -1307,13 +1306,12 @@ async def get_cash_flow_forecast(
         )
         for row in result.all():
             cat_id = row.id
-            daily = row.total / days_in_that_month if days_in_that_month > 0 else 0
             if cat_id not in category_daily:
                 category_daily[cat_id] = {"name": row.name, "icon": row.icon, "color": row.color, "totals": []}
             category_daily[cat_id]["totals"].append({"total": row.total, "weight": m_data["weight"]})
 
     # Weighted per-category daily
-    for cat_id, cat_data in category_daily.items():
+    for _cat_id, cat_data in category_daily.items():
         weighted = sum(t["total"] / 30 * t["weight"] for t in cat_data["totals"])  # approximate
         cat_data["weighted_daily"] = weighted
 
@@ -1346,7 +1344,6 @@ async def get_cash_flow_forecast(
 
     for day_offset in range(days_remaining + 1):
         forecast_date = today + timedelta(days=day_offset)
-        day_of_month = forecast_date.day
 
         # Base prediction: weighted average daily spending
         base_prediction = weighted_daily
@@ -1399,8 +1396,8 @@ async def get_cash_flow_forecast(
 
     # --- 8. Confidence score ---
     # Confidence is higher if we have more historical data and recurring transactions
-    months_with_data = sum(1 for m in months_data if m["total"] > 0)
-    confidence = min(1.0, (months_with_data * 0.25) + (len(recurring_transactions) * 0.15) + 0.1)
+    _months_with_data = sum(1 for m in months_data if m["total"] > 0)
+    confidence = min(1.0, (_months_with_data * 0.25) + (len(recurring_transactions) * 0.15) + 0.1)
 
     return {
         "current_balance": -current_month_spent,  # negative = spent
