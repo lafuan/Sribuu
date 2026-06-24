@@ -161,6 +161,22 @@ MINIMAL_CONTEXT = {
             "has_previous_year_data": False,
         },
     },
+    # Cash flow forecast context
+    "forecast": {
+        "current_balance": 0,
+        "current_balance_formatted": "Rp 0",
+        "end_of_month_balance": 0,
+        "end_of_month_balance_formatted": "Rp 0",
+        "total_predicted_expense": 0,
+        "total_predicted_expense_formatted": "Rp 0",
+        "daily_forecast": [],
+        "forecast_end_date": "2026-06-30",
+        "warning": None,
+        "safe_balance": None,
+        "confidence": 0.1,
+        "recurring_transactions": [],
+        "monthly_avg_based_on": [],
+    },
 }
 
 
@@ -208,6 +224,7 @@ class TestTemplateExtendsBase:
                 "stats/partials/spending_pace.html",
                 "stats/partials/weekly_summary.html",
                 "stats/partials/period_comparison.html",
+                "stats/partials/cash_flow_forecast.html",
                 "transactions/partials/transaction_list.html",
                 "transactions/partials/transaction_row.html",
                 "transactions/partials/manage_templates_modal.html",
@@ -231,6 +248,7 @@ class TestTemplateExtendsBase:
                 "stats/partials/spending_pace.html",
                 "stats/partials/weekly_summary.html",
                 "stats/partials/period_comparison.html",
+                "stats/partials/cash_flow_forecast.html",
                 "transactions/partials/transaction_list.html",
                 "transactions/partials/transaction_row.html",
                 "transactions/partials/manage_templates_modal.html",

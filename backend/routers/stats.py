@@ -14,6 +14,7 @@ from ..services.auth_service import get_current_user
 from ..services.stats_service import (
     annual_summary_stats,
     generate_weekly_summary,
+    get_cash_flow_forecast,
     get_daily_trend,
     get_dashboard,
     get_monthly_comparison,
@@ -208,6 +209,37 @@ async def annual_summary(
             request,
             "stats/partials/annual_summary.html",
             {"summary": result},
+        )
+
+    return StandardResponse(
+        status="success",
+        data=result,
+    ).model_dump()
+
+
+@router.get("/cash-flow-forecast")
+async def cash_flow_forecast(
+    request: Request,
+    safe_balance: int | None = Query(None, description="Safe balance threshold (Rupiah) untuk warning"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Cash Flow Forecast — Prediksi saldo & pengeluaran mendatang.
+
+    Proyeksi harian sisa saldo sampai akhir bulan berdasarkan:
+    - Weighted average last 3 months daily spending
+    - Recurring transactions yang terdeteksi
+    - Warning jika forecast menunjukkan saldo akan minus
+    """
+    result = await get_cash_flow_forecast(db, current_user.id, safe_balance=safe_balance)
+
+    # HTMX: return HTML fragment
+    if request.headers.get("HX-Request") == "true":
+        from ..main import templates
+        return templates.TemplateResponse(
+            request,
+            "stats/partials/cash_flow_forecast.html",
+            {"forecast": result},
         )
 
     return StandardResponse(
