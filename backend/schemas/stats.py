@@ -118,3 +118,35 @@ class MonthlyComparisonResponse(BaseModel):
     """Response untuk perbandingan multi-bulan."""
     months: list[MonthlyComparisonItem]
     max_amount: int
+
+
+class ForecastDay(BaseModel):
+    """Data forecast per hari."""
+    date: str
+    date_formatted: str
+    day_name: str
+    predicted_expense: int
+    predicted_expense_formatted: str
+    cumulative_expense: int
+    cumulative_expense_formatted: str
+    predicted_balance: int
+    predicted_balance_formatted: str
+    is_recurring: bool = False
+    recurring_note: str | None = None
+
+
+class CashFlowForecastResponse(BaseModel):
+    """Response untuk Cash Flow Forecast."""
+    current_balance: int
+    current_balance_formatted: str
+    end_of_month_balance: int
+    end_of_month_balance_formatted: str
+    total_predicted_expense: int
+    total_predicted_expense_formatted: str
+    daily_forecast: list[ForecastDay]
+    forecast_end_date: str
+    warning: str | None = None
+    safe_balance: int | None = None
+    confidence: float  # 0.0 - 1.0
+    recurring_transactions: list[dict]
+    monthly_avg_based_on: list[dict]  # [{month, total, label}]
