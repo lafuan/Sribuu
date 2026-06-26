@@ -112,21 +112,21 @@
     </div>
     {% endfor %}
     {% else %}
-    <!-- Empty state with copy-from-previous banner -->
+    <!-- Empty state with integrated add actions -->
     <div class="card text-center py-8">
       <div class="w-16 h-16 bg-stone-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-3">
         <i class="fas fa-coins text-stone-300 dark:text-gray-600 text-2xl"></i>
       </div>
-      <p class="text-sm text-stone-400 dark:text-gray-500">Belum ada anggaran bulan ini</p>
-      <div class="mt-4 flex flex-col sm:flex-row gap-2 justify-center">
+      <p class="text-sm text-stone-400 dark:text-gray-500 mb-4">Belum ada anggaran bulan ini</p>
+      <div class="flex flex-col sm:flex-row gap-2 justify-center">
         <button onclick="openBudgetModal()"
-                class="btn btn-primary flex items-center justify-center gap-2 text-sm">
-          <i class="fas fa-plus"></i> Tambah Manual
+                class="btn-primary flex items-center justify-center gap-2 text-sm px-6">
+          <i class="fas fa-plus"></i> Tambah Budget
         </button>
         <button hx-get="/api/budgets/copy-from-previous?month={{ current_month }}&year={{ current_year }}"
                 hx-target="#copyBudgetModalWrapper"
                 hx-swap="innerHTML"
-                class="btn flex items-center justify-center gap-2 text-sm bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50">
+                class="btn flex items-center justify-center gap-2 text-sm px-4 bg-stone-100 dark:bg-gray-800 border border-stone-200 dark:border-gray-700 text-stone-600 dark:text-gray-300 hover:bg-stone-200 dark:hover:bg-gray-700">
           <i class="fas fa-copy"></i> Salin dari Bulan Lalu
         </button>
       </div>

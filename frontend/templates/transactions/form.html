@@ -89,6 +89,18 @@
     .payment-label:hover { background: #f5f5f4; }
     .dark .payment-label:hover { background: #44403c; }
 </style>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var textarea = document.querySelector('textarea[name=notes]');
+    var preview = document.getElementById('notes-preview');
+    if (textarea && preview) {
+        textarea.addEventListener('input', function() {
+            preview.innerHTML = this.value.replace(/#(\w+)/g,
+              '<span style="color:#059669;font-weight:600">#$1</span>');
+        });
+    }
+});
+</script>
 {% endblock %}
 
 {% block body %}
@@ -156,14 +168,7 @@
         <label>Catatan <span class="text-stone-300 dark:text-gray-500 font-normal text-xs">(opsional)</span>
           <span class="text-xs text-emerald-500 ml-2">💡 Gunakan #tag untuk label</span>
         </label>
-        <textarea name="notes" rows="2" placeholder="Misal: beli nasi padang + es teh #makan #kerja"
-                  x-data
-                  x-init="$el.addEventListener('input', function() {
-                    const preview = document.getElementById('notes-preview');
-                    if (!preview) return;
-                    preview.innerHTML = this.value.replace(/#(\w+)/g,
-                      '<span class=\"text-emerald-600 font-semibold\">#$1</span>');
-                  })">{{ form_data.notes if form_data else '' }}</textarea>
+        <textarea name="notes" rows="2" placeholder="Misal: beli nasi padang + es teh #makan #kerja">{{ form_data.notes if form_data else '' }}</textarea>
         <p id="notes-preview" class="text-xs text-stone-400 dark:text-gray-500 mt-1 min-h-[1rem]"></p>
       </div>
 
