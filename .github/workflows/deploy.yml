@@ -39,6 +39,14 @@ jobs:
             sudo docker stop sribuu 2>/dev/null || true
             sudo docker rm sribuu 2>/dev/null || true
 
+            echo "=== Pulling latest code ==="
+            cd /home/ubuntu/Sribuu
+            git pull origin main
+
+            echo "=== Building assets ==="
+            npm install
+            npm run build:css
+
             echo "=== Waiting 15s for old container to fully terminate ==="
             sleep 15
 
