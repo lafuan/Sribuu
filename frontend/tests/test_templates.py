@@ -229,7 +229,9 @@ class TestTemplateExtendsBase:
                 "transactions/partials/transaction_row.html",
                 "transactions/partials/manage_templates_modal.html",
                 "transactions/partials/template_buttons.html",
-                "transactions/partials/template_manage_list.html"}
+                "transactions/partials/template_manage_list.html",
+                "bills/partials/list_items.html",
+                "bills/partials/upcoming.html"}
 
         for tpl in ALL_TEMPLATES:
             if tpl in skip:
@@ -253,7 +255,9 @@ class TestTemplateExtendsBase:
                 "transactions/partials/transaction_row.html",
                 "transactions/partials/manage_templates_modal.html",
                 "transactions/partials/template_buttons.html",
-                "transactions/partials/template_manage_list.html"}
+                "transactions/partials/template_manage_list.html",
+                "bills/partials/list_items.html",
+                "bills/partials/upcoming.html"}
 
         for tpl in ALL_TEMPLATES:
             if tpl in skip:
