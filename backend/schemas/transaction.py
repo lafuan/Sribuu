@@ -97,3 +97,40 @@ class TransactionListResponse(BaseModel):
     transactions: list[TransactionResponse]
     pagination: PaginationInfo
     summary: TransactionSummary
+
+
+class SplitItem(BaseModel):
+    """Satu item dalam split transaksi."""
+    category_id: int = Field(..., gt=0)
+    amount: int = Field(..., gt=0, description="Jumlah dalam Rupiah")
+    notes: str | None = Field(None, max_length=200)
+
+    @model_validator(mode="after")
+    def validate_amount_positive(self):
+        if self.amount <= 0:
+            raise ValueError("Jumlah harus > 0")
+        return self
+
+
+class SplitRequest(BaseModel):
+    """Request untuk split transaksi."""
+    items: list[SplitItem] = Field(..., min_length=2, max_length=10)
+
+    @model_validator(mode="after")
+    def validate_items_unique_category(self):
+        cat_ids = [item.category_id for item in self.items]
+        if len(cat_ids) != len(set(cat_ids)):
+            raise ValueError("Kategori split tidak boleh duplikat")
+        return self
+
+
+class SplitResponse(BaseModel):
+    """Response untuk split transaction item."""
+    id: int
+    category: CategoryBrief
+    amount: int
+    amount_formatted: str
+    notes: str | None = None
+
+    class Config:
+        from_attributes = True
