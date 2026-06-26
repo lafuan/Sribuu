@@ -6,6 +6,7 @@ __pycache__/
 venv/
 *.egg-info/
 dist/
+!frontend/static/dist/output.css
 build/
 .hermes/
 .DS_Store
