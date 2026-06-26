@@ -45,7 +45,7 @@ jobs:
 
             echo "=== Building assets ==="
             npm install
-            npm run build:css
+            /tmp/tailwindcss -i ./frontend/static/src/input.css -o ./frontend/static/dist/output.css --minify
 
             echo "=== Waiting 15s for old container to fully terminate ==="
             sleep 15
