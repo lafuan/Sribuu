@@ -90,6 +90,7 @@ class Transaction(Base):
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     category_id = Column(Integer, ForeignKey("categories.id", ondelete="RESTRICT"), nullable=False)
     payment_method_id = Column(Integer, ForeignKey("payment_methods.id", ondelete="SET NULL"), nullable=True)
+    parent_transaction_id = Column(Integer, ForeignKey("transactions.id", ondelete="CASCADE"), nullable=True)
     amount = Column(Integer, nullable=False)  # dalam Rupiah (integer)
     notes = Column(Text, nullable=True)
     attachment_path = Column(String(255), nullable=True)
@@ -100,6 +101,7 @@ class Transaction(Base):
     user = relationship("User", back_populates="transactions")
     category = relationship("Category", back_populates="transactions")
     payment_method = relationship("PaymentMethod", back_populates="transactions")
+    parent = relationship("Transaction", remote_side=[id], backref="children")
 
 
 class TransactionTemplate(Base):

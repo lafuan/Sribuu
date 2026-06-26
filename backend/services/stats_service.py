@@ -49,6 +49,7 @@ async def get_dashboard(
         ).where(
             Transaction.user_id == user_id,
             Transaction.transaction_date == today,
+            Transaction.parent_transaction_id.is_(None),
         )
     )
     today_amount, today_count = result.one()
@@ -62,6 +63,7 @@ async def get_dashboard(
             Transaction.user_id == user_id,
             Transaction.transaction_date >= month_start,
             Transaction.transaction_date <= today,
+            Transaction.parent_transaction_id.is_(None),
         )
     )
     month_amount, month_count = result.one()
@@ -81,6 +83,7 @@ async def get_dashboard(
             Transaction.user_id == user_id,
             Transaction.transaction_date >= month_start,
             Transaction.transaction_date <= today,
+            Transaction.parent_transaction_id.is_(None),
         )
         .group_by(Category.id)
         .order_by(func.sum(Transaction.amount).desc())
@@ -107,7 +110,7 @@ async def get_dashboard(
     result = await db.execute(
         select(Transaction)
         .options(joinedload(Transaction.category), joinedload(Transaction.payment_method))
-        .where(Transaction.user_id == user_id)
+        .where(Transaction.user_id == user_id, Transaction.parent_transaction_id.is_(None))
         .order_by(Transaction.transaction_date.desc(), Transaction.id.desc())
         .limit(5)
     )

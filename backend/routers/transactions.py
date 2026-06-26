@@ -12,11 +12,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ..database import get_db
 from ..models import User
 from ..schemas.auth import StandardResponse
-from ..schemas.transaction import TransactionCreate, TransactionUpdate
+from ..schemas.transaction import SplitRequest, TransactionCreate, TransactionUpdate
 from ..services.auth_service import get_current_user
 from ..services.transaction_service import (
+    create_split,
     create_transaction,
+    delete_split,
     delete_transaction,
+    get_split_children,
     get_transaction_by_id,
     get_transaction_detail,
     list_transactions,
@@ -322,3 +325,58 @@ def _delete_attachment_file(attachment_path: str) -> None:
             file_path.unlink()
     except OSError:
         pass  # Ignore errors during file deletion (file may already be gone)
+
+
+# ─── Split Transaction ────────────────────────────────────────────────
+
+
+@router.post("/{tx_id}/split", status_code=201)
+async def split_tx(
+    tx_id: int,
+    data: SplitRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Split transaksi menjadi beberapa sub-transaksi per kategori."""
+    result = await create_split(db, tx_id, current_user.id, data)
+    await db.commit()
+
+    return StandardResponse(
+        status="success",
+        data=result,
+        message=f"Transaksi di-split menjadi {len(data.items)} bagian",
+    ).model_dump()
+
+
+@router.get("/{tx_id}/split")
+async def get_split(
+    tx_id: int,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Dapatkan daftar split children dari transaksi."""
+    children = await get_split_children(db, tx_id, current_user.id)
+
+    return StandardResponse(
+        status="success",
+        data={"parent_id": tx_id, "children": children},
+    ).model_dump()
+
+
+@router.delete("/{tx_id}/split")
+async def delete_split_endpoint(
+    tx_id: int,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Hapus semua split children (kembalikan ke transaksi normal)."""
+    await delete_split(db, tx_id, current_user.id)
+    await db.commit()
+
+    return StandardResponse(
+        status="success",
+        message="Split berhasil dihapus",
+    ).model_dump()
