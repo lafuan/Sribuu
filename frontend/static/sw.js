@@ -1,5 +1,5 @@
 // Sribuu PWA Service Worker v1.1 — with Notification Support
-const CACHE_NAME = 'sribuu-v1';
+const CACHE_NAME = 'sribuu-v2';
 
 // Assets to cache immediately on install
 const PRECACHE_ASSETS = [
