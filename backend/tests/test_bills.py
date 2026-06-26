@@ -195,3 +195,56 @@ class TestBillCRUD:
             b = await db.get(Bill, bill["id"])
             await db.delete(b)
             await db.commit()
+
+    async def test_list_bills_filter_paid(self, test_user):
+        async with AsyncSessionLocal() as db:
+            # Create unpaid bill
+            data = BillCreate(
+                name="Filter Test",
+                amount=100000,
+                due_date=date(2026, 8, 1),
+                frequency="monthly",
+                category_id=4,
+            )
+            bill = await create_bill(db, test_user.id, data)
+            await db.commit()
+
+            # Filter unpaid
+            unpaid = await list_bills(db, test_user.id, is_paid=False)
+            assert len(unpaid) > 0
+
+            # Filter paid (should be empty)
+            paid = await list_bills(db, test_user.id, is_paid=True)
+            assert len(paid) == 0
+
+            # Cleanup
+            b = await db.get(Bill, bill["id"])
+            await db.delete(b)
+            await db.commit()
+
+    async def test_get_upcoming_bills_empty(self, test_user):
+        async with AsyncSessionLocal() as db:
+            # With no unpaid bills, should return empty
+            upcoming = await get_upcoming_bills(db, test_user.id)
+            assert len(upcoming) == 0
+
+    async def test_unmark_not_paid_fails(self, test_user):
+        async with AsyncSessionLocal() as db:
+            data = BillCreate(
+                name="Unpaid Bill",
+                amount=50000,
+                due_date=date(2026, 8, 15),
+                frequency="monthly",
+                category_id=4,
+            )
+            bill = await create_bill(db, test_user.id, data)
+            await db.commit()
+
+            from fastapi import HTTPException
+            with pytest.raises(HTTPException):
+                await unmark_paid(db, bill["id"], test_user.id)
+
+            # Cleanup
+            b = await db.get(Bill, bill["id"])
+            await db.delete(b)
+            await db.commit()
