@@ -876,6 +876,35 @@ async def budgets_page(
         await db.close()
 
 
+@router.get("/bills", name="bills_page")
+async def bills_page(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+):
+    """Halaman manajemen tagihan rutin."""
+    from ..database import get_db_session
+    from ..services.bill_service import list_bills
+    from ..services.category_service import list_categories
+
+    db = get_db_session()
+    try:
+        bills = await list_bills(db, current_user.id)
+        categories = await list_categories(db, current_user.id)
+
+        templates = _get_templates()
+        return templates.TemplateResponse(
+            request,
+            "bills/list.html",
+            {
+                "current_user": current_user,
+                "bills": bills,
+                "categories": categories,
+            },
+        )
+    finally:
+        await db.close()
+
+
 @router.get("/settings", name="settings")
 async def settings_page(
     request: Request,
