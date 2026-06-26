@@ -55,12 +55,6 @@
 
   <!-- Actions (Edit / Delete) -->
   <div class="sm:col-span-1 flex gap-1 sm:justify-center">
-    <!-- Split Indicator -->
-    {% if tx.split_count and tx.split_count > 0 %}
-    <span class="text-amber-500 dark:text-amber-400 p-1" title="Di-split menjadi {{ tx.split_count }} bagian">
-      <i class="fas fa-code-branch text-xs"></i>
-    </span>
-    {% endif %}
     <!-- Attachment Thumbnail -->
     {% if tx.attachment_url %}
     <button

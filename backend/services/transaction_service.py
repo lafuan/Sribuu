@@ -60,7 +60,6 @@ def _build_transaction_response(tx, cat, pm) -> TransactionResponse:
             id=pm.id, name=pm.name, icon=pm.icon
         ) if pm else None,
         attachment_url=attachment_url,
-        split_count=len(tx.children) if tx.children else 0,
         created_at=format_datetime_id(tx.created_at),
         updated_at=format_datetime_id(tx.updated_at),
     )
@@ -289,11 +288,7 @@ async def list_transactions(
     # Query data dengan join
     query = (
         select(Transaction)
-        .options(
-            joinedload(Transaction.category),
-            joinedload(Transaction.payment_method),
-            joinedload(Transaction.children),  # type: ignore[attr-defined]
-        )
+        .options(joinedload(Transaction.category), joinedload(Transaction.payment_method))
         .where(where_clause)
         .order_by(Transaction.transaction_date.desc(), Transaction.id.desc())
         .offset(offset)

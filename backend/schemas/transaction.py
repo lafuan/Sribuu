@@ -68,7 +68,6 @@ class TransactionResponse(BaseModel):
     category: CategoryBrief | None = None
     payment_method: PaymentMethodBrief | None = None
     attachment_url: str | None = Field(None, description="URL ke lampiran transaksi")
-    split_count: int = Field(0, description="Jumlah split children (0 jika tidak di-split)")
     created_at: str | None = None
     updated_at: str | None = None
 
