@@ -51,6 +51,7 @@ def get_db_session() -> AsyncSession:
 async def init_db():
     """Inisialisasi database: buat tabel + seed data."""
     from .models import (  # noqa: F401, PLC0415
+        Bill,
         Budget,
         Category,
         PaymentMethod,

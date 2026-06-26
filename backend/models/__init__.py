@@ -169,3 +169,28 @@ class Budget(Base):
 
     user = relationship("User", back_populates="budgets")
     category = relationship("Category", back_populates="budgets")
+
+
+class Bill(Base):
+    """Tagihan rutin (listrik, air, internet, dsb)."""
+    __tablename__ = "bills"
+    __table_args__ = (
+        Index("idx_bills_user_due", "user_id", "due_date"),
+        Index("idx_bills_user_paid", "user_id", "is_paid"),
+    )
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    category_id = Column(Integer, ForeignKey("categories.id", ondelete="RESTRICT"), nullable=False)
+    name = Column(String(100), nullable=False)
+    amount = Column(Integer, nullable=False)
+    due_date = Column(Date, nullable=False)
+    frequency = Column(String(10), nullable=False, default="monthly")
+    is_paid = Column(Integer, nullable=False, default=0)
+    paid_transaction_id = Column(Integer, ForeignKey("transactions.id", ondelete="SET NULL"), nullable=True)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = relationship("User", backref="bills")
+    category = relationship("Category")
+    paid_transaction = relationship("Transaction", foreign_keys=[paid_transaction_id])
