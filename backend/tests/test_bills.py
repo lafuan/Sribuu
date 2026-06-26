@@ -2,8 +2,9 @@
 Tests untuk Bill Service.
 """
 
-import pytest
 from datetime import date
+
+import pytest
 
 from backend.database import AsyncSessionLocal
 from backend.models import Bill, User
@@ -91,7 +92,7 @@ class TestBillCRUD:
             bill = await create_bill(db, test_user.id, data)
             await db.commit()
 
-            update_data = BillUpdate(name="Air PDAM", amount=120000)
+            update_data = BillUpdate(name="Air PDAM", amount=120000, due_date=None, frequency=None, category_id=None)
             updated = await update_bill(db, bill["id"], test_user.id, update_data)
             await db.commit()
             assert updated["name"] == "Air PDAM"
@@ -186,7 +187,8 @@ class TestBillCRUD:
             await mark_as_paid(db, bill["id"], test_user.id, payment_method_id=1)
             await db.commit()
 
-            with pytest.raises(Exception):
+            from fastapi import HTTPException
+            with pytest.raises(HTTPException):
                 await mark_as_paid(db, bill["id"], test_user.id, payment_method_id=1)
 
             # Cleanup
