@@ -292,7 +292,7 @@ async def list_transactions(
         .options(
             joinedload(Transaction.category),
             joinedload(Transaction.payment_method),
-            joinedload(Transaction.children),
+            joinedload(Transaction.children),  # type: ignore[attr-defined]
         )
         .where(where_clause)
         .order_by(Transaction.transaction_date.desc(), Transaction.id.desc())
