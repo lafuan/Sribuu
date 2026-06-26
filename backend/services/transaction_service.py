@@ -15,6 +15,8 @@ from ..schemas.transaction import (
     CategoryBrief,
     PaginationInfo,
     PaymentMethodBrief,
+    SplitRequest,
+    SplitResponse,
     TransactionCreate,
     TransactionListResponse,
     TransactionResponse,
@@ -58,6 +60,7 @@ def _build_transaction_response(tx, cat, pm) -> TransactionResponse:
             id=pm.id, name=pm.name, icon=pm.icon
         ) if pm else None,
         attachment_url=attachment_url,
+        split_count=len(tx.children) if tx.children else 0,
         created_at=format_datetime_id(tx.created_at),
         updated_at=format_datetime_id(tx.updated_at),
     )
@@ -253,7 +256,7 @@ async def list_transactions(
         per_page = 25
 
     # Bangun base query
-    conditions = [Transaction.user_id == user_id]
+    conditions = [Transaction.user_id == user_id, Transaction.parent_transaction_id.is_(None)]
 
     if date_from:
         conditions.append(Transaction.transaction_date >= date_from)
@@ -286,7 +289,11 @@ async def list_transactions(
     # Query data dengan join
     query = (
         select(Transaction)
-        .options(joinedload(Transaction.category), joinedload(Transaction.payment_method))
+        .options(
+            joinedload(Transaction.category),
+            joinedload(Transaction.payment_method),
+            joinedload(Transaction.children),
+        )
         .where(where_clause)
         .order_by(Transaction.transaction_date.desc(), Transaction.id.desc())
         .offset(offset)
@@ -333,7 +340,7 @@ async def get_transactions_for_export(
     tag: str | None = None,
 ) -> list[Transaction]:
     """Dapatkan semua transaksi (tanpa pagination) untuk export."""
-    conditions = [Transaction.user_id == user_id]
+    conditions = [Transaction.user_id == user_id, Transaction.parent_transaction_id.is_(None)]
 
     if date_from:
         conditions.append(Transaction.transaction_date >= date_from)
@@ -358,3 +365,134 @@ async def get_transactions_for_export(
     )
     result = await db.execute(query)
     return list(result.unique().scalars().all())
+
+
+async def create_split(
+    db: AsyncSession, tx_id: int, user_id: int, data: SplitRequest,
+) -> dict:
+    """Split transaksi menjadi beberapa sub-transaksi per kategori."""
+    tx = await get_transaction_by_id(db, tx_id, user_id)
+
+    # Already split?
+    result = await db.execute(
+        select(Transaction).where(Transaction.parent_transaction_id == tx_id)
+    )
+    if result.first():
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={
+                "status": "error",
+                "message": "Transaksi sudah di-split. Hapus split dulu.",
+            },
+        )
+
+    # Validate total
+    total_split = sum(item.amount for item in data.items)
+    if total_split != tx.amount:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={
+                "status": "error",
+                "message": f"Total split (Rp {total_split:,.0f}) harus sama dengan jumlah transaksi (Rp {tx.amount:,.0f})",
+            },
+        )
+
+    # Validate all categories exist and are active
+    for item in data.items:
+        result = await db.execute(
+            select(Category).where(
+                Category.id == item.category_id,
+                Category.is_active == 1,
+                or_(Category.user_id == user_id, Category.user_id.is_(None)),
+            )
+        )
+        if not result.scalar_one_or_none():
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail={
+                    "status": "error",
+                    "message": f"Kategori ID {item.category_id} tidak ditemukan",
+                },
+            )
+
+    # Create child transactions
+    children = []
+    for item in data.items:
+        child = Transaction(
+            user_id=user_id,
+            category_id=item.category_id,
+            payment_method_id=tx.payment_method_id,
+            amount=item.amount,
+            notes=item.notes,
+            transaction_date=tx.transaction_date,
+            parent_transaction_id=tx_id,
+        )
+        db.add(child)
+        children.append(child)
+
+    await db.flush()
+
+    # Build response
+    children_resp = []
+    for child in children:
+        cat_result = await db.execute(
+            select(Category).where(Category.id == child.category_id)
+        )
+        cat = cat_result.scalar_one()
+        children_resp.append(SplitResponse(
+            id=child.id,
+            category=CategoryBrief(id=cat.id, name=cat.name, icon=cat.icon),
+            amount=child.amount,
+            amount_formatted=format_rupiah(child.amount),
+            notes=child.notes,
+        ).model_dump())
+
+    return {
+        "parent_id": tx_id,
+        "parent_amount": tx.amount,
+        "parent_amount_formatted": format_rupiah(tx.amount),
+        "children": children_resp,
+    }
+
+
+async def get_split_children(
+    db: AsyncSession, tx_id: int, user_id: int,
+) -> list[dict]:
+    """Dapatkan semua child transaction dari split."""
+    await get_transaction_by_id(db, tx_id, user_id)
+
+    result = await db.execute(
+        select(Transaction)
+        .options(joinedload(Transaction.category))
+        .where(Transaction.parent_transaction_id == tx_id)
+        .order_by(Transaction.id)
+    )
+    children = result.unique().scalars().all()
+
+    return [
+        SplitResponse(
+            id=child.id,
+            category=CategoryBrief(
+                id=child.category.id, name=child.category.name, icon=child.category.icon,
+            ),
+            amount=child.amount,
+            amount_formatted=format_rupiah(child.amount),
+            notes=child.notes,
+        ).model_dump()
+        for child in children
+    ]
+
+
+async def delete_split(
+    db: AsyncSession, tx_id: int, user_id: int,
+) -> None:
+    """Hapus semua split children dari transaksi."""
+    await get_transaction_by_id(db, tx_id, user_id)
+
+    result = await db.execute(
+        select(Transaction).where(Transaction.parent_transaction_id == tx_id)
+    )
+    children = result.scalars().all()
+    for child in children:
+        await db.delete(child)
+    await db.flush()
