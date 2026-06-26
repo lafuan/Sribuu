@@ -1,0 +1,29 @@
+{
+  "name": "sribuu",
+  "version": "1.0.0",
+  "description": "[![CI](https://github.com/lafuan/Sribuu/actions/workflows/ci.yml/badge.svg)](https://github.com/lafuan/Sribuu/actions/workflows/ci.yml) [![Coverage](https://codecov.io/gh/lafuan/Sribuu/branch/main/graph/badge.svg)](https://codecov.io/gh/lafuan/Sribuu) [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "build:css": "tailwindcss -i ./frontend/static/src/input.css -o ./frontend/static/dist/output.css --minify",
+    "watch:css": "npx tailwindcss -i ./frontend/static/src/input.css -o ./frontend/static/dist/output.css --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lafuan/Sribuu.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/lafuan/Sribuu/issues"
+  },
+  "homepage": "https://github.com/lafuan/Sribuu#readme",
+  "devDependencies": {
+    "autoprefixer": "^10.5.2",
+    "postcss": "^8.5.15",
+    "tailwindcss": "^4.3.1"
+  }
+}
