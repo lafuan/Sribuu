@@ -105,9 +105,13 @@
       <i class="fas fa-chart-pie text-lg"></i>
       <span class="text-[10px]">Statistik</span>
     </a>
+    <a href="{{ url_for('annual_summary') }}" class="flex flex-col items-center {% if '/annual-summary' in request.url.path %}text-emerald-600 dark:text-emerald-400{% else %}text-stone-400 dark:text-gray-500{% endif %}">
+      <i class="fas fa-calendar-check text-lg"></i>
+      <span class="text-[10px]">Tahunan</span>
+    </a>
     <a href="{{ url_for('settings') }}" class="flex flex-col items-center {% if '/settings' in request.url.path %}text-emerald-600 dark:text-emerald-400{% else %}text-stone-400 dark:text-gray-500{% endif %}">
       <i class="fas fa-cog text-lg"></i>
-      <span class="text-[10px]">Atur</span>
+      <span class="text-[10px]">Pengaturan</span>
     </a>
   </div>
 </nav>
