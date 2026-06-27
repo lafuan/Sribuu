@@ -2,8 +2,6 @@
 Pydantic schemas untuk modul Subscription (deteksi transaksi berulang).
 """
 
-from datetime import date, datetime
-
 from pydantic import BaseModel, Field
 
 

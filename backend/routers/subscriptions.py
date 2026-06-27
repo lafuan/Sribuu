@@ -2,7 +2,7 @@
 Router untuk modul Subscription: deteksi & manajemen transaksi berulang.
 """
 
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta, timezone
 
 from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -147,7 +147,7 @@ async def update_subscription_api(
     body = await request.json() if request.headers.get("Content-Type", "").startswith("application/json") else {}
     if request.headers.get("HX-Request") == "true" and not body:
         form = await request.form()
-        update_data = {}
+        update_data: dict[str, int | str | None] = {}
         if form.get("name"):
             update_data["name"] = str(form["name"])
         if form.get("amount"):
@@ -156,7 +156,7 @@ async def update_subscription_api(
             update_data["frequency"] = str(form["frequency"])
         if form.get("category_id"):
             update_data["category_id"] = int(str(form["category_id"]))
-        data = SubscriptionUpdate(**update_data)
+        data = SubscriptionUpdate(**update_data)  # type: ignore[arg-type]
     else:
         data = SubscriptionUpdate(**body)
 

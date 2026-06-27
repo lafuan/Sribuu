@@ -2,14 +2,14 @@
 Service layer untuk Subscription: deteksi transaksi berulang + CRUD.
 """
 
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, timedelta, timezone
 
 from fastapi import HTTPException, status
-from sqlalchemy import and_, func, select, text
+from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
-from ..models import Category, Subscription, Transaction
+from ..models import Category, Subscription
 from ..schemas.subscription import SubscriptionCreate, SubscriptionUpdate
 from ..utils.formatting import format_rupiah
 
