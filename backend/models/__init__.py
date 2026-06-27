@@ -194,3 +194,28 @@ class Bill(Base):
     user = relationship("User", backref="bills")
     category = relationship("Category")
     paid_transaction = relationship("Transaction", foreign_keys=[paid_transaction_id])
+
+
+class Subscription(Base):
+    """Subscription/layanan berulang yang terdeteksi otomatis dari transaksi."""
+    __tablename__ = "subscriptions"
+    __table_args__ = (
+        Index("idx_subscriptions_user_active", "user_id", "is_active"),
+        Index("idx_subscriptions_user_category", "user_id", "category_id"),
+    )
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    category_id = Column(Integer, ForeignKey("categories.id", ondelete="RESTRICT"), nullable=False)
+    name = Column(String(100), nullable=False)
+    amount = Column(Integer, nullable=False)
+    frequency = Column(String(10), nullable=False, default="monthly")
+    is_active = Column(Integer, nullable=False, default=1)
+    occurrence_count = Column(Integer, nullable=False, default=1)
+    last_detected_date = Column(Date, nullable=True)
+    first_detected_date = Column(Date, nullable=True)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = relationship("User", backref="subscriptions")
+    category = relationship("Category")

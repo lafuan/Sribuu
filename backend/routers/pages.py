@@ -905,6 +905,37 @@ async def bills_page(
         await db.close()
 
 
+@router.get("/subscriptions", name="subscriptions_page")
+async def subscriptions_page(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+):
+    """Halaman manajemen subscription / transaksi berulang."""
+    from ..database import get_db_session
+    from ..services.category_service import list_categories
+    from ..services.subscription_service import get_subscription_summary, list_subscriptions
+
+    db = get_db_session()
+    try:
+        subs = await list_subscriptions(db, current_user.id)
+        summary = await get_subscription_summary(db, current_user.id)
+        categories = await list_categories(db, current_user.id)
+
+        templates = _get_templates()
+        return templates.TemplateResponse(
+            request,
+            "subscriptions/list.html",
+            {
+                "current_user": current_user,
+                "subscriptions": subs,
+                "summary": summary,
+                "categories": categories,
+            },
+        )
+    finally:
+        await db.close()
+
+
 @router.get("/settings", name="settings")
 async def settings_page(
     request: Request,
