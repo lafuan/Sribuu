@@ -23,6 +23,9 @@
       <a href="{{ url_for('bills_page') }}" class="text-sm font-medium text-stone-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition {% if '/bills' in request.url.path %}text-emerald-600 dark:text-emerald-400{% endif %}">
         <i class="fas fa-bell mr-1"></i> Tagihan
       </a>
+      <a href="{{ url_for('subscriptions_page') }}" class="text-sm font-medium text-stone-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition {% if '/subscriptions' in request.url.path %}text-emerald-600 dark:text-emerald-400{% endif %}">
+        <i class="fas fa-sync-alt mr-1"></i> Subscription
+      </a>
       <a href="{{ url_for('stats') }}" class="text-sm font-medium text-stone-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition {% if '/stats' in request.url.path %}text-emerald-600 dark:text-emerald-400{% endif %}">
         <i class="fas fa-chart-pie mr-1"></i> Statistik
       </a>
@@ -100,6 +103,10 @@
     <a href="{{ url_for('bills_page') }}" class="flex flex-col items-center {% if '/bills' in request.url.path %}text-emerald-600 dark:text-emerald-400{% else %}text-stone-400 dark:text-gray-500{% endif %}">
       <i class="fas fa-bell text-lg"></i>
       <span class="text-[10px]">Tagihan</span>
+    </a>
+    <a href="{{ url_for('subscriptions_page') }}" class="flex flex-col items-center {% if '/subscriptions' in request.url.path %}text-emerald-600 dark:text-emerald-400{% else %}text-stone-400 dark:text-gray-500{% endif %}">
+      <i class="fas fa-sync-alt text-lg"></i>
+      <span class="text-[10px]">Subscription</span>
     </a>
     <a href="{{ url_for('stats') }}" class="flex flex-col items-center {% if '/stats' in request.url.path %}text-emerald-600 dark:text-emerald-400{% else %}text-stone-400 dark:text-gray-500{% endif %}">
       <i class="fas fa-chart-pie text-lg"></i>

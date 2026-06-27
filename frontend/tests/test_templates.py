@@ -97,7 +97,9 @@ MINIMAL_CONTEXT = {
                  "categories": [], "top_transactions": [],
                  "prev_week_total": 0, "prev_week_total_formatted": "Rp 0",
                  "percentage_change": 0, "generated_at": None,
-                 "monday": "2026-06-15", "sunday": "2026-06-21"},
+                 "monday": "2026-06-15", "sunday": "2026-06-21",
+                 # Subscription summary keys
+                 "total_monthly": 0, "total_monthly_formatted": "Rp 0", "active_count": 0},
     "total_amount": 0,
     "mc": {"amount": 0, "label": "Juni 2026", "count": 0},
     "diff": 0,
@@ -177,6 +179,12 @@ MINIMAL_CONTEXT = {
         "recurring_transactions": [],
         "monthly_avg_based_on": [],
     },
+    # Subscription context
+    "subscriptions": [],
+    # Bills context
+    "bills": [],
+    "upcoming_bills": [],
+    "detected_message": None,
 }
 
 
@@ -231,7 +239,8 @@ class TestTemplateExtendsBase:
                 "transactions/partials/template_buttons.html",
                 "transactions/partials/template_manage_list.html",
                 "bills/partials/list_items.html",
-                "bills/partials/upcoming.html"}
+                "bills/partials/upcoming.html",
+                "subscriptions/partials/list_items.html"}
 
         for tpl in ALL_TEMPLATES:
             if tpl in skip:
@@ -257,7 +266,8 @@ class TestTemplateExtendsBase:
                 "transactions/partials/template_buttons.html",
                 "transactions/partials/template_manage_list.html",
                 "bills/partials/list_items.html",
-                "bills/partials/upcoming.html"}
+                "bills/partials/upcoming.html",
+                "subscriptions/partials/list_items.html"}
 
         for tpl in ALL_TEMPLATES:
             if tpl in skip:
