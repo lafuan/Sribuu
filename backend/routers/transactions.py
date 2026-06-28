@@ -25,6 +25,7 @@ from ..services.transaction_service import (
     list_transactions,
     update_transaction,
 )
+from ..services.rule_service import apply_rules_to_transaction
 
 router = APIRouter(prefix="/api/transactions", tags=["Transactions"])
 
@@ -130,6 +131,15 @@ async def create_tx(
         )
 
     result = await create_transaction(db, current_user.id, data)
+
+    # Auto-apply rules: if category not explicitly set, try keyword matching
+    if result.get("category_id") == 0:
+        tx_obj = await get_transaction_by_id(db, result["id"], current_user.id)
+        matched_cat = await apply_rules_to_transaction(db, current_user.id, tx_obj)
+        if matched_cat:
+            tx_obj.category_id = matched_cat
+            result["category_id"] = matched_cat
+
     await db.commit()
 
     # HTMX request: return HTML snippet untuk feedback visual
