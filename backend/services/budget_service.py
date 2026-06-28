@@ -49,7 +49,7 @@ async def _get_budget_or_404(
 
 async def _budget_to_response(budget: Budget, spent: int = 0) -> dict:
     """Konversi Budget model + spent ke dict response."""
-    percentage = (spent / budget.amount * 100) if budget.amount > 0 else 0.0
+    percentage = (spent / (budget.amount + (budget.rollover or 0)) * 100) if (budget.amount + (budget.rollover or 0)) > 0 else 0.0
     return {
         "id": budget.id,
         "category_id": budget.category_id,
@@ -59,6 +59,8 @@ async def _budget_to_response(budget: Budget, spent: int = 0) -> dict:
         "month": budget.month,
         "year": budget.year,
         "amount": budget.amount,
+        "rollover": budget.rollover or 0,
+        "effective_budget": budget.amount + (budget.rollover or 0),
         "spent": spent,
         "percentage": round(percentage, 2),
     }
@@ -210,10 +212,14 @@ async def create_budget(
 async def update_budget_amount(
     db: AsyncSession, budget_id: int, user_id: int, data: BudgetUpdate
 ) -> dict:
-    """Update amount budget."""
+    """Update amount dan/atau rollover budget."""
     budget = await _get_budget_or_404(db, budget_id, user_id)
 
-    budget.amount = data.amount
+    if data.amount is not None:
+        budget.amount = data.amount
+    if data.rollover is not None:
+        budget.rollover = data.rollover
+
     await db.flush()
     await db.refresh(budget, ["category"])
 
@@ -244,11 +250,13 @@ async def get_budgets_summary(
 
 
 async def copy_budgets_from_previous_month(
-    db: AsyncSession, user_id: int, month: int, year: int
+    db: AsyncSession, user_id: int, month: int, year: int, rollover: bool = False
 ) -> list[dict]:
     """Ambil budgets dari bulan sebelumnya sebagai template untuk bulan baru.
 
     Menghitung bulan sebelumnya: jika month=1, maka prev_month=12, prev_year=year-1.
+
+    Jika rollover=True, sisa budget bulan lalu ditambahkan sebagai rollover.
     """
     if month == 1:
         prev_month = 12
@@ -259,9 +267,9 @@ async def copy_budgets_from_previous_month(
 
     prev_budgets = await list_budgets(db, user_id, prev_month, prev_year)
 
-    # Kembalikan tanpa id, dengan month/year yang baru
-    return [
-        {
+    result = []
+    for b in prev_budgets:
+        item = {
             "category_id": b["category_id"],
             "category_name": b["category_name"],
             "category_icon": b["category_icon"],
@@ -269,9 +277,18 @@ async def copy_budgets_from_previous_month(
             "month": month,
             "year": year,
             "amount": b["amount"],
+            "rollover": 0,
         }
-        for b in prev_budgets
-    ]
+
+        if rollover:
+            # Sisa budget = amount - spent
+            remaining = b["amount"] - b["spent"]
+            if remaining > 0:
+                item["rollover"] = remaining
+
+        result.append(item)
+
+    return result
 
 
 async def bulk_create_budgets(
@@ -317,6 +334,7 @@ async def bulk_create_budgets(
             month=item.month,
             year=item.year,
             amount=item.amount,
+            rollover=item.rollover,
         )
         db.add(budget)
         await db.flush()

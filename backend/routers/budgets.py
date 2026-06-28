@@ -168,14 +168,18 @@ async def copy_from_previous(
     request: Request,
     month: int = Query(..., ge=1, le=12),
     year: int = Query(..., ge=2000),
+    rollover: bool = Query(False, description="Tambahkan sisa budget bulan lalu sebagai rollover"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """Ambil budgets dari bulan sebelumnya sebagai template.
 
     Mengembalikan list budget yang bisa di-copy (belum tersimpan).
+    Jika rollover=True, sisa budget bulan lalu ditambahkan sebagai carry-over.
     """
-    budgets = await copy_budgets_from_previous_month(db, current_user.id, month, year)
+    budgets = await copy_budgets_from_previous_month(
+        db, current_user.id, month, year, rollover=rollover
+    )
 
     # HTMX: return modal with list of budgets to copy
     if request.headers.get("HX-Request") == "true":

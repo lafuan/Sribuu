@@ -14,8 +14,9 @@ class BudgetCreate(BaseModel):
 
 
 class BudgetUpdate(BaseModel):
-    """Request body untuk mengedit budget (hanya amount)."""
-    amount: int = Field(..., gt=0, description="Jumlah budget baru dalam Rupiah")
+    """Request body untuk mengedit budget (amount + rollover)."""
+    amount: int | None = Field(None, gt=0, description="Jumlah budget baru dalam Rupiah")
+    rollover: int | None = Field(None, ge=0, description="Sisa budget bulan lalu yang di-rollover")
 
 
 class BudgetBulkCreateItem(BaseModel):
@@ -24,6 +25,7 @@ class BudgetBulkCreateItem(BaseModel):
     month: int = Field(..., ge=1, le=12, description="Bulan (1-12)")
     year: int = Field(..., description="Tahun")
     amount: int = Field(..., gt=0, description="Jumlah budget dalam Rupiah")
+    rollover: int = Field(0, ge=0, description="Sisa budget bulan lalu (rollover)")
 
 
 class BudgetBulkCreate(BaseModel):
