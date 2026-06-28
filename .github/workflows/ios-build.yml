@@ -39,7 +39,7 @@ jobs:
       - name: Generate unsigned IPA from xcarchive
         run: |
           mkdir -p build/ios/ipa
-          # Export unsigned IPA — no codesign, no team needed
+          # Export unsigned IPA — skip teamID, codesign disabled
           xcodebuild -exportArchive \
             -archivePath build/ios/archive/Runner.xcarchive \
             -exportPath build/ios/ipa \
@@ -55,8 +55,6 @@ jobs:
               <string>debugging</string>
               <key>signingStyle</key>
               <string>manual</string>
-              <key>teamID</key>
-              <string></string>
               <key>provisioningProfiles</key>
               <dict/>
           </dict>
