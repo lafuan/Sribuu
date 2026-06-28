@@ -20,17 +20,29 @@ from ..services.budget_service import (
     get_budgets_summary,
     list_budgets,
     update_budget_amount,
+    get_smart_budget_recommendations,
 )
 
 WIB = timezone(timedelta(hours=7))
-
 router = APIRouter(prefix="/api/budgets", tags=["Budgets"])
-
 
 def _now_wib() -> datetime:
     """Waktu sekarang di WIB."""
     return datetime.now(WIB)
 
+@router.get("/recommendations")
+async def get_smart_budget_rec(
+    month: int | None = Query(None, ge=1, le=12),
+    year: int | None = Query(None),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    now = _now_wib()
+    month = month or now.month
+    year = year or now.year
+    
+    recs = await get_smart_budget_recommendations(db, current_user.id, month, year)
+    return StandardResponse(status="success", data={"recommendations": recs}).model_dump()
 
 @router.get("")
 async def list_bgt(
@@ -40,7 +52,6 @@ async def list_bgt(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """List budget untuk bulan/tahun tertentu."""
     now = _now_wib()
     month = month or now.month
     year = year or now.year
@@ -51,16 +62,12 @@ async def list_bgt(
         data={"budgets": budgets},
     ).model_dump()
 
-
 @router.post("", status_code=201)
 async def create_bgt(
     request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Buat budget baru."""
-
-    # Detect HTMX form-data vs JSON
     if request.headers.get("Content-Type", "").startswith("application/x-www-form-urlencoded") or request.headers.get("HX-Request") == "true":
         form = await request.form()
         data = BudgetCreate(
@@ -76,13 +83,10 @@ async def create_bgt(
     result = await create_budget(db, current_user.id, data)
     await db.commit()
 
-    # HTMX: return updated budget list for the current month
     if request.headers.get("HX-Request") == "true":
         now = _now_wib()
         budgets = await list_budgets(db, current_user.id, now.month, now.year)
         from ..main import templates as tpl
-
-        # juga butuh categories, current_month, current_year buat modal
         from ..services.category_service import list_categories as list_cats
         categories = await list_cats(db, current_user.id)
         return tpl.TemplateResponse(
@@ -101,7 +105,6 @@ async def create_bgt(
         message="Budget berhasil ditambahkan",
     ).model_dump()
 
-
 @router.put("/{budget_id}")
 async def update_bgt(
     budget_id: int,
@@ -110,7 +113,6 @@ async def update_bgt(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Update amount budget."""
     result = await update_budget_amount(db, budget_id, current_user.id, data)
     await db.commit()
 
@@ -120,7 +122,6 @@ async def update_bgt(
         message="Budget berhasil diperbarui",
     ).model_dump()
 
-
 @router.delete("/{budget_id}")
 async def delete_bgt(
     budget_id: int,
@@ -128,7 +129,6 @@ async def delete_bgt(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Hapus budget."""
     await delete_budget(db, budget_id, current_user.id)
     await db.commit()
 
@@ -137,18 +137,15 @@ async def delete_bgt(
         message="Budget berhasil dihapus",
     ).model_dump()
 
-
 @router.get("/summary")
 async def summary_bgt(
     request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Return budgets + spending per category for current month (for dashboard)."""
     now = _now_wib()
     budgets = await get_budgets_summary(db, current_user.id, now.month, now.year)
 
-    # HTMX request: return HTML fragment
     if request.headers.get("HX-Request") == "true":
         from ..main import templates
         return templates.TemplateResponse(
@@ -162,7 +159,6 @@ async def summary_bgt(
         data={"budgets": budgets},
     ).model_dump()
 
-
 @router.post("/copy-from-previous")
 async def copy_from_previous(
     request: Request,
@@ -172,16 +168,10 @@ async def copy_from_previous(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Ambil budgets dari bulan sebelumnya sebagai template.
-
-    Mengembalikan list budget yang bisa di-copy (belum tersimpan).
-    Jika rollover=True, sisa budget bulan lalu ditambahkan sebagai carry-over.
-    """
     budgets = await copy_budgets_from_previous_month(
         db, current_user.id, month, year, rollover=rollover
     )
 
-    # HTMX: return modal with list of budgets to copy
     if request.headers.get("HX-Request") == "true":
         from ..main import templates as tpl
         return tpl.TemplateResponse(
@@ -199,19 +189,14 @@ async def copy_from_previous(
         data={"budgets": budgets},
     ).model_dump()
 
-
 @router.post("/bulk-create")
 async def bulk_create(
     request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Buat multiple budgets sekaligus."""
-    # Detect HTMX form-data vs JSON
     if request.headers.get("Content-Type", "").startswith("application/x-www-form-urlencoded") or request.headers.get("HX-Request") == "true":
         form = await request.form()
-        # Parse budgets from form data (indexed by idx)
-        # Expected format: category_id_0, amount_0, month_0, year_0, category_id_1, ...
         budgets_raw = []
         idx = 0
         while True:
@@ -246,7 +231,6 @@ async def bulk_create(
     created = await bulk_create_budgets(db, current_user.id, budgets_data)
     await db.commit()
 
-    # HTMX: return updated budget list
     if request.headers.get("HX-Request") == "true":
         now = _now_wib()
         current_budgets = await list_budgets(db, current_user.id, now.month, now.year)

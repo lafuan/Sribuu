@@ -345,3 +345,52 @@ async def bulk_create_budgets(
         created.append(await _budget_to_response(budget, spent))
 
     return created
+
+async def get_smart_budget_recommendations(
+    db: AsyncSession, user_id: int, month: int, year: int
+) -> list[dict]:
+    """
+    Saran budget berdasarkan rata-rata 3 bulan terakhir.
+    """
+    # Simple logic for now: Average of previous 3 months
+    # We'll just list all categories and their average spending over past 3 months
+    
+    # Calculate past 3 months
+    import datetime
+    current_date = datetime.date(year, month, 1)
+    
+    # Simple approach for now, expand later
+    # Just list categories and for each calculate avg of last 3 months
+    
+    result = []
+    
+    # Get all categories
+    from ..models import Category
+    cat_result = await db.execute(select(Category).where(Category.user_id == user_id, Category.is_active == 1))
+    categories = cat_result.scalars().all()
+    
+    for cat in categories:
+        # Get spending for last 3 months
+        total_spent = 0
+        for i in range(1, 4):
+            # Calculate month/year
+            m = month - i
+            y = year
+            if m <= 0:
+                m += 12
+                y -= 1
+            
+            spent = await _get_spent_for_category(db, user_id, cat.id, m, y)
+            total_spent += spent
+            
+        avg_spent = total_spent / 3
+        
+        result.append({
+            "category_id": cat.id,
+            "category_name": cat.name,
+            "recommended_amount": int(avg_spent),
+            "trend": "stable", # Placeholder
+            "average_last_3_months": int(avg_spent)
+        })
+        
+    return result
