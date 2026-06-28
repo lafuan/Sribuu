@@ -150,6 +150,7 @@ from .routers import (  # noqa: E402
     export,
     notifications,
     payment_methods,
+    reports,
     rules,
     stats,
     subscriptions,
@@ -162,6 +163,7 @@ app.include_router(categories.router)
 app.include_router(stats.router)
 app.include_router(export.router)
 app.include_router(notifications.router)
+app.include_router(reports.router)
 app.include_router(payment_methods.router)
 app.include_router(budgets.router)
 app.include_router(expense_templates.router)  # type: ignore[has-type]
