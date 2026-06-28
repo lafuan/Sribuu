@@ -20,6 +20,7 @@ from ..services.stats_service import (
     get_monthly_comparison,
     get_monthly_stats,
     get_period_comparison,
+    get_sankey_data,
     get_spending_pace,
     get_stats_by_category,
 )
@@ -240,6 +241,32 @@ async def cash_flow_forecast(
             request,
             "stats/partials/cash_flow_forecast.html",
             {"forecast": result},
+        )
+
+    return StandardResponse(
+        status="success",
+        data=result,
+    ).model_dump()
+
+
+@router.get("/sankey")
+async def sankey(
+    request: Request,
+    year: int | None = Query(None, description="Tahun (YYYY), default: tahun sekarang"),
+    month: int | None = Query(None, ge=1, le=12, description="Bulan (1-12), default: bulan sekarang"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Sankey diagram: aliran Pemasukan → Kategori → Subkategori."""
+    result = await get_sankey_data(db, current_user.id, year=year, month=month)
+
+    # HTMX: return HTML fragment
+    if request.headers.get("HX-Request") == "true":
+        from ..main import templates
+        return templates.TemplateResponse(
+            request,
+            "stats/partials/sankey.html",
+            {"sankey": result},
         )
 
     return StandardResponse(
