@@ -39,27 +39,28 @@ jobs:
       - name: Generate unsigned IPA from xcarchive
         run: |
           mkdir -p build/ios/ipa
-          cat > build/ios/ipa/ExportOptions.plist << 'PLIST'
-          <?xml version="1.0" encoding="UTF-8"?>
+          # Export unsigned IPA — no codesign, no team needed
+          xcodebuild -exportArchive \
+            -archivePath build/ios/archive/Runner.xcarchive \
+            -exportPath build/ios/ipa \
+            -exportOptionsPlist /dev/stdin \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            DEVELOPMENT_TEAM="" <<< '<?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
           <dict>
               <key>method</key>
-              <string>development</string>
+              <string>debugging</string>
               <key>signingStyle</key>
               <string>manual</string>
+              <key>teamID</key>
+              <string></string>
               <key>provisioningProfiles</key>
               <dict/>
           </dict>
-          </plist>
-          PLIST
-          xcodebuild -exportArchive \
-            -archivePath build/ios/archive/Runner.xcarchive \
-            -exportPath build/ios/ipa \
-            -exportOptionsPlist build/ios/ipa/ExportOptions.plist \
-            CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO
+          </plist>'
         continue-on-error: true
 
       - name: Verify IPA exists
