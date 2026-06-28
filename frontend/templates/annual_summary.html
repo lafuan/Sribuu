@@ -196,6 +196,10 @@
 
   <!-- Export Button -->
   <div class="flex justify-end gap-3">
+    <a :href="`/api/reports/monthly?year=${year}&month=1`"
+       class="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-stone-200 dark:border-gray-700 rounded-xl text-sm font-medium text-stone-600 dark:text-gray-300 hover:bg-stone-50 dark:hover:bg-gray-700 transition">
+      <i class="fas fa-file-pdf text-red-500"></i> Download PDF
+    </a>
     <button @click="exportCSV()"
             class="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-stone-200 dark:border-gray-700 rounded-xl text-sm font-medium text-stone-600 dark:text-gray-300 hover:bg-stone-50 dark:hover:bg-gray-700 transition">
       <i class="fas fa-download text-emerald-500"></i> Export CSV
