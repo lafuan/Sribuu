@@ -220,3 +220,28 @@ class Subscription(Base):
 
     user = relationship("User", backref="subscriptions")
     category = relationship("Category")
+
+
+class Rule(Base):
+    """Auto-categorization rule: IF notes match keyword THEN assign category."""
+    __tablename__ = "rules"
+    __table_args__ = (
+        Index("idx_rules_user_active", "user_id", "is_active"),
+        Index("idx_rules_user_priority", "user_id", "priority"),
+    )
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    name = Column(String(100), nullable=False)
+    match_keywords = Column(String(500), nullable=False)  # comma-separated keywords
+    category_id = Column(Integer, ForeignKey("categories.id", ondelete="RESTRICT"), nullable=False)
+    match_mode = Column(String(20), nullable=False, default="contains")  # contains, exact, startswith
+    is_active = Column(Integer, nullable=False, default=1)
+    priority = Column(Integer, nullable=False, default=0)
+    match_count = Column(Integer, nullable=False, default=0)
+    last_matched_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = relationship("User", backref="rules")
+    category = relationship("Category")

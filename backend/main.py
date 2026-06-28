@@ -150,6 +150,7 @@ from .routers import (  # noqa: E402
     export,
     notifications,
     payment_methods,
+    rules,
     stats,
     subscriptions,
     transactions,
@@ -166,6 +167,7 @@ app.include_router(budgets.router)
 app.include_router(expense_templates.router)  # type: ignore[has-type]
 app.include_router(bills.router)
 app.include_router(subscriptions.router)
+app.include_router(rules.router)
 
 # --- Page Router (HTML) — harus didaftarkan setelah API routers ---
 from .routers import pages  # noqa: E402
