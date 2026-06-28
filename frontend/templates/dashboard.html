@@ -124,6 +124,10 @@ document.addEventListener('click', function(e) {
       <div id="spending-pace" class="card" hx-get="/api/stats/spending-pace" hx-trigger="load delay:200ms" hx-swap="innerHTML">
         <div class="flex items-center justify-center py-3"><div class="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div></div>
       </div>
+      <!-- Sankey Diagram -->
+      <div id="sankey-diagram" class="card" hx-get="/api/stats/sankey" hx-trigger="load delay:250ms" hx-swap="innerHTML">
+        <div class="flex items-center justify-center py-3"><div class="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div></div>
+      </div>
     </div>
   </div>
 </main>
