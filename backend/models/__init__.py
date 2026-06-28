@@ -164,6 +164,7 @@ class Budget(Base):
     month = Column(Integer, nullable=False)  # 1-12
     year = Column(Integer, nullable=False)
     amount = Column(Integer, nullable=False)  # dalam Rupiah (integer)
+    rollover = Column(Integer, nullable=False, default=0)  # sisa budget bulan lalu
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
 
