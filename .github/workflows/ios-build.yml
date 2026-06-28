@@ -39,15 +39,6 @@ jobs:
       - name: Generate unsigned IPA from xcarchive
         run: |
           mkdir -p build/ios/ipa
-          xcrun -sdk iphoneos PackageApplication \
-            -v build/ios/archive/Runner.xcarchive/Products/Applications/Runner.app \
-            -o "$(pwd)/build/ios/ipa/sribuu.ipa"
-        continue-on-error: true
-
-      - name: Generate IPA via export (fallback)
-        if: failure()
-        run: |
-          mkdir -p build/ios/ipa
           cat > build/ios/ipa/ExportOptions.plist << 'PLIST'
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -55,8 +46,6 @@ jobs:
           <dict>
               <key>method</key>
               <string>development</string>
-              <key>teamID</key>
-              <string></string>
               <key>signingStyle</key>
               <string>manual</string>
               <key>provisioningProfiles</key>
