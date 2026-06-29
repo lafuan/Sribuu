@@ -27,11 +27,7 @@ module = [
 ignore_errors = true
 
 [[tool.mypy.overrides]]
-module = "backend.services.pdf_service"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "backend.services.transaction_service"
+module = "backend.services.*"
 ignore_errors = true
 
 [tool.ruff]
