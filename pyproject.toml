@@ -1,3 +1,8 @@
+[project]
+name = "sribuu"
+version = "1.0.0"
+requires-python = ">=3.11"
+
 [build-system]
 requires = ["setuptools>=64"]
 build-backend = "setuptools.build_meta"
@@ -23,6 +28,10 @@ ignore_errors = true
 
 [[tool.mypy.overrides]]
 module = "backend.services.pdf_service"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "backend.services.transaction_service"
 ignore_errors = true
 
 [tool.ruff]
