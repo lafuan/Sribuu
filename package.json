@@ -7,7 +7,7 @@
     "doc": "docs"
   },
   "scripts": {
-    "build:css": "tailwindcss -i ./frontend/static/src/input.css -o ./frontend/static/dist/output.css --minify",
+    "build:css": "npx tailwindcss -i ./frontend/static/src/input.css -o ./frontend/static/dist/output.css --minify",
     "watch:css": "npx tailwindcss -i ./frontend/static/src/input.css -o ./frontend/static/dist/output.css --watch",
     "verify:css": "grep -q 'bg-emerald-500' frontend/static/dist/output.css && grep -q 'rounded-xl' frontend/static/dist/output.css && grep -q 'text-white' frontend/static/dist/output.css && echo 'CSS utilities OK' || (echo 'ERROR: CSS missing utilities - rebuild with npm run build:css' && exit 1)"
   },

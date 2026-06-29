@@ -185,7 +185,15 @@ MINIMAL_CONTEXT = {
     "upcoming_bills": [],
     "detected_message": None,
     # Sankey partial context
-    "sankey": {"month": 6},
+    "sankey": {
+        "month": 6,
+        "year": 2026,
+        "total_income": 5000000,
+        "total_expense": 3500000,
+        "month_label": "Juni 2026",
+        "nodes": [{"name": "Pemasukan", "type": "income"}],
+        "links": [],
+    },
 }
 
 

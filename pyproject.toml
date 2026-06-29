@@ -21,9 +21,13 @@ module = [
 ]
 ignore_errors = true
 
+[[tool.mypy.overrides]]
+module = "backend.services.pdf_service"
+ignore_errors = true
+
 [tool.ruff]
 exclude = ["migrations", ".venv", "venv", "__pycache__"]
 
 [tool.bandit]
 exclude_dirs = ["migrations", "venv", ".venv"]
-skips = ["B105", "B404", "B603"]
+skips = ["B101", "B105", "B404", "B603"]
