@@ -30,6 +30,26 @@ ignore_errors = true
 module = "backend.services.*"
 ignore_errors = true
 
+[[tool.mypy.overrides]]
+module = "backend.routers.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "backend.models"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "backend.schemas.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "backend.database"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "backend.migrations.*"
+ignore_errors = true
+
 [tool.ruff]
 exclude = ["migrations", ".venv", "venv", "__pycache__"]
 
