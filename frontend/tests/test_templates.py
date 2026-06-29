@@ -181,10 +181,11 @@ MINIMAL_CONTEXT = {
     },
     # Subscription context
     "subscriptions": [],
-    # Bills context
     "bills": [],
     "upcoming_bills": [],
     "detected_message": None,
+    # Sankey partial context
+    "sankey": {"month": 6},
 }
 
 
@@ -233,6 +234,7 @@ class TestTemplateExtendsBase:
                 "stats/partials/weekly_summary.html",
                 "stats/partials/period_comparison.html",
                 "stats/partials/cash_flow_forecast.html",
+                "stats/partials/sankey.html",
                 "transactions/partials/transaction_list.html",
                 "transactions/partials/transaction_row.html",
                 "transactions/partials/manage_templates_modal.html",
@@ -260,6 +262,7 @@ class TestTemplateExtendsBase:
                 "stats/partials/weekly_summary.html",
                 "stats/partials/period_comparison.html",
                 "stats/partials/cash_flow_forecast.html",
+                "stats/partials/sankey.html",
                 "transactions/partials/transaction_list.html",
                 "transactions/partials/transaction_row.html",
                 "transactions/partials/manage_templates_modal.html",
