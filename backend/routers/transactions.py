@@ -14,6 +14,7 @@ from ..models import User
 from ..schemas.auth import StandardResponse
 from ..schemas.transaction import SplitRequest, TransactionCreate, TransactionUpdate
 from ..services.auth_service import get_current_user
+from ..services.rule_service import apply_rules_to_transaction
 from ..services.transaction_service import (
     create_split,
     create_transaction,
@@ -25,7 +26,6 @@ from ..services.transaction_service import (
     list_transactions,
     update_transaction,
 )
-from ..services.rule_service import apply_rules_to_transaction
 
 router = APIRouter(prefix="/api/transactions", tags=["Transactions"])
 

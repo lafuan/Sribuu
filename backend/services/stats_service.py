@@ -1490,7 +1490,6 @@ async def get_sankey_data(
 
     # Node 0: Income source
     income_idx = _add_node("Pemasukan", "income", {"total": total_income})
-    income_node_name = "Pemasukan"
 
     if total_income == 0 and not rows:
         # No data at all
@@ -1567,15 +1566,14 @@ async def get_sankey_data(
                     {"total": remaining},
                 )
                 links.append({"source": parent_idx, "target": other_idx, "value": remaining})
-        else:
+        elif parent_total > 0:
             # No subcategories — add terminal "Lainnya" for remaining
-            if parent_total > 0:
-                other_idx = _add_node(
-                    f"Lainnya ({parent_name})",
-                    "subcategory",
-                    {"total": parent_total},
-                )
-                links.append({"source": parent_idx, "target": other_idx, "value": parent_total})
+            other_idx = _add_node(
+                f"Lainnya ({parent_name})",
+                "subcategory",
+                {"total": parent_total},
+            )
+            links.append({"source": parent_idx, "target": other_idx, "value": parent_total})
 
     # Uncategorized expenses (transactions without category)
     uncat_result = await db.execute(

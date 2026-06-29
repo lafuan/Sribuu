@@ -788,7 +788,6 @@ async def stats_page(
 async def annual_summary_page(
     request: Request,
     year: int | None = None,
-    current_user: User = Depends(get_current_user),
 ):
     """Halaman Year-End Financial Summary — laporan keuangan tahunan."""
     from datetime import date
@@ -796,20 +795,25 @@ async def annual_summary_page(
     from ..database import get_db_session
     from ..services.stats_service import annual_summary_stats
 
+    # Check auth — redirect to login if not authenticated
+    user = await _optional_user(request)
+    if user is None:
+        return RedirectResponse(url="/login", status_code=302)
+
     today = date.today()
     if year is None:
         year = today.year
 
     db = get_db_session()
     try:
-        summary = await annual_summary_stats(db, current_user.id, year=year)
+        summary = await annual_summary_stats(db, user.id, year=year)
 
         templates = _get_templates()
         return templates.TemplateResponse(
             request,
             "annual_summary.html",
             {
-                "current_user": current_user,
+                "current_user": user,
                 "year": year,
                 "annual_summary": summary,
             },

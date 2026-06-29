@@ -217,7 +217,7 @@ async def _get_monthly_data(
         .order_by(func.sum(Transaction.amount).desc())
     )
 
-    categories = []
+    categories: list[dict] = []
     for row in result.all():
         pct = (row.total / total_amount * 100) if total_amount > 0 else 0
         categories.append({
