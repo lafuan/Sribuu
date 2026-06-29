@@ -1,10 +1,9 @@
 """
 Service layer untuk Rule Engine — auto-categorization.
 """
-import re
 from datetime import datetime, timezone
 
-from fastapi import HTTPException, status
+from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
@@ -86,8 +85,9 @@ async def update_rule(db: AsyncSession, rule_id: int, user_id: int, data: RuleUp
     updates = data.model_dump(exclude_unset=True)
     for key, val in updates.items():
         if key == "is_active":
-            val = 1 if val else 0
-        setattr(rule, key, val)
+            setattr(rule, key, 1 if val else 0)
+        else:
+            setattr(rule, key, val)
 
     await db.flush()
     await db.refresh(rule, ["category"])
@@ -111,17 +111,16 @@ def _match_notes(notes: str, keywords: str, mode: str) -> bool:
         return False
     notes_lower = notes.lower()
     for kw in keywords.split(","):
-        kw = kw.strip().lower()
-        if not kw:
+        keyword = kw.strip().lower()
+        if not keyword:
             continue
         if mode == "exact":
-            if notes_lower == kw:
+            if notes_lower == keyword:
                 return True
         elif mode == "startswith":
-            if notes_lower.startswith(kw):
+            if notes_lower.startswith(keyword):
                 return True
-        else:  # contains (default)
-            if kw in notes_lower:
+        elif keyword in notes_lower:  # contains (default)
                 return True
     return False
 
@@ -144,10 +143,11 @@ async def apply_rules_to_transaction(
     for rule in rules:
         if _match_notes(transaction.notes, rule.match_keywords, rule.match_mode):
             # Update rule stats
-            rule.match_count = (rule.match_count or 0) + 1
-            rule.last_matched_at = _now_utc()
-            await db.flush()
-            return rule.category_id
+            if rule:
+                rule.match_count = (rule.match_count or 0) + 1
+                rule.last_matched_at = _now_utc()
+                await db.flush()
+                return int(rule.category_id)
 
     return None
 

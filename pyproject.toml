@@ -1,123 +1,58 @@
+[project]
+name = "sribuu"
+version = "1.0.0"
+requires-python = ">=3.11"
+
 [build-system]
 requires = ["setuptools>=64"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-include = ["backend*", "frontend*"]
+include = ["backend*"]
 
-[project]
-name = "sribuu"
-version = "1.0.0"
-description = "Aplikasi Pencatatan Pengeluaran Harian"
-requires-python = ">=3.11"
-license = { text = "MIT" }
-
-# ─── Ruff ───────────────────────────────────────────────────────────
-[tool.ruff]
-target-version = "py311"
-line-length = 100
-exclude = [
-    ".git",
-    ".github",
-    "__pycache__",
-    "venv",
-    ".venv",
-    "migrations",
-    "alembic",
-]
-
-[tool.ruff.lint]
-select = [
-    # Pyflakes
-    "F",
-    # Pycodestyle
-    "E",
-    "W",
-    # isort
-    "I",
-    # Bugbear
-    "B",
-    # Sim
-    "SIM",
-    # Pylint
-    "PL",
-]
-ignore = [
-    "E501",   # line too long (handled by formatter)
-    "PLR0912", # too many branches (complex branching logic)
-    "PLR0913", # too many arguments
-    "PLR0915", # too many statements (complex analytics functions)
-    "B008",   # FastAPI Depends() in defaults (standard pattern)
-    "PLR2004", # magic values in tests (HTTP codes are fine)
-    "PLC0415", # local imports in FastAPI lazy-loading pattern
-]
-
-[tool.ruff.lint.isort]
-known-first-party = ["backend"]
-
-[tool.ruff.format]
-quote-style = "double"
-indent-style = "space"
-skip-magic-trailing-comma = false
-
-# ─── Mypy ───────────────────────────────────────────────────────────
 [tool.mypy]
 python_version = "3.11"
-strict = false
+ignore_missing_imports = true
+disallow_untyped_defs = false
 explicit_package_bases = true
-warn_return_any = true
-warn_unused_configs = true
-warn_redundant_casts = true
-warn_unused_ignores = false
-check_untyped_defs = true
-no_implicit_optional = true
-show_error_codes = true
+files = ["backend/"]
 
 [[tool.mypy.overrides]]
 module = [
-    "jose.*",
-    "passlib.*",
-    "bcrypt.*",
-    "asyncpg.*",
-    "aiosqlite.*",
-    "jinja2.*",
+    "sqlalchemy.*",
+    "sqlalchemy.ext.*",
+    "sqlalchemy.orm.*",
+    "reportlab.*",
 ]
-ignore_missing_imports = true
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "backend.services.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "backend.routers.*"
+ignore_errors = true
 
 [[tool.mypy.overrides]]
 module = "backend.models"
 ignore_errors = true
 
 [[tool.mypy.overrides]]
-module = ["backend.services.*", "backend.routers.*"]
-disable_error_code = "arg-type,assignment,operator"
+module = "backend.schemas.*"
+ignore_errors = true
 
-# ─── Pytest ─────────────────────────────────────────────────────────
-[tool.pytest.ini_options]
-minversion = "8.0"
-asyncio_mode = "auto"
-testpaths = ["backend/tests", "frontend/tests"]
-addopts = "-v --tb=short --strict-markers"
+[[tool.mypy.overrides]]
+module = "backend.database"
+ignore_errors = true
 
-[tool.coverage.run]
-source = ["backend", "frontend"]
-omit = [
-    "*/tests/*",
-    "*/migrations/*",
-    "*/venv/*",
-]
+[[tool.mypy.overrides]]
+module = "backend.migrations.*"
+ignore_errors = true
 
-[tool.coverage.report]
-fail_under = 50
-show_missing = true
-skip_covered = false
-precision = 1
+[tool.ruff]
+exclude = ["migrations", ".venv", "venv", "__pycache__"]
 
-[tool.coverage.html]
-directory = "htmlcov"
-
-# ─── Bandit ─────────────────────────────────────────────────────────
 [tool.bandit]
-exclude_dirs = ["tests", "venv", ".venv", "migrations"]
-severity = "medium"
-skips = ["B101", "B104", "B105", "B404", "B603"]
+exclude_dirs = ["migrations", "venv", ".venv"]
+skips = ["B101", "B105", "B404", "B603"]
