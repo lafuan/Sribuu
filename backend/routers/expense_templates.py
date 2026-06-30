@@ -142,14 +142,14 @@ async def create_tx_template(
         # Return both success message + updated buttons
         return HTMLResponse(
             '<div id="template-feedback" class="text-xs text-emerald-600 mb-2">'
-            f'✅ Template "{result["label"]}" berhasil dibuat</div>'
+            f'✅ Template "{result["label"]}" created</div>'
             + await _render_template_buttons(all_templates),
         )
 
     return StandardResponse(
         status="success",
         data=result,
-        message="Template berhasil dibuat",
+        message="Template created",
     ).model_dump()
 
 
@@ -168,7 +168,7 @@ async def update_tx_template(
     return StandardResponse(
         status="success",
         data=result,
-        message="Template berhasil diperbarui",
+        message="Template updated",
     ).model_dump()
 
 
@@ -189,14 +189,14 @@ async def delete_tx_template(
 
     return StandardResponse(
         status="success",
-        message="Template berhasil dihapus",
+        message="Template deleted",
     ).model_dump()
 
 
 async def _render_template_buttons(templates: list) -> str:
     """Render template buttons HTML."""
     if not templates:
-        return '<div id="template-buttons"><p class="text-xs text-stone-400">Belum ada template.</p></div>'
+        return '<div id="template-buttons"><p class="text-xs text-stone-400">No templates yet.</p></div>'
 
     buttons_html = '<div id="template-buttons" class="flex flex-wrap gap-1.5 mt-2">'
     for t in templates[:12]:  # max 12 templates

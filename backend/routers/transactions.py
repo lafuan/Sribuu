@@ -144,7 +144,7 @@ async def create_tx(
 
     # HTMX request: return HTML snippet untuk feedback visual
     if request.headers.get("HX-Request") == "true":
-        msg = "✅ Transaksi berhasil disimpan — Rp {:,.0f}</div>".format(result["amount"])
+        msg = "✅ Transaction saved — Rp {:,.0f}</div>".format(result["amount"])
         return HTMLResponse(
             '<div class="flex items-center gap-2 p-3 bg-emerald-50 text-emerald-700 rounded-xl text-sm border border-emerald-200">'
             '<i class="fas fa-check-circle text-emerald-500"></i> '
@@ -156,7 +156,7 @@ async def create_tx(
     return StandardResponse(
         status="success",
         data=result,
-        message="Transaksi berhasil disimpan",
+        message="Transaction saved",
     ).model_dump()
 
 
@@ -175,7 +175,7 @@ async def update_tx(
     return StandardResponse(
         status="success",
         data=result,
-        message="Transaksi berhasil diperbarui",
+        message="Transaction updated",
     ).model_dump()
 
 
@@ -198,7 +198,7 @@ async def delete_tx(
 
     return StandardResponse(
         status="success",
-        message="Transaksi berhasil dihapus",
+        message="Transaction deleted",
     ).model_dump()
 
 
@@ -256,7 +256,7 @@ async def upload_attachment(
     return StandardResponse(
         status="success",
         data={"attachment_url": f"/api/transactions/{tx_id}/attachment"},
-        message="Lampiran berhasil diunggah",
+        message="Attachment uploaded",
     ).model_dump()
 
 
@@ -323,7 +323,7 @@ async def delete_attachment(
 
     return StandardResponse(
         status="success",
-        message="Lampiran berhasil dihapus",
+        message="Attachment deleted",
     ).model_dump()
 
 
@@ -388,5 +388,5 @@ async def delete_split_endpoint(
 
     return StandardResponse(
         status="success",
-        message="Split berhasil dihapus",
+        message="Split deleted",
     ).model_dump()

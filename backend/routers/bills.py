@@ -100,7 +100,7 @@ async def create_bill_api(
         )
 
     return StandardResponse(
-        status="success", data=bill, message="Tagihan berhasil ditambahkan"
+        status="success", data=bill, message="Bill added"
     ).model_dump()
 
 
@@ -141,7 +141,7 @@ async def update_bill_api(
         )
 
     return StandardResponse(
-        status="success", data=bill, message="Tagihan berhasil diperbarui"
+        status="success", data=bill, message="Bill updated"
     ).model_dump()
 
 
@@ -163,7 +163,7 @@ async def delete_bill_api(
             {"bills": bills},
         )
 
-    return StandardResponse(status="success", message="Tagihan berhasil dihapus").model_dump()
+    return StandardResponse(status="success", message="Bill deleted").model_dump()
 
 
 @router.post("/{bill_id}/pay")

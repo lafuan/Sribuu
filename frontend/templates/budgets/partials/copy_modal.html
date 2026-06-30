@@ -5,8 +5,8 @@
     <!-- Modal Header -->
     <div class="flex items-center justify-between p-5 border-b border-stone-100 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 rounded-t-2xl">
       <div>
-        <h2 class="font-bold text-stone-700 dark:text-gray-200 text-lg">📋 Salin Anggaran</h2>
-        <p class="text-xs text-stone-400 dark:text-gray-500 mt-0.5">Adjust jumlah sebelum disimpan</p>
+        <h2 class="font-bold text-stone-700 dark:text-gray-200 text-lg">📋 Copy Budget</h2>
+        <p class="text-xs text-stone-400 dark:text-gray-500 mt-0.5">Adjust amounts before saving</p>
       </div>
       <button onclick="closeCopyModal()" class="w-9 h-9 flex items-center justify-center rounded-full bg-stone-100 dark:bg-gray-700 hover:bg-stone-200 dark:hover:bg-gray-600 text-stone-500 dark:text-gray-300 hover:text-stone-700 dark:hover:text-gray-100 transition">
         <i class="fas fa-times"></i>
@@ -20,7 +20,7 @@
           hx-on::after-request="if(event.detail.successful) { closeCopyModal(); }"
           class="p-5 space-y-3">
       <p class="text-sm text-stone-500 dark:text-gray-400">
-        {{ budgets_to_copy | length }} anggaran akan disalin:
+        {{ budgets_to_copy | length }} budget(s) will be copied:
       </p>
 
       <!-- Hidden fields for bulk create -->
@@ -47,10 +47,10 @@
 
       <div class="flex gap-3 pt-2">
         <button type="button" onclick="closeCopyModal()" class="btn flex-1 bg-stone-100 dark:bg-gray-700 hover:bg-stone-200 dark:hover:bg-gray-600 text-stone-600 dark:text-gray-300">
-          Batal
+          Cancel
         </button>
         <button type="submit" class="btn-primary flex-1 flex items-center justify-center gap-2">
-          <i class="fas fa-copy"></i> Salin {{ budgets_to_copy | length }} Anggaran
+          <i class="fas fa-copy"></i> Copy {{ budgets_to_copy | length }} Budget(s)
         </button>
       </div>
     </form>
@@ -59,9 +59,9 @@
       <div class="w-16 h-16 bg-stone-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-3">
         <i class="fas fa-inbox text-stone-300 dark:text-gray-600 text-2xl"></i>
       </div>
-      <p class="text-sm text-stone-500 dark:text-gray-400">Tidak ada anggaran di bulan sebelumnya</p>
+      <p class="text-sm text-stone-500 dark:text-gray-400">No budgets in the previous month</p>
       <button onclick="closeCopyModal()" class="btn mt-4 bg-stone-100 dark:bg-gray-700 hover:bg-stone-200 dark:hover:bg-gray-600 text-stone-600 dark:text-gray-300">
-        Tutup
+        Close
       </button>
     </div>
     {% endif %}

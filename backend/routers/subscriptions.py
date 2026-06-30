@@ -133,7 +133,7 @@ async def create_subscription_api(
         )
 
     return StandardResponse(
-        status="success", data=sub, message="Subscription berhasil ditambahkan"
+        status="success", data=sub, message="Subscription added"
     ).model_dump()
 
 
@@ -173,7 +173,7 @@ async def update_subscription_api(
         )
 
     return StandardResponse(
-        status="success", data=sub, message="Subscription berhasil diperbarui"
+        status="success", data=sub, message="Subscription updated"
     ).model_dump()
 
 
@@ -196,7 +196,7 @@ async def delete_subscription_api(
             {"subscriptions": subs, "summary": summary},
         )
 
-    return StandardResponse(status="success", message="Subscription berhasil dihapus").model_dump()
+    return StandardResponse(status="success", message="Subscription deleted").model_dump()
 
 
 @router.post("/{sub_id}/toggle")

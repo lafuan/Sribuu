@@ -46,7 +46,7 @@ async def register(
             "user": to_user_response(user),
             "redirect": "/",
         },
-        message="Registrasi berhasil. Selamat datang!",
+        message="Registration successful. Welcome!",
     ).model_dump()
 
     response = JSONResponse(content=content, status_code=201)
@@ -83,7 +83,7 @@ async def logout(request: Request):
     content = StandardResponse(
         status="success",
         data={"redirect": "/login"},
-        message="Anda telah logout",
+        message="You have been logged out",
     ).model_dump()
 
     response = JSONResponse(content=content)
@@ -116,7 +116,7 @@ async def update_password(
 
     return StandardResponse(
         status="success",
-        message="Password berhasil diubah",
+        message="Password changed successfully",
     ).model_dump()
 
 

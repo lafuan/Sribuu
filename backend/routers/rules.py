@@ -42,7 +42,7 @@ async def create_r(
     result = await create_rule(db, current_user.id, data)
     await db.commit()
     return StandardResponse(
-        status="success", data=result, message="Rule berhasil dibuat"
+        status="success", data=result, message="Rule created"
     ).model_dump()
 
 
@@ -58,7 +58,7 @@ async def update_r(
     result = await update_rule(db, rule_id, current_user.id, data)
     await db.commit()
     return StandardResponse(
-        status="success", data=result, message="Rule berhasil diperbarui"
+        status="success", data=result, message="Rule updated"
     ).model_dump()
 
 
@@ -73,7 +73,7 @@ async def delete_r(
     await delete_rule(db, rule_id, current_user.id)
     await db.commit()
     return StandardResponse(
-        status="success", message="Rule berhasil dihapus"
+        status="success", message="Rule deleted"
     ).model_dump()
 
 

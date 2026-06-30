@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Beranda — Sribuu{% endblock %}
+{% block title %}Home — Sribuu{% endblock %}
 
 {% block head %}
 <style>
@@ -41,7 +41,7 @@ document.addEventListener('click', function(e) {
       <div class="card quick-add" id="quick-add-section">
         <div class="flex items-center gap-3 mb-4">
           <i class="fas fa-plus-circle text-emerald-500 text-lg"></i>
-          <h2 class="font-bold text-stone-700 dark:text-gray-200 text-base">Catat Cepat</h2>
+          <h2 class="font-bold text-stone-700 dark:text-gray-200 text-base">Quick Entry</h2>
         </div>
         <form hx-post="/api/transactions" hx-target="#quick-add-response" hx-swap="innerHTML" hx-on::after-request="if(event.detail.successful) { this.reset(); document.querySelectorAll('.template-quick-btn').forEach(b => b.classList.remove('active')); setTimeout(() => { htmx.ajax('GET', window.location.href, {target: '#dashboard-summary', swap: 'outerHTML'}); htmx.ajax('GET', window.location.href + '?partial=recent', {target: '#recent-transactions', swap: 'outerHTML'}); }, 200); }">
           <div class="flex flex-wrap gap-2">
@@ -50,11 +50,11 @@ document.addEventListener('click', function(e) {
               <input type="number" name="amount" placeholder="0" required class="w-full pl-10 pr-3 py-2.5 border border-stone-200 dark:border-gray-600 rounded-xl text-lg font-semibold text-stone-700 dark:text-gray-100 outline-none bg-white dark:bg-gray-800" style="appearance: none; -moz-appearance: textfield;" min="1" id="quick-amount">
             </div>
             <select name="category_id" required class="flex-1 min-w-[130px] px-3 py-2.5 border border-stone-200 dark:border-gray-600 rounded-xl text-sm text-stone-600 dark:text-gray-200 bg-white dark:bg-gray-800 outline-none cursor-pointer" id="quick-category">
-              <option value="">📂 Pilih Kategori</option>
+              <option value="">📂 Select Category</option>
               {% for cat in categories %}<option value="{{ cat.id }}">{{ cat.icon }} {{ cat.name }}</option>{% endfor %}
             </select>
             <button type="submit" class="btn-primary flex items-center gap-2 flex-shrink-0">
-              <i class="fas fa-check"></i> Simpan
+              <i class="fas fa-check"></i> Save
             </button>
           </div>
           <div class="flex items-center gap-2 mt-2">
@@ -68,8 +68,8 @@ document.addEventListener('click', function(e) {
       <!-- Recent Transactions -->
       <div id="recent-transactions" class="card">
         <div class="flex items-center justify-between mb-3">
-          <h2 class="font-bold text-stone-700 dark:text-gray-200 text-base">Transaksi Terakhir</h2>
-          <a href="{{ url_for('transactions_list') }}" class="text-sm text-emerald-600 dark:text-emerald-400 font-medium hover:underline">Lihat Semua →</a>
+          <h2 class="font-bold text-stone-700 dark:text-gray-200 text-base">Recent Transactions</h2>
+          <a href="{{ url_for('transactions_list') }}" class="text-sm text-emerald-600 dark:text-emerald-400 font-medium hover:underline">View All →</a>
         </div>
         {% if recent_transactions %}
         <div class="space-y-2">
@@ -100,11 +100,11 @@ document.addEventListener('click', function(e) {
       <!-- Stats Cards -->
       <div class="grid grid-cols-2 gap-4">
         <div class="card stat-card text-center p-4">
-          <p class="text-xs text-stone-500 dark:text-gray-400 uppercase tracking-wide mb-1">Hari Ini</p>
+          <p class="text-xs text-stone-500 dark:text-gray-400 uppercase tracking-wide mb-1">Today</p>
           <p class="text-xl font-bold text-emerald-600">Rp {{ "{:,.0f}".format(today_total) }}</p>
         </div>
         <div class="card stat-card text-center p-4">
-          <p class="text-xs text-stone-500 dark:text-gray-400 uppercase tracking-wide mb-1">Bulan Ini</p>
+          <p class="text-xs text-stone-500 dark:text-gray-400 uppercase tracking-wide mb-1">This Month</p>
           <p class="text-xl font-bold text-stone-700 dark:text-gray-100">Rp {{ "{:,.0f}".format(month_total) }}</p>
         </div>
       </div>
