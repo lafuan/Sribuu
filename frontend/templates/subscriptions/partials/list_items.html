@@ -19,16 +19,16 @@
     <div class="flex items-center gap-2">
       <p class="text-sm font-medium text-stone-700 dark:text-gray-200 truncate">{{ sub.name }}</p>
       {% if sub.is_active %}
-      <span class="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300">Aktif</span>
+      <span class="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300">Active</span>
       {% else %}
-      <span class="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-stone-100 dark:bg-stone-700 text-stone-500 dark:text-stone-400">Nonaktif</span>
+      <span class="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-stone-100 dark:bg-stone-700 text-stone-500 dark:text-stone-400">Inactive</span>
       {% endif %}
     </div>
     <p class="text-xs text-stone-400 dark:text-gray-500">
       {{ sub.category_name }}
       <span class="ml-1">· {{ sub.frequency }}</span>
       {% if sub.occurrence_count > 1 %}
-      <span class="ml-1">· {{ sub.occurrence_count }}x terdeteksi</span>
+      <span class="ml-1">· {{ sub.occurrence_count }}x detected</span>
       {% endif %}
     </p>
   </div>
@@ -50,14 +50,14 @@
               {% else %}
               bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40
               {% endif %}">
-        {% if sub.is_active %}⏸ Nonaktifkan{% else %}▶ Aktifkan{% endif %}
+        {% if sub.is_active %}⏸ Deactivate{% else %}▶ Activate{% endif %}
       </button>
     </form>
     <button
       hx-delete="/api/subscriptions/{{ sub.id }}"
       hx-target="#subscriptions-container"
       hx-swap="innerHTML"
-      hx-confirm="Hapus subscription {{ sub.name }}?"
+      hx-confirm="Delete subscription {{ sub.name }}?"
       class="text-xs px-2 py-1 bg-red-50 dark:bg-red-900/20 text-red-500 dark:text-red-400 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/40 transition">
       🗑
     </button>
@@ -70,7 +70,7 @@
   <div class="w-16 h-16 bg-stone-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-3">
     <i class="fas fa-sync-alt text-stone-300 dark:text-gray-600 text-2xl"></i>
   </div>
-  <p class="text-sm text-stone-400 dark:text-gray-500">Belum ada subscription</p>
-  <p class="text-xs text-stone-300 dark:text-gray-600 mt-1">Klik "Deteksi" untuk mencari transaksi berulang</p>
+  <p class="text-sm text-stone-400 dark:text-gray-500">No subscriptions yet</p>
+  <p class="text-xs text-stone-300 dark:text-gray-600 mt-1">Click "Detect" to find recurring transactions</p>
 </div>
 {% endif %}

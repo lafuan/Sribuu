@@ -2,10 +2,10 @@
 <div class="card p-0 overflow-hidden">
   <!-- Table Header -->
   <div class="hidden sm:grid grid-cols-12 gap-2 px-5 py-3 bg-stone-50 dark:bg-gray-800 text-xs text-stone-400 dark:text-gray-500 uppercase tracking-wide font-semibold border-b border-stone-100 dark:border-gray-700">
-    <div class="col-span-3">Tanggal</div>
-    <div class="col-span-4">Kategori / Catatan</div>
-    <div class="col-span-2">Metode</div>
-    <div class="col-span-2 text-right">Jumlah</div>
+    <div class="col-span-3">Date</div>
+    <div class="col-span-4">Category / Notes</div>
+    <div class="col-span-2">Method</div>
+    <div class="col-span-2 text-right">Amount</div>
     <div class="col-span-1"></div>
   </div>
 
@@ -20,8 +20,8 @@
     <div class="w-16 h-16 bg-stone-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-3">
       <i class="fas fa-search text-stone-300 dark:text-gray-600 text-2xl"></i>
     </div>
-    <p class="text-sm text-stone-500 dark:text-gray-400 font-medium">Tidak ada transaksi ditemukan</p>
-    <p class="text-xs text-stone-400 dark:text-gray-500 mt-1">Coba ubah filter atau kata kunci pencarian</p>
+    <p class="text-sm text-stone-500 dark:text-gray-400 font-medium">No transactions found</p>
+    <p class="text-xs text-stone-400 dark:text-gray-500 mt-1">Try changing filters or search keywords</p>
   </div>
   {% endif %}
 </div>
@@ -30,7 +30,7 @@
 {% if total_pages > 1 %}
 <div class="card flex items-center justify-between mt-4">
   <span class="text-xs text-stone-400 dark:text-gray-500">
-    Menampilkan {{ ((page - 1) * page_size) + 1 }}–{{ [page * page_size, total_items] | min }} dari {{ total_items }} transaksi
+    Showing {{ ((page - 1) * page_size) + 1 }}–{{ [page * page_size, total_items] | min }} of {{ total_items }} transactions
   </span>
   <div class="flex gap-1">
     {% if page > 1 %}

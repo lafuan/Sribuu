@@ -10,15 +10,15 @@
       <p class="text-sm font-medium text-stone-700 dark:text-gray-200 truncate">
         {{ bill.name }}
         {% if bill.is_overdue %}
-        <span class="text-xs text-red-500 dark:text-red-400 font-bold ml-1">⚠ TERLAMBAT</span>
+        <span class="text-xs text-red-500 dark:text-red-400 font-bold ml-1">⚠ OVERDUE</span>
         {% endif %}
       </p>
       <p class="text-xs {% if bill.is_overdue %}text-red-500 dark:text-red-400{% else %}text-stone-400 dark:text-gray-500{% endif %}">
-        📅 Jatuh tempo: {{ bill.due_date | format_date_id }}
+        📅 Due: {{ bill.due_date | format_date_id }}
         {% if bill.frequency == "monthly" %}
-        <span class="ml-1 text-stone-300 dark:text-gray-600">· Bulanan</span>
+        <span class="ml-1 text-stone-300 dark:text-gray-600">· Monthly</span>
         {% else %}
-        <span class="ml-1 text-stone-300 dark:text-gray-600">· Tahunan</span>
+        <span class="ml-1 text-stone-300 dark:text-gray-600">· Yearly</span>
         {% endif %}
       </p>
     </div>
@@ -32,9 +32,9 @@
 </div>
 {% else %}
 <div class="text-center py-4">
-  <p class="text-sm text-stone-400 dark:text-gray-500">🎉 Tidak ada tagihan mendatang</p>
+  <p class="text-sm text-stone-400 dark:text-gray-500">🎉 No upcoming bills</p>
   <a href="{{ url_for('bills_page') }}" class="text-xs text-emerald-600 dark:text-emerald-400 hover:underline mt-1 inline-block">
-    + Tambah Tagihan
+    + Add Bill
   </a>
 </div>
 {% endif %}
