@@ -38,4 +38,8 @@ Each report includes:
 - **Implementation complexity**: Simple / Moderate / Complex
 - **Affected modules**: backend/routers/..., frontend/templates/...
 - **User story**: As a user, I want to...
+
+## Recent Activity
+
+_(Updated daily at 23:00 WIB by Daily Progress Recorder)_
 ```

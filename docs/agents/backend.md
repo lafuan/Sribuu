@@ -41,3 +41,7 @@ The Backend Agent audits the FastAPI backend codebase for code smells, architect
 | Direct model import in router | Bypasses service layer, violates architecture | High |
 | Missing `selectinload` | N+1 query on every request | High |
 | Large file (>1000 lines) | Hard to maintain, should split by domain | Medium |
+
+## Recent Activity
+
+_(Updated daily at 23:00 WIB by Daily Progress Recorder)_

@@ -38,6 +38,10 @@ The Daily Progress Recorder compiles a comprehensive summary of all agent activi
 <List of all open agent-recommendation issues>
 ```
 
+## Recent Activity
+
+_(Updated daily at 23:00 WIB by Daily Progress Recorder)_
+
 ## Benefits
 
 - **Single source of truth**: One issue to read for daily progress
