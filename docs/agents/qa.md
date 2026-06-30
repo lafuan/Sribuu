@@ -55,4 +55,7 @@ If no CI failures and no coverage gaps are found, the QA Agent responds with `[S
 
 ## Recent Activity
 
-_(Updated daily at 23:00 WIB by Daily Progress Recorder)_
+### 2026-06-30
+- Issue [#122](https://github.com/lafuan/Sribuu/issues/122): [QA Agent] 🚨 109 tests broken — Missing 'reportlab' module — ✅ CLOSED
+- Issue [#123](https://github.com/lafuan/Sribuu/issues/123): [QA Agent] ⚠️ 9 stale PRs open >24 jam — butuh review/merge — ⏳ OPEN
+- Issue [#151](https://github.com/lafuan/Sribuu/issues/151): 🔴 CI Health Alert: E2E test failure due to i18n + recurring sankey template error — ⏳ OPEN

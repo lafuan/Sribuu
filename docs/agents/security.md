@@ -66,4 +66,11 @@ The Security Agent performs comprehensive security auditing across five dimensio
 
 ## Recent Activity
 
-_(Updated daily at 23:00 WIB by Daily Progress Recorder)_
+### 2026-06-30
+- Issue [#124](https://github.com/lafuan/Sribuu/issues/124): [Security Agent] 🚨 CRITICAL: Database password exposed in plaintext in deploy.yml — ⏳ OPEN
+- Issue [#125](https://github.com/lafuan/Sribuu/issues/125): [Security Agent] 🔴 HIGH: SSH PasswordAuth enabled + No firewall/IDS on production VPS — ⏳ OPEN
+- Issue [#126](https://github.com/lafuan/Sribuu/issues/126): [Security Agent] 🔴 HIGH: deploy.yml & ios-build.yml missing explicit permissions — ⏳ OPEN
+- Issue [#127](https://github.com/lafuan/Sribuu/issues/127): [Security Agent] 🔴 HIGH: deploy.yml & ios-build.yml missing explicit permissions — ✅ CLOSED
+- Issue [#129](https://github.com/lafuan/Sribuu/issues/129): ⚠️ Security hardening: UFW firewall not active + SSH password auth enabled — ⏳ OPEN
+- Issue [#130](https://github.com/lafuan/Sribuu/issues/130): [Security Agent] 🟡 MEDIUM: __import__() usage in rule_service.py + missing .gitignore patterns — ⏳ OPEN
+- Issue [#140](https://github.com/lafuan/Sribuu/issues/140): 🔴 CRITICAL: VPS Security Gaps Detected — UFW Inactive, Password Auth Enabled — ⏳ OPEN

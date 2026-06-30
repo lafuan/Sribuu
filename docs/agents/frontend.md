@@ -51,4 +51,6 @@ The Frontend Agent audits the Jinja2 + HTMX + Tailwind frontend for UI inconsist
 
 ## Recent Activity
 
-_(Updated daily at 23:00 WIB by Daily Progress Recorder)_
+### 2026-06-30
+- Issue [#120](https://github.com/lafuan/Sribuu/issues/120): [Frontend Agent] Remove redundant CDN Tailwind + Move inline style to input.css — ✅ CLOSED
+- Issue [#121](https://github.com/lafuan/Sribuu/issues/121): [Frontend Agent] Clean up inline styles (27x) + Audit accessibility — ⏳ OPEN

@@ -44,4 +44,16 @@ The Backend Agent audits the FastAPI backend codebase for code smells, architect
 
 ## Recent Activity
 
-_(Updated daily at 23:00 WIB by Daily Progress Recorder)_
+### 2026-06-30
+- Issue [#117](https://github.com/lafuan/Sribuu/issues/117): [Backend Agent] Refactor pages.py (1048 lines) → Modular Router Split — ⏳ OPEN
+- Issue [#118](https://github.com/lafuan/Sribuu/issues/118): [Backend Agent] Replace deprecated datetime.utcnow() (17 occurences) — ⏳ OPEN
+- Issue [#119](https://github.com/lafuan/Sribuu/issues/119): [Backend Agent] Split stats_service.py (1604 lines) + Add Caching Layer — ⏳ OPEN
+- Issue [#128](https://github.com/lafuan/Sribuu/issues/128): 🔴 CI Broken: Ruff lint errors blocking main pipeline (10 failures across 3 files) — ✅ CLOSED
+- Issue [#136](https://github.com/lafuan/Sribuu/issues/136): 🔴 God Class: stats_service.py (1,602 lines) — needs decomposition — ⏳ OPEN
+- Issue [#137](https://github.com/lafuan/Sribuu/issues/137): 🟡 datetime.utcnow() deprecated — 18 occurrences across backend — ⏳ OPEN
+- Issue [#138](https://github.com/lafuan/Sribuu/issues/138): 🟡 Duplicated Code: PaymentMethod query repeated 5× in pages.py — ⏳ OPEN
+- Issue [#146](https://github.com/lafuan/Sribuu/issues/146): CRITICAL: stats_service.py is 1,602 lines with 4 functions over 200 lines — ⏳ OPEN
+- Issue [#147](https://github.com/lafuan/Sribuu/issues/147): CRITICAL: E2E login test fails — asserts 'Masuk' but page title is 'Login — Sribuu' (i18n mismatch) — ⏳ OPEN
+- Issue [#148](https://github.com/lafuan/Sribuu/issues/148): Clean Code: pages.py (1,052 lines) has duplicated PaymentMethod queries — ⏳ OPEN
+- Issue [#149](https://github.com/lafuan/Sribuu/issues/149): Clean Code: 18 deprecated datetime.utcnow() calls in models/__init__.py and stats_service.py — ⏳ OPEN
+- Issue [#150](https://github.com/lafuan/Sribuu/issues/150): Clean Code: 10 models crammed into single models/__init__.py (247 lines) — ⏳ OPEN
