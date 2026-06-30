@@ -8,13 +8,9 @@ import io
 import logging
 from datetime import date, datetime, timedelta, timezone
 
-import matplotlib
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
-
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt  # noqa: E402
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER
 from reportlab.lib.pagesizes import A4
@@ -75,6 +71,9 @@ def _end_of_month(year: int, month: int) -> date:
 
 def _generate_pie_chart(categories: list[dict], total: int) -> io.BytesIO:
     """Generate pie chart as PNG buffer for category breakdown."""
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
     fig, ax = plt.subplots(figsize=(5, 4))
 
     values = [c["total_amount"] for c in categories]
@@ -119,6 +118,9 @@ def _generate_pie_chart(categories: list[dict], total: int) -> io.BytesIO:
 
 def _generate_bar_chart(daily_data: list[dict], max_amount: int) -> io.BytesIO:
     """Generate bar chart as PNG buffer for daily trend."""
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
     fig, ax = plt.subplots(figsize=(8, 3))
 
     dates = [d["date_formatted"] for d in daily_data]
