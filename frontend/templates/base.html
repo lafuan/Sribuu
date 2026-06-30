@@ -194,8 +194,8 @@
             if (now.getHours() === targetHour && now.getMinutes() === targetMin) {
                 _lastReminderDay = today;
                 sendNotification(
-                    '📒 Pengingat Sribuu',
-                    'Jangan lupa catat pengeluaran hari ini!',
+                    '📒 Sribuu Reminder',
+                    'Don't forget to log today's expenses!',
                     'daily-reminder',
                     { url: '/', type: 'daily_reminder' }
                 );
@@ -234,7 +234,7 @@
                 if (shownTags.includes(tag)) continue; // Already alerted this session
 
                 sendNotification(
-                    alert.urgent ? '🔴 Anggaran Terlewati!' : '🟡 Peringatan Anggaran',
+                    alert.urgent ? '🔴 Budget Exceeded!' : '🟡 Budget Warning',
                     alert.message,
                     tag,
                     { url: '/budgets', type: 'budget_alert', category_id: alert.category_id }
