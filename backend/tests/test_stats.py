@@ -302,20 +302,25 @@ class TestSpendingPace:
 
         from datetime import date, timedelta
         today = date.today()
+        # Use dates within the current month to avoid month-boundary failures
+        # (spending-pace endpoint only sums current-month transactions)
+        month_start = today.replace(day=1)
+        day_count = min(3, today.day)  # at most 3 days this month
 
-        # Buat 3 transaksi pada hari berbeda (pastikan berbeda)
-        for i in range(3):
-            d = today - timedelta(days=i)
+        expected_total = 0
+        for i in range(day_count):
+            d = month_start + timedelta(days=i)
             await auth_client.post(
                 "/api/transactions",
                 json={"amount": 15000, "category_id": cat_id, "transaction_date": d.isoformat()},
             )
+            expected_total += 15000
 
         response = await auth_client.get("/api/stats/spending-pace")
         assert response.status_code == 200
         pace = response.json()["data"]
-        assert pace["total_spent"] == 45000
-        assert pace["daily_avg"] == 45000 // pace["days_elapsed"]
+        assert pace["total_spent"] == expected_total
+        assert pace["daily_avg"] == expected_total // pace["days_elapsed"]
         assert pace["remaining_days"] >= 0
 
 
