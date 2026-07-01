@@ -32,8 +32,8 @@ class TestDashboard:
 
         # Harus ada informasi keuangan
         has_info = any(kw in body_text for kw in [
-            "Rp", "Total", "ringkasan", "pengeluaran",
-            "bulan ini", "hari ini", "transaksi",
+            "Rp", "Total", "spending",
+            "month", "today", "transaction",
         ])
         assert has_info, "Dashboard harus menampilkan info keuangan"
 
@@ -53,8 +53,8 @@ class TestDashboard:
         page.goto(f"{BASE_URL}/")
         page.wait_for_load_state("networkidle")
 
-        # Klik link "Riwayat" atau "Transaksi"
-        nav_links = ["Riwayat", "Transaksi", "Anggaran", "Statistik", "Pengaturan"]
+        # Klik link navigasi (English after i18n)
+        nav_links = ["History", "Transactions", "Budget", "Statistics", "Settings", "Home"]
         found_nav = False
         for link_text in nav_links:
             try:

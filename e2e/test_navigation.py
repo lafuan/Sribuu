@@ -10,11 +10,11 @@ class TestNavigation:
     """Test all navigation links work correctly."""
 
     @pytest.mark.parametrize("path,title_kw", [
-        ("/transactions", "Riwayat"),
-        ("/transactions/new", "Tambah"),
-        ("/budgets", "Anggaran"),
-        ("/stats", "Statistik"),
-        ("/settings", "Pengaturan"),
+        ("/transactions", "History"),
+        ("/transactions/new", "Add"),
+        ("/budgets", "Budget"),
+        ("/stats", "Statistics"),
+        ("/settings", "Settings"),
     ])
     def test_page_loads(self, login_page, path, title_kw):
         """Setiap halaman harus bisa dibuka tanpa error."""

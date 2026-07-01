@@ -27,8 +27,8 @@ class TestBudgets:
         body_text = page.text_content("body") or ""
         # Harus ada info anggaran
         has_budget_info = any(kw in body_text for kw in [
-            "Anggaran", "Budget", "anggaran", "budget",
-            "Total", "Sisa", "terpakai",
+            "Budget", "budget",
+            "Total", "Remaining", "Spent",
         ])
         assert has_budget_info or page.is_visible("button, a")
 
@@ -38,6 +38,6 @@ class TestBudgets:
         page.goto(f"{BASE_URL}/budgets")
         page.wait_for_load_state("networkidle")
 
-        # Cari tombol tambah
-        add_btn = page.locator("button:has-text('Tambah'), a:has-text('Tambah'), button:has-text('+'), a:has-text('Buat')").first
+        # Cari tombol tambah (English after i18n)
+        add_btn = page.locator("button:has-text('Add'), a:has-text('Add'), button:has-text('+')").first
         assert add_btn.count() > 0 or page.is_visible("[class*=add], [class*=create], [class*=new]") is not False
