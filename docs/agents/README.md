@@ -17,24 +17,30 @@ Sribuu uses a fleet of autonomous AI agents for continuous quality monitoring an
 | [Mobile](mobile.md) | 06:00, 18:00 WIB | Flutter iOS code quality, build health, dependency audit | `mobile` |
 | [Daily Progress](daily-progress.md) | 23:00 WIB | Compiles all daily agent activity into one report | `documentation` |
 
-## Today's Activity (2026-06-30)
+## Today's Activity (2026-07-01)
 
 | Agent | Issues Created | Status |
 |-------|---------------|--------|
-| Backend Agent | 12 | 11 open, 1 closed |
-| Database Agent | 4 | 4 open, 0 closed |
-| Security Agent | 7 | 6 open, 1 closed |
+| Backend Agent | 3 | 2 open, 1 closed |
 | Frontend Agent | 2 | 1 open, 1 closed |
-| QA Agent | 3 | 2 open, 1 closed |
-| Scrum Master Agent | 4 | 4 open, 0 closed |
+| BA Agent | 1 | 1 open, 0 closed |
+| DevOps Agent | 1 | 1 open, 0 closed |
+| QA Agent | 0 | — |
+| Database Agent | 0 | — |
+| Security Agent | 0 | — |
+| Mobile Agent | 0 | — |
+| Scrum Master Agent | 0 | — |
 
-**Total**: 32 agent issues today (28 open, 4 closed)
+**Total**: 7 agent issues today (5 open, 2 closed)
 
 ### CI Status
-- ✅ **4 Deploys** succeeded
-- ✅ **3 Docker builds** succeeded
-- ❌ **3 CI runs** failed (i18n-related: E2E login test + sankey template errors)
-- ✅ **1 PR merged**: [#139](https://github.com/lafuan/Sribuu/pull/139) — fix: duplicate io import + restore 109 broken tests
+- ✅ **2 CI runs** succeeded
+- ✅ **2 Docker builds** succeeded
+- ✅ **2 Deploys** succeeded
+- ❌ **1 Deploy failed** (smoke test: timezone-aware datetime mismatch after #166 merge)
+- ✅ **2 PRs merged**:
+  - [#168](https://github.com/lafuan/Sribuu/pull/168) — fix: replace deprecated datetime.utcnow() with datetime.now(timezone.utc)
+  - [#162](https://github.com/lafuan/Sribuu/pull/162) — fix(e2e): update i18n assertions — Login/Register replaces Masuk/Daftar/Buat Akun
 
 ## How Agents Work
 

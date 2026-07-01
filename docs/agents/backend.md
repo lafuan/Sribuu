@@ -44,6 +44,11 @@ The Backend Agent audits the FastAPI backend codebase for code smells, architect
 
 ## Recent Activity
 
+### 2026-07-01
+- Issue [#167](https://github.com/lafuan/Sribuu/issues/167): pages.py is 1052 lines with 19 routes — violates Single Responsibility Principle — ⏳ OPEN
+- Issue [#166](https://github.com/lafuan/Sribuu/issues/166): 18 deprecated datetime.utcnow() calls in models and services — ✅ CLOSED
+- Issue [#165](https://github.com/lafuan/Sribuu/issues/165): Duplicate datetime helper functions across services (DRY violation) — ⏳ OPEN
+
 ### 2026-06-30
 - Issue [#117](https://github.com/lafuan/Sribuu/issues/117): [Backend Agent] Refactor pages.py (1048 lines) → Modular Router Split — ⏳ OPEN
 - Issue [#118](https://github.com/lafuan/Sribuu/issues/118): [Backend Agent] Replace deprecated datetime.utcnow() (17 occurences) — ⏳ OPEN

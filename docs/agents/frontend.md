@@ -51,6 +51,10 @@ The Frontend Agent audits the Jinja2 + HTMX + Tailwind frontend for UI inconsist
 
 ## Recent Activity
 
+### 2026-07-01
+- Issue [#164](https://github.com/lafuan/Sribuu/issues/164): [Frontend Agent] Heading hierarchy violations (missing H1s, duplicate H1s) + unpurged Tailwind CSS — ⏳ OPEN
+- Issue [#163](https://github.com/lafuan/Sribuu/issues/163): [Frontend Agent] Heading hierarchy violations (missing H1s, duplicate H1s) + unpurged Tailwind CSS — ✅ CLOSED
+
 ### 2026-06-30
 - Issue [#120](https://github.com/lafuan/Sribuu/issues/120): [Frontend Agent] Remove redundant CDN Tailwind + Move inline style to input.css — ✅ CLOSED
 - Issue [#121](https://github.com/lafuan/Sribuu/issues/121): [Frontend Agent] Clean up inline styles (27x) + Audit accessibility — ⏳ OPEN
