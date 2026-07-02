@@ -56,6 +56,10 @@ The DevOps Agent monitors server health, CI/CD pipeline safety, and deployment r
 
 ## Recent Activity
 
+### 2026-07-02
+- Issue [#180](https://github.com/lafuan/Sribuu/issues/180): ⚠️ Nginx Permission Denied on manifest.json — PWA manifest blocked (recurring) — ⏳ OPEN
+- Issue [#179](https://github.com/lafuan/Sribuu/issues/179): [CRITICAL] Deploy rollback mechanism is broken — failed deploys leave broken containers in production — ⏳ OPEN
+
 ### 2026-07-01
 - Issue [#169](https://github.com/lafuan/Sribuu/issues/169): [CRITICAL] Deploy smoke test failing: Register returns 500 - timezone-aware datetime mismatch — ⏳ OPEN
 

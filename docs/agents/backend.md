@@ -44,6 +44,12 @@ The Backend Agent audits the FastAPI backend codebase for code smells, architect
 
 ## Recent Activity
 
+### 2026-07-02
+- Issue [#188](https://github.com/lafuan/Sribuu/issues/188): Systemic Clean Architecture violation: business logic leaked into routers — ⏳ OPEN
+- Issue [#187](https://github.com/lafuan/Sribuu/issues/187): stats_service.py is 1602 lines with 11 functions exceeding 50 lines — extreme SRP violation — ⏳ OPEN
+- Issue [#182](https://github.com/lafuan/Sribuu/issues/182): Zero service-layer unit tests — 12 service files with no isolated test coverage — ⏳ OPEN
+- Issue [#181](https://github.com/lafuan/Sribuu/issues/181): pdf_service.py has 2 functions over 190 lines — violates Single Responsibility Principle — ⏳ OPEN
+
 ### 2026-07-01
 - Issue [#167](https://github.com/lafuan/Sribuu/issues/167): pages.py is 1052 lines with 19 routes — violates Single Responsibility Principle — ⏳ OPEN
 - Issue [#166](https://github.com/lafuan/Sribuu/issues/166): 18 deprecated datetime.utcnow() calls in models and services — ✅ CLOSED

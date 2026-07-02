@@ -41,6 +41,9 @@ Each report includes:
 
 ## Recent Activity
 
+### 2026-07-02
+- Issue [#177](https://github.com/lafuan/Sribuu/issues/177): 🤖 AI-Powered Auto-Categorization — Smart Category Prediction untuk Setiap Transaksi — ⏳ OPEN
+
 ### 2026-07-01
 - Issue [#161](https://github.com/lafuan/Sribuu/issues/161): [BA Agent] 💬 Natural Language Expense Input — Catat Pengeluaran dengan Bahasa Sehari-hari + AI — ⏳ OPEN
 

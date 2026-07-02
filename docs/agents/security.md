@@ -66,6 +66,9 @@ The Security Agent performs comprehensive security auditing across five dimensio
 
 ## Recent Activity
 
+### 2026-07-02
+- Issue [#183](https://github.com/lafuan/Sribuu/issues/183): CRITICAL: Security gaps — password SSH auth enabled, no firewall — ⏳ OPEN
+
 ### 2026-06-30
 - Issue [#124](https://github.com/lafuan/Sribuu/issues/124): [Security Agent] 🚨 CRITICAL: Database password exposed in plaintext in deploy.yml — ⏳ OPEN
 - Issue [#125](https://github.com/lafuan/Sribuu/issues/125): [Security Agent] 🔴 HIGH: SSH PasswordAuth enabled + No firewall/IDS on production VPS — ⏳ OPEN

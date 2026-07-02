@@ -55,6 +55,9 @@ If no CI failures and no coverage gaps are found, the QA Agent responds with `[S
 
 ## Recent Activity
 
+### 2026-07-02
+- Issue [#182](https://github.com/lafuan/Sribuu/issues/182): Zero service-layer unit tests — 12 service files with no isolated test coverage — ⏳ OPEN
+
 ### 2026-06-30
 - Issue [#122](https://github.com/lafuan/Sribuu/issues/122): [QA Agent] 🚨 109 tests broken — Missing 'reportlab' module — ✅ CLOSED
 - Issue [#123](https://github.com/lafuan/Sribuu/issues/123): [QA Agent] ⚠️ 9 stale PRs open >24 jam — butuh review/merge — ⏳ OPEN

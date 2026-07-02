@@ -57,6 +57,11 @@ The Database Agent audits PostgreSQL query patterns, index usage, and connection
 
 ## Recent Activity
 
+### 2026-07-02
+- Issue [#186](https://github.com/lafuan/Sribuu/issues/186): 🟢 DEBUG=True still enabled in production config — ⏳ OPEN
+- Issue [#185](https://github.com/lafuan/Sribuu/issues/185): 🟡 Missing Index on paid_transaction_id (bills table) — ⏳ OPEN
+- Issue [#184](https://github.com/lafuan/Sribuu/issues/184): 🔴 CRITICAL: Sankey endpoint crashes — nonexistent columns Transaction.type, Transaction.date, Category.parent_id — ⏳ OPEN
+
 ### 2026-06-30
 - Issue [#142](https://github.com/lafuan/Sribuu/issues/142): [DB Agent] 🔴 N+1 Queries: Sparkline (60+ queries), Monthly Comparison, Rule Application — ⏳ OPEN
 - Issue [#143](https://github.com/lafuan/Sribuu/issues/143): [DB Agent] 🟡 Missing Connection Pool Config + Inconsistent Session Management — ⏳ OPEN
