@@ -300,15 +300,14 @@ class TestSpendingPace:
         cat_resp = await auth_client.get("/api/categories")
         cat_id = cat_resp.json()["data"]["categories"][0]["id"]
 
-        from datetime import date, timedelta
+        from datetime import date
         today = date.today()
 
-        # Buat 3 transaksi pada hari berbeda (pastikan berbeda)
+        # Buat 3 transaksi pada hari yang sama (today, dalam bulan yang sama)
         for i in range(3):
-            d = today - timedelta(days=i)
             await auth_client.post(
                 "/api/transactions",
-                json={"amount": 15000, "category_id": cat_id, "transaction_date": d.isoformat()},
+                json={"amount": 15000, "category_id": cat_id, "transaction_date": today.isoformat()},
             )
 
         response = await auth_client.get("/api/stats/spending-pace")
