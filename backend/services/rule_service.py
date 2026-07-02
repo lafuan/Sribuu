@@ -87,8 +87,8 @@ async def update_rule(db: AsyncSession, rule_id: int, user_id: int, data: RuleUp
     for key, val in updates.items():
         if key == "is_active":
             setattr(rule, key, 1 if val else 0)
-        else:
-            setattr(rule, key, val)
+            continue
+        setattr(rule, key, val)
 
     await db.flush()
     await db.refresh(rule, ["category"])
@@ -111,18 +111,18 @@ def _match_notes(notes: str, keywords: str, mode: str) -> bool:
     if not notes or not keywords:
         return False
     notes_lower = notes.lower()
-    for kw in keywords.split(","):
-        keyword = kw.strip().lower()
-        if not keyword:
+    for keyword in keywords.split(","):
+        trimmed = keyword.strip().lower()
+        if not trimmed:
             continue
         if mode == "exact":
-            if notes_lower == keyword:
+            if notes_lower == trimmed:
                 return True
         elif mode == "startswith":
-            if notes_lower.startswith(keyword):
+            if notes_lower.startswith(trimmed):
                 return True
-        elif keyword in notes_lower:  # contains (default)
-                return True
+        elif trimmed in notes_lower:  # contains (default)
+            return True
     return False
 
 
