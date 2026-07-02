@@ -180,7 +180,7 @@ class TestChangePassword:
         assert response.status_code == 200
         data = response.json()
         assert data["status"] == "success"
-        assert "berhasil" in data["message"].lower()
+        assert "success" in data["message"].lower()
 
     async def test_change_password_wrong_old(self, auth_client):
         """Ganti password dengan old_password salah → 400."""

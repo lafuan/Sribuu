@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Anggaran — Sribuu{% endblock %}
+{% block title %}Budgets — Sribuu{% endblock %}
 
 {% block head %}
 <style>
@@ -16,12 +16,12 @@
   <!-- Header -->
   <div class="flex items-center justify-between">
     <div>
-      <h1 class="text-xl font-bold text-stone-800 dark:text-gray-100">📊 Anggaran</h1>
-      <p class="text-sm text-stone-400 dark:text-gray-500 mt-1">Atur batas pengeluaran per kategori</p>
+      <h1 class="text-xl font-bold text-stone-800 dark:text-gray-100">📊 Budgets</h1>
+      <p class="text-sm text-stone-400 dark:text-gray-500 mt-1">Set spending limits per category</p>
     </div>
     <button onclick="openBudgetModal()"
             class="btn-primary flex items-center gap-2 text-sm">
-      <i class="fas fa-plus"></i> Tambah
+      <i class="fas fa-plus"></i> Add
     </button>
   </div>
 
@@ -43,11 +43,11 @@
   <div class="card bg-gradient-to-r from-emerald-50 dark:from-emerald-900/20 to-stone-50 dark:to-gray-800 border border-emerald-100 dark:border-emerald-900/30">
     <div class="flex items-center justify-between mb-2">
       <div>
-        <p class="text-xs text-stone-500 dark:text-gray-400 font-medium uppercase tracking-wide">Total Anggaran</p>
+        <p class="text-xs text-stone-500 dark:text-gray-400 font-medium uppercase tracking-wide">Total Budget</p>
         <p class="text-lg font-bold text-stone-800 dark:text-gray-100">Rp {{ "{:,.0f}".format(total_budget) }}</p>
       </div>
       <div class="text-right">
-        <p class="text-xs text-stone-500 dark:text-gray-400 font-medium uppercase tracking-wide">Terpakai</p>
+        <p class="text-xs text-stone-500 dark:text-gray-400 font-medium uppercase tracking-wide">Spent</p>
         <p class="text-lg font-bold {{ 'text-red-500' if total_pct >= 80 else ('text-amber-500' if total_pct >= 50 else 'text-emerald-600') }}">
           Rp {{ "{:,.0f}".format(total_spent) }}
         </p>
@@ -57,10 +57,10 @@
       <div class="progress-bar h-full rounded-full" style="width: {{ [total_pct, 100]|min }}%; {{ 'background: #ef4444' if total_pct >= 80 else ('background: #f59e0b' if total_pct >= 50 else 'background: #10b981') }}"></div>
     </div>
     <div class="flex justify-between text-xs text-stone-400 dark:text-gray-500 mt-1.5">
-      <span>{{ "%.1f"|format(total_pct) }}% dari total anggaran</span>
+      <span>{{ "%.1f"|format(total_pct) }}% of total budget</span>
       <span>
         <strong class="{{ 'text-red-500' if total_pct >= 80 else 'text-emerald-600' }}">
-          {% if total_pct >= 100 %}Lebih Rp {{ "{:,.0f}".format(total_spent - total_budget) }}{% else %}Sisa Rp {{ "{:,.0f}".format(total_budget - total_spent) }}{% endif %}
+          {% if total_pct >= 100 %}Over by Rp {{ "{:,.0f}".format(total_spent - total_budget) }}{% else %}Remaining Rp {{ "{:,.0f}".format(total_budget - total_spent) }}{% endif %}
         </strong>
       </span>
     </div>
@@ -104,9 +104,9 @@
       </div>
 
       <div class="flex justify-between text-xs text-stone-400 dark:text-gray-500 mt-1.5">
-        <span>Terpakai: <strong class="text-stone-600 dark:text-gray-300">Rp {{ "{:,.0f}".format(b.spent) }}</strong></span>
-        <span>Sisa: <strong class="{{ 'text-red-500' if b.percentage >= 80 else 'text-emerald-600' }}">
-          {% if b.percentage >= 100 %}Lebih Rp {{ "{:,.0f}".format(b.spent - b.amount) }}{% else %}Rp {{ "{:,.0f}".format(b.amount - b.spent) }}{% endif %}
+        <span>Spent: <strong class="text-stone-600 dark:text-gray-300">Rp {{ "{:,.0f}".format(b.spent) }}</strong></span>
+        <span>Remaining: <strong class="{{ 'text-red-500' if b.percentage >= 80 else 'text-emerald-600' }}">
+          {% if b.percentage >= 100 %}Over by Rp {{ "{:,.0f}".format(b.spent - b.amount) }}{% else %}Rp {{ "{:,.0f}".format(b.amount - b.spent) }}{% endif %}
         </strong></span>
       </div>
     </div>
@@ -117,17 +117,17 @@
       <div class="w-16 h-16 bg-stone-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-3">
         <i class="fas fa-coins text-stone-300 dark:text-gray-600 text-2xl"></i>
       </div>
-      <p class="text-sm text-stone-400 dark:text-gray-500 mb-4">Belum ada anggaran bulan ini</p>
+      <p class="text-sm text-stone-400 dark:text-gray-500 mb-4">No budgets this month</p>
       <div class="flex flex-col sm:flex-row gap-2 justify-center">
         <button onclick="openBudgetModal()"
                 class="btn-primary flex items-center justify-center gap-2 text-sm px-6">
-          <i class="fas fa-plus"></i> Tambah Budget
+          <i class="fas fa-plus"></i> Add Budget
         </button>
         <button hx-get="/api/budgets/copy-from-previous?month={{ current_month }}&year={{ current_year }}"
                 hx-target="#copyBudgetModalWrapper"
                 hx-swap="innerHTML"
                 class="btn flex items-center justify-center gap-2 text-sm px-4 bg-stone-100 dark:bg-gray-800 border border-stone-200 dark:border-gray-700 text-stone-600 dark:text-gray-300 hover:bg-stone-200 dark:hover:bg-gray-700">
-          <i class="fas fa-copy"></i> Salin dari Bulan Lalu
+          <i class="fas fa-copy"></i> Copy from Last Month
         </button>
       </div>
     </div>
@@ -140,7 +140,7 @@
     <div class="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-md shadow-xl">
       <!-- Modal Header -->
       <div class="flex items-center justify-between p-5 border-b border-stone-100 dark:border-gray-700">
-        <h2 class="font-bold text-stone-700 dark:text-gray-200 text-lg">➕ Tambah Anggaran</h2>
+        <h2 class="font-bold text-stone-700 dark:text-gray-200 text-lg">➕ Add Budget</h2>
         <button onclick="closeBudgetModal()" class="w-9 h-9 flex items-center justify-center rounded-full bg-stone-100 dark:bg-gray-700 hover:bg-stone-200 dark:hover:bg-gray-600 text-stone-500 dark:text-gray-300 hover:text-stone-700 dark:hover:text-gray-100 transition">
           <i class="fas fa-times"></i>
         </button>
@@ -153,9 +153,9 @@
             class="p-5 space-y-4">
 
         <div>
-          <label class="block text-sm font-medium text-stone-600 dark:text-gray-300 mb-1">Kategori</label>
+          <label class="block text-sm font-medium text-stone-600 dark:text-gray-300 mb-1">Category</label>
           <select name="category_id" required class="w-full px-3 py-2.5 border border-stone-200 dark:border-gray-600 rounded-xl text-sm outline-none focus:border-emerald-400 bg-white dark:bg-gray-800 text-stone-700 dark:text-gray-200">
-            <option value="">Pilih kategori</option>
+            <option value="">Select category</option>
             {% for cat in categories %}
             <option value="{{ cat.id }}">{{ cat.icon }} {{ cat.name }}</option>
             {% endfor %}
@@ -163,22 +163,22 @@
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-stone-600 dark:text-gray-300 mb-1">Batas Anggaran (Rp)</label>
+          <label class="block text-sm font-medium text-stone-600 dark:text-gray-300 mb-1">Budget Limit (Rp)</label>
           <input type="number" name="amount" placeholder="500000" required min="1"
                  class="w-full px-3 py-2.5 border border-stone-200 dark:border-gray-600 rounded-xl text-sm outline-none focus:border-emerald-400 bg-white dark:bg-gray-800 text-stone-700 dark:text-gray-200">
         </div>
 
         <div class="flex gap-4">
           <div class="flex-1">
-            <label class="block text-sm font-medium text-stone-600 dark:text-gray-300 mb-1">Bulan</label>
+            <label class="block text-sm font-medium text-stone-600 dark:text-gray-300 mb-1">Month</label>
             <select name="month" required class="w-full px-3 py-2.5 border border-stone-200 dark:border-gray-600 rounded-xl text-sm outline-none focus:border-emerald-400 bg-white dark:bg-gray-800 text-stone-700 dark:text-gray-200">
               {% for m in range(1, 13) %}
-              <option value="{{ m }}" {% if m == current_month %}selected{% endif %}>{{ ["", "Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"][m] }}</option>
+              <option value="{{ m }}" {% if m == current_month %}selected{% endif %}>{{ ["", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][m] }}</option>
               {% endfor %}
             </select>
           </div>
           <div class="flex-1">
-            <label class="block text-sm font-medium text-stone-600 dark:text-gray-300 mb-1">Tahun</label>
+            <label class="block text-sm font-medium text-stone-600 dark:text-gray-300 mb-1">Year</label>
             <select name="year" required class="w-full px-3 py-2.5 border border-stone-200 dark:border-gray-600 rounded-xl text-sm outline-none focus:border-emerald-400 bg-white dark:bg-gray-800 text-stone-700 dark:text-gray-200">
               {% for y in range(current_year - 1, current_year + 3) %}
               <option value="{{ y }}" {% if y == current_year %}selected{% endif %}>{{ y }}</option>
@@ -188,7 +188,7 @@
         </div>
 
         <button type="submit" class="btn-primary w-full flex items-center justify-center gap-2">
-          <i class="fas fa-check"></i> Simpan Anggaran
+          <i class="fas fa-check"></i> Save Budget
         </button>
       </form>
     </div>
@@ -220,14 +220,14 @@ document.addEventListener('keydown', function(e) {
 
 // ── Delete Budget ──
 function deleteBudget(id) {
-  if (!confirm('Hapus anggaran ini?')) return;
+  if (!confirm('Delete this budget?')) return;
   fetch('/api/budgets/' + id, { method: 'DELETE' })
     .then(r => r.json())
     .then(d => {
       if (d.status === 'success') {
         window.location.reload();
       } else {
-        alert(d.message || 'Gagal menghapus');
+        alert(d.message || 'Failed to delete');
       }
     });
 }

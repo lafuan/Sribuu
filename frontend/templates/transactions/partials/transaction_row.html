@@ -3,13 +3,13 @@
      class="tx-row grid grid-cols-1 sm:grid-cols-12 gap-1 sm:gap-2 px-5 py-3.5 border-b border-stone-50 dark:border-gray-800 items-center"
      {% if loop is defined and loop.last %}style="border-bottom: none;"{% endif %}>
 
-  <!-- Tanggal (Mobile + Desktop) -->
+  <!-- Date (Mobile + Desktop) -->
   <div class="sm:col-span-3">
     <span class="text-sm font-medium text-stone-700 dark:text-gray-200">{{ tx.transaction_date | format_date_id }}</span>
     <span class="text-xs text-stone-400 dark:text-gray-500 sm:hidden ml-2">{{ tx.transaction_date | format_time if tx.created_at else '' }}</span>
   </div>
 
-  <!-- Kategori / Catatan -->
+  <!-- Category / Notes -->
   <div class="sm:col-span-4">
     <div class="flex items-center gap-2">
       <span class="text-lg">{{ tx.category_icon }}</span>
@@ -36,7 +36,7 @@
     {% endif %}
   </div>
 
-  <!-- Metode Pembayaran -->
+  <!-- Payment Method -->
   <div class="sm:col-span-2">
     {% if tx.payment_icon %}
     <span class="badge bg-stone-50 dark:bg-gray-800 text-stone-600 dark:text-gray-300">
@@ -48,7 +48,7 @@
     {% endif %}
   </div>
 
-  <!-- Jumlah -->
+  <!-- Amount -->
   <div class="sm:col-span-2 sm:text-right">
     <span class="text-sm font-semibold text-red-500 dark:text-red-400 tabular-nums">-Rp {{ "{:,.0f}".format(tx.amount) }}</span>
   </div>
@@ -60,7 +60,7 @@
     <button
       @click="showAttachmentModal('{{ tx.attachment_url }}')"
       class="text-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-400 transition p-1"
-      title="Lihat Lampiran">
+      title="View Attachment">
       <i class="fas fa-paperclip text-xs"></i>
     </button>
     {% endif %}
@@ -72,7 +72,7 @@
     <!-- Delete with Alpine.js confirmation -->
     <button
       @click="confirmDelete({{ tx.id }})"
-      class="text-stone-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 transition p-1" title="Hapus">
+      class="text-stone-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 transition p-1" title="Delete">
       <i class="fas fa-trash text-xs"></i>
     </button>
   </div>

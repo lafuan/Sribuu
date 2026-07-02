@@ -886,7 +886,7 @@ async def generate_weekly_summary(
         existing.top_transactions = json.dumps(top_tx, ensure_ascii=False)
         existing.prev_week_total = prev_week_total
         existing.percentage_change = pct_change
-        existing.generated_at = datetime.utcnow()
+        existing.generated_at = datetime.now(timezone.utc).replace(tzinfo=None)
     else:
         ws = WeeklySummary(
             user_id=user_id,

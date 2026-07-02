@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Tambah Transaksi — Sribuu{% endblock %}
+{% block title %}Add Transaction — Sribuu{% endblock %}
 
 {% block head %}
 <style>
@@ -111,14 +111,14 @@ document.addEventListener('DOMContentLoaded', function() {
     <a href="{{ url_for('transactions_list') }}" class="text-stone-500 dark:text-gray-400 hover:text-stone-700 dark:hover:text-gray-200">
       <i class="fas fa-arrow-left text-lg"></i>
     </a>
-    <h1 class="text-xl font-bold text-stone-800 dark:text-gray-100">Tambah Transaksi</h1>
+    <h1 class="text-xl font-bold text-stone-800 dark:text-gray-100">Add Transaction</h1>
   </div>
 
   <div class="form-card">
     <form method="POST" action="{{ url_for('transactions_new') }}">
-      <!-- Jumlah -->
+      <!-- Amount -->
       <div class="form-group">
-        <label class="required">Jumlah</label>
+        <label class="required">Amount</label>
         <div class="relative">
           <span class="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400 dark:text-gray-400 font-medium text-lg">Rp</span>
           <input type="number" name="amount" placeholder="0" required min="1"
@@ -126,14 +126,14 @@ document.addEventListener('DOMContentLoaded', function() {
                  style="appearance: none; -moz-appearance: textfield;"
                  value="{{ form_data.amount if form_data else '' }}">
         </div>
-        <p class="text-xs text-stone-400 dark:text-gray-500 mt-1">Masukkan nominal pengeluaran</p>
+        <p class="text-xs text-stone-400 dark:text-gray-500 mt-1">Enter expense amount</p>
       </div>
 
-      <!-- Kategori -->
+      <!-- Category -->
       <div class="form-group">
-        <label class="required">Kategori</label>
+        <label class="required">Category</label>
         <select name="category_id" required>
-          <option value="">-- Pilih Kategori --</option>
+          <option value="">-- Select Category --</option>
           {% for cat in categories %}
           <option value="{{ cat.id }}" {% if form_data and form_data.category_id|string == cat.id|string %}selected{% endif %}>
             {{ cat.icon }} {{ cat.name }}
@@ -142,16 +142,16 @@ document.addEventListener('DOMContentLoaded', function() {
         </select>
       </div>
 
-      <!-- Tanggal -->
+      <!-- Date -->
       <div class="form-group">
-        <label class="required">Tanggal</label>
+        <label class="required">Date</label>
         <input type="date" name="transaction_date" required
                value="{{ form_data.transaction_date if form_data else today_iso }}">
       </div>
 
-      <!-- Metode Pembayaran -->
+      <!-- Payment Method -->
       <div class="form-group">
-        <label>Metode Pembayaran <span class="text-stone-300 font-normal text-xs">(opsional)</span></label>
+        <label>Payment Method <span class="text-stone-300 font-normal text-xs">(optional)</span></label>
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
           {% for pm in payment_methods %}
           <label class="payment-radio">
@@ -163,20 +163,20 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
       </div>
 
-      <!-- Catatan -->
+      <!-- Notes -->
       <div class="form-group">
-        <label>Catatan <span class="text-stone-300 dark:text-gray-500 font-normal text-xs">(opsional)</span>
-          <span class="text-xs text-emerald-500 ml-2">💡 Gunakan #tag untuk label</span>
+        <label>Notes <span class="text-stone-300 dark:text-gray-500 font-normal text-xs">(optional)</span>
+          <span class="text-xs text-emerald-500 ml-2">💡 Use #tag for labels</span>
         </label>
-        <textarea name="notes" rows="2" placeholder="Misal: beli nasi padang + es teh #makan #kerja">{{ form_data.notes if form_data else '' }}</textarea>
+        <textarea name="notes" rows="2" placeholder="e.g. bought lunch + coffee #food #work">{{ form_data.notes if form_data else '' }}</textarea>
         <p id="notes-preview" class="text-xs text-stone-400 dark:text-gray-500 mt-1 min-h-[1rem]"></p>
       </div>
 
       <!-- Buttons -->
       <div class="flex gap-3 pt-2">
-        <a href="{{ url_for('transactions_list') }}" class="btn-cancel flex-1 text-center">Batal</a>
+        <a href="{{ url_for('transactions_list') }}" class="btn-cancel flex-1 text-center">Cancel</a>
         <button type="submit" class="btn-save flex-1 flex items-center justify-center gap-2">
-          <i class="fas fa-save"></i> Simpan
+          <i class="fas fa-save"></i> Save
         </button>
       </div>
     </form>

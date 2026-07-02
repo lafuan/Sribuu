@@ -1,26 +1,49 @@
-# Sribuu — Aplikasi Pencatatan Pengeluaran Harian
+# Sribuu — Daily Expense Tracker
 
 [![CI](https://github.com/lafuan/Sribuu/actions/workflows/ci.yml/badge.svg)](https://github.com/lafuan/Sribuu/actions/workflows/ci.yml)
 [![Coverage](https://codecov.io/gh/lafuan/Sribuu/branch/main/graph/badge.svg)](https://codecov.io/gh/lafuan/Sribuu)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Aplikasi web ringan untuk mencatat pengeluaran harian. Dibangun dengan Python FastAPI + SQLite + Jinja2 + HTMX.
+A lightweight web application for tracking daily expenses. Built with Python FastAPI + SQLite + Jinja2 + HTMX.
 
-## Tech Stack
+**Live**: [sribuu.duckdns.org](https://sribuu.duckdns.org) | **Docs**: [Agent Documentation](docs/agents/)
 
-| Komponen | Teknologi |
-|----------|-----------|
+---
+
+## 🚀 Tech Stack
+
+| Component | Technology |
+|-----------|------------|
 | Backend | Python 3.11+ / FastAPI |
-| Database | SQLite + SQLAlchemy 2.0 (async) |
-| Frontend | Jinja2 + HTMX + Alpine.js + Tailwind CSS CDN |
-| Chart | Chart.js CDN |
-| Server | Uvicorn + Nginx |
+| Database | PostgreSQL (production) / SQLite (dev) + SQLAlchemy 2.0 (async) |
+| Frontend | Jinja2 + HTMX + Alpine.js + Tailwind CSS |
+| Charts | Chart.js CDN |
+| Server | Uvicorn + Nginx + systemd |
 | CI/CD | GitHub Actions |
 | SAST | Bandit, CodeQL |
 | Linting | Ruff, Mypy |
 | Migrations | Alembic (async) |
 | Logging | Structlog (JSON structured) |
+| iOS App | Flutter (unsigned IPA for sideloading) |
+
+## 🤖 Autonomous AI Agents
+
+Sribuu uses a fleet of autonomous AI agents for continuous quality monitoring. Each agent runs on a cron schedule and creates GitHub Issues with findings.
+
+| Agent | Schedule | Focus Area |
+|-------|----------|------------|
+| [Scrum Master](docs/agents/scrum-master.md) | 08:00, 19:00 WIB | Backlog prioritization, sprint planning |
+| [Business Analyst](docs/agents/business-analyst.md) | 07:00 WIB | Market research, feature discovery |
+| [Backend](docs/agents/backend.md) | 10:00, 16:00, 22:00 WIB | Code quality, architecture, N+1 queries |
+| [Frontend](docs/agents/frontend.md) | 12:00, 18:00, 00:00 WIB | UI/UX, accessibility, CSS cleanup |
+| [QA](docs/agents/qa.md) | Every 2 hours | CI health, flaky tests, coverage gaps |
+| [DevOps](docs/agents/devops.md) | 02:00, 14:00, 20:00 WIB | Infrastructure health, deploy safety |
+| [Security](docs/agents/security.md) | 03:00, 09:00, 15:00, 21:00 WIB | SAST, infra hardening, CVE audit |
+| [Database](docs/agents/database.md) | 05:00, 13:00, 21:00 WIB | Query performance, index optimization |
+| [Mobile](docs/agents/mobile.md) | 06:00, 18:00 WIB | Flutter iOS code quality, build health |
+
+See [Agent Documentation](docs/agents/README.md) for full details.
 
 ## Quick Start (Development)
 
@@ -36,10 +59,10 @@ pip install -r requirements.txt
 
 # Run with hot reload
 make dev
-# atau: cd backend && uvicorn main:app --reload --host 0.0.0.0 --port 8000
+# or: cd backend && uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-Buka http://localhost:8000
+Open http://localhost:8000
 
 ## Makefile Commands
 
@@ -61,13 +84,13 @@ Buka http://localhost:8000
 | `make alembic-downgrade` | Rollback last migration |
 | `make clean` | Remove cache and build artifacts |
 
-## Struktur Proyek
+## Project Structure
 
 ```
 Sribuu/
 ├── backend/
-│   ├── main.py              # Entry point FastAPI
-│   ├── config.py            # Konfigurasi aplikasi
+│   ├── main.py              # FastAPI entry point
+│   ├── config.py            # Application configuration
 │   ├── database.py          # Database connection + session
 │   ├── alembic.ini          # Alembic configuration
 │   ├── migrations/          # Database migrations
@@ -79,56 +102,60 @@ Sribuu/
 │   └── tests/               # Backend tests
 ├── frontend/
 │   ├── templates/           # Jinja2 templates
+│   ├── static/              # Static assets (CSS, JS)
 │   └── tests/               # Frontend tests
+├── flutter_app/             # Flutter iOS app
+├── docs/
+│   └── agents/              # AI agent documentation
 ├── scripts/                 # VPS deployment scripts
-├── docs/                    # Dokumentasi
 ├── .github/
 │   ├── workflows/
 │   │   ├── ci.yml           # CI pipeline
+│   │   ├── ios-build.yml    # iOS IPA build
 │   │   └── deploy.yml       # CD pipeline
 │   └── dependabot.yml       # Auto dependency updates
-├── pyproject.toml            # Centralized tool config
+├── pyproject.toml           # Centralized tool config
 ├── .pre-commit-config.yaml  # Pre-commit hooks
-├── Makefile                  # Development shortcuts
+├── Makefile                 # Development shortcuts
 └── requirements.txt
 ```
 
 ## CI/CD Pipeline
 
 ### CI (Continuous Integration)
-Trigger on push & PR ke `main`:
+Trigger on push & PR to `main`:
 - **pip-audit** — Dependency vulnerability scanning
 - **Bandit** — Python SAST security scan
 - **Ruff** — Fast Python linter
 - **Mypy** — Static type checking
-- **Pytest** — All tests (backend 56 + frontend 19)
+- **Pytest** — All tests (backend + frontend)
 - **pytest-cov** — Coverage report (fail < 70%)
 - **CodeQL** — GitHub security analysis (Python + JavaScript)
 
 ### CD (Continuous Deployment)
-Trigger on push ke `main` (setelah merge):
-- SSH ke VPS → git pull → restart service → health check
-- Auto-rollback jika health check gagal
-- Gunakan GitHub Secrets: `SSH_HOST`, `SSH_USER`, `SSH_KEY`
+Trigger on push to `main` (after merge):
+- SSH to VPS → git pull → restart service → health check
+- Auto-rollback if health check fails
+- Uses GitHub Secrets: `SSH_HOST`, `SSH_USER`, `SSH_KEY`
 
-## Deploy ke VPS
+## Deploy to VPS
 
-### Prasyarat
+### Prerequisites
 - Ubuntu 22.04+ VPS
-- Domain yang mengarah ke VPS
-- GitHub Secrets terisi (`SSH_HOST`, `SSH_USER`, `SSH_KEY`)
+- Domain pointing to VPS
+- GitHub Secrets configured (`SSH_HOST`, `SSH_USER`, `SSH_KEY`)
 
-### Setup Manual
+### Automated Setup
 
 ```bash
-# SSH ke VPS
+# SSH to VPS
 ssh user@your-vps-ip
 
-# Clone dan jalankan setup script
+# Clone and run setup script
 sudo bash -c "$(curl -fsSL https://raw.githubusercontent.com/lafuan/Sribuu/main/scripts/setup-vps.sh)"
 ```
 
-Atau step-by-step:
+### Manual Setup (Step by Step)
 
 ```bash
 # 1. Install dependencies
@@ -163,7 +190,7 @@ sudo certbot --nginx -d your-domain.com
 ### Database Migrations
 
 ```bash
-# Generate migration (setelah perubahan model)
+# Generate migration (after model changes)
 cd backend
 alembic revision --autogenerate -m "description"
 
@@ -188,6 +215,6 @@ sudo journalctl -u sribuu -f
 sudo tail -f /var/log/nginx/sribuu-access.log
 ```
 
-## Lisensi
+## License
 
 MIT

@@ -15,7 +15,7 @@ jobs:
     name: "🔍 Dependency Audit"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
@@ -28,11 +28,10 @@ jobs:
     name: "🛡️ Bandit SAST"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-          cache: "pip"
       - name: Install bandit
         run: pip install bandit[toml]
       - name: Run Bandit
@@ -42,11 +41,7 @@ jobs:
     name: "🧹 Ruff Lint"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          cache: "pip"
+      - uses: actions/checkout@v7
       - uses: astral-sh/ruff-action@v3
         with:
           args: check
@@ -55,13 +50,14 @@ jobs:
     name: "🔬 Mypy Type Check"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-          cache: "pip"
       - name: Install dependencies
-        run: pip install -r requirements.txt mypy
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt mypy
       - name: Run mypy
         run: mypy backend/
 
@@ -72,17 +68,18 @@ jobs:
       matrix:
         suite: [backend, frontend]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-          cache: "pip"
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
       - name: Run ${{ matrix.suite }} tests
         if: matrix.suite == 'frontend'
         run: |
-          pip install pytest-html
+          pip install pytest-html 2>/dev/null || true
           pytest frontend/tests/ -v --tb=short
 
       - name: Install backend + run tests
@@ -96,13 +93,13 @@ jobs:
     runs-on: ubuntu-latest
     needs: [pytest]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-          cache: "pip"
       - name: Install dependencies
         run: |
+          pip install --upgrade pip
           pip install -r requirements.txt pytest-cov
           pip install -e .
       - name: Run tests with coverage
@@ -128,7 +125,7 @@ jobs:
       actions: read
       contents: read
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
@@ -140,7 +137,7 @@ jobs:
     name: "🎨 CSS Build Verification"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -157,7 +154,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [pytest]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"

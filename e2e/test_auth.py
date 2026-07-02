@@ -12,7 +12,7 @@ class TestAuth:
         """Halaman login harus muncul dengan benar."""
         page.goto(f"{BASE_URL}/login")
         page.wait_for_load_state("networkidle")
-        assert "Masuk" in page.title()
+        assert "Login" in page.title()
         assert page.is_visible("input[name=email]")
         assert page.is_visible("input[name=password]")
 
@@ -47,7 +47,7 @@ class TestAuth:
         """Halaman register harus muncul dengan benar."""
         page.goto(f"{BASE_URL}/register")
         page.wait_for_load_state("networkidle")
-        assert "Daftar" in page.title() or "Buat Akun" in page.text_content("h1")
+        assert "Register" in page.title() or "Create Account" in page.text_content("h1")
         assert page.is_visible("input[name=name]")
         assert page.is_visible("input[name=email]")
         assert page.is_visible("input[name=password]")

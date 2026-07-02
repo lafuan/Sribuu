@@ -98,7 +98,7 @@ async def create_bgt(
     return StandardResponse(
         status="success",
         data=result,
-        message="Budget berhasil ditambahkan",
+        message="Budget added",
     ).model_dump()
 
 
@@ -117,7 +117,7 @@ async def update_bgt(
     return StandardResponse(
         status="success",
         data=result,
-        message="Budget berhasil diperbarui",
+        message="Budget updated",
     ).model_dump()
 
 
@@ -134,7 +134,7 @@ async def delete_bgt(
 
     return StandardResponse(
         status="success",
-        message="Budget berhasil dihapus",
+        message="Budget deleted",
     ).model_dump()
 
 
@@ -266,5 +266,5 @@ async def bulk_create(
     return StandardResponse(
         status="success",
         data={"created": created},
-        message=f"{len(created)} budget berhasil dibuat",
+        message=f"{len(created)} budgets created",
     ).model_dump()

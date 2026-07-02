@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Edit Transaksi — Sribuu{% endblock %}
+{% block title %}Edit Transaction — Sribuu{% endblock %}
 
 {% block head %}
 <style>
@@ -122,18 +122,18 @@
     <div class="bg-white dark:bg-gray-900 rounded-2xl p-4 max-w-lg w-full mx-4 shadow-2xl"
          @click.stop>
       <div class="flex justify-between items-center mb-3">
-        <h3 class="text-lg font-semibold text-stone-700 dark:text-gray-200">Lampiran</h3>
+        <h3 class="text-lg font-semibold text-stone-700 dark:text-gray-200">Attachment</h3>
         <button @click="showAttachment = false" class="text-stone-400 hover:text-stone-600 dark:hover:text-gray-200">
           <i class="fas fa-times"></i>
         </button>
       </div>
-      <img :src="attachmentUrl" alt="Lampiran" class="w-full rounded-lg">
+      <img :src="attachmentUrl" alt="Attachment" class="w-full rounded-lg">
       <div class="mt-3 flex gap-2">
         <a :href="attachmentUrl" target="_blank" class="btn-cancel flex-1 text-center !py-2 !px-4 text-sm">
-          <i class="fas fa-external-link-alt mr-1"></i> Buka di Tab Baru
+          <i class="fas fa-external-link-alt mr-1"></i> Open in New Tab
         </a>
         <button @click="deleteAttachment()" class="flex-1 !bg-red-500 !text-white !border-red-500 hover:!bg-red-600 btn-cancel text-sm">
-          <i class="fas fa-trash mr-1"></i> Hapus
+          <i class="fas fa-trash mr-1"></i> Delete
         </button>
       </div>
     </div>
@@ -144,26 +144,26 @@
     <a href="{{ url_for('transactions_list') }}" class="text-stone-500 dark:text-gray-400 hover:text-stone-700 dark:hover:text-gray-200">
       <i class="fas fa-arrow-left text-lg"></i>
     </a>
-    <h1 class="text-xl font-bold text-stone-800 dark:text-gray-100">Edit Transaksi</h1>
+    <h1 class="text-xl font-bold text-stone-800 dark:text-gray-100">Edit Transaction</h1>
   </div>
 
   <div class="form-card">
     <form method="POST" action="{{ url_for('transactions_edit', tx_id=tx.id) }}" enctype="multipart/form-data">
       <!-- Attachment Preview/Upload -->
       <div class="form-group">
-        <label>Lampiran <span class="text-stone-300 font-normal text-xs">(opsional)</span></label>
+        <label>Attachment <span class="text-stone-300 font-normal text-xs">(optional)</span></label>
         {% if tx.attachment_url %}
         <div class="flex items-center gap-3 mb-2" id="current-attachment">
-          <img src="{{ tx.attachment_url }}" alt="Lampiran" class="attachment-preview">
+          <img src="{{ tx.attachment_url }}" alt="Attachment" class="attachment-preview">
           <div>
-            <p class="text-sm text-stone-600 dark:text-gray-400">Lampiran tersedia</p>
+            <p class="text-sm text-stone-600 dark:text-gray-400">Attachment available</p>
             <button type="button" @click="showAttachmentModal('{{ tx.attachment_url }}')"
                     class="text-xs text-emerald-600 hover:text-emerald-700 dark:text-emerald-400">
-              <i class="fas fa-eye mr-1"></i> Lihat
+              <i class="fas fa-eye mr-1"></i> View
             </button>
             <button type="button" @click="deleteAttachment()"
                     class="text-xs text-red-500 hover:text-red-600 ml-2">
-              <i class="fas fa-trash mr-1"></i> Hapus
+              <i class="fas fa-trash mr-1"></i> Delete
             </button>
           </div>
         </div>
@@ -173,8 +173,8 @@
         <!-- Upload Area -->
         <div class="attachment-upload-area" @click="$refs.attachmentFile.click()">
           <i class="fas fa-cloud-upload-alt text-2xl text-stone-300 dark:text-gray-600 mb-2"></i>
-          <p class="text-sm text-stone-500 dark:text-gray-400">Klik untuk upload foto</p>
-          <p class="text-xs text-stone-400 dark:text-gray-500 mt-1">JPG, PNG, WebP • Maks 5MB</p>
+          <p class="text-sm text-stone-500 dark:text-gray-400">Click to upload photo</p>
+          <p class="text-xs text-stone-400 dark:text-gray-500 mt-1">JPG, PNG, WebP • Max 5MB</p>
           <input type="file" name="attachment" x-ref="attachmentFile" @change="previewFile($event)"
                  accept=".jpg,.jpeg,.png,.webp" class="hidden">
         </div>
@@ -185,9 +185,9 @@
         </div>
       </div>
 
-      <!-- Jumlah -->
+      <!-- Amount -->
       <div class="form-group">
-        <label class="required">Jumlah</label>
+        <label class="required">Amount</label>
         <div class="relative">
           <span class="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400 dark:text-gray-400 font-medium text-lg">Rp</span>
           <input type="number" name="amount" placeholder="0" required min="1"
@@ -195,14 +195,14 @@
                  style="appearance: none; -moz-appearance: textfield;"
                  value="{{ tx.amount }}">
         </div>
-        <p class="text-xs text-stone-400 dark:text-gray-500 mt-1">Masukkan nominal pengeluaran</p>
+        <p class="text-xs text-stone-400 dark:text-gray-500 mt-1">Enter expense amount</p>
       </div>
 
-      <!-- Kategori -->
+      <!-- Category -->
       <div class="form-group">
-        <label class="required">Kategori</label>
+        <label class="required">Category</label>
         <select name="category_id" required>
-          <option value="">-- Pilih Kategori --</option>
+          <option value="">-- Select Category --</option>
           {% for cat in categories %}
           <option value="{{ cat.id }}" {% if tx.category and tx.category.id == cat.id %}selected{% endif %}>
             {{ cat.icon }} {{ cat.name }}
@@ -211,16 +211,16 @@
         </select>
       </div>
 
-      <!-- Tanggal -->
+      <!-- Date -->
       <div class="form-group">
-        <label class="required">Tanggal</label>
+        <label class="required">Date</label>
         <input type="date" name="transaction_date" required
                value="{{ tx.transaction_date }}">
       </div>
 
-      <!-- Metode Pembayaran -->
+      <!-- Payment Method -->
       <div class="form-group">
-        <label>Metode Pembayaran <span class="text-stone-300 font-normal text-xs">(opsional)</span></label>
+        <label>Payment Method <span class="text-stone-300 font-normal text-xs">(optional)</span></label>
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
           {% for pm in payment_methods %}
           <label class="payment-radio">
@@ -232,12 +232,12 @@
         </div>
       </div>
 
-      <!-- Catatan -->
+      <!-- Notes -->
       <div class="form-group">
-        <label>Catatan <span class="text-stone-300 dark:text-gray-500 font-normal text-xs">(opsional)</span>
-          <span class="text-xs text-emerald-500 ml-2">💡 Gunakan #tag untuk label</span>
+        <label>Notes <span class="text-stone-300 dark:text-gray-500 font-normal text-xs">(optional)</span>
+          <span class="text-xs text-emerald-500 ml-2">💡 Use #tag for labels</span>
         </label>
-        <textarea name="notes" rows="2" placeholder="Misal: beli nasi padang + es teh #makan #kerja"
+        <textarea name="notes" rows="2" placeholder="e.g. bought lunch + coffee #food #work"
                   x-data
                   x-init="$el.addEventListener('input', function() {
                     const preview = document.getElementById('notes-preview');
@@ -250,9 +250,9 @@
 
       <!-- Buttons -->
       <div class="flex gap-3 pt-2">
-        <a href="{{ url_for('transactions_list') }}" class="btn-cancel flex-1 text-center">Batal</a>
+        <a href="{{ url_for('transactions_list') }}" class="btn-cancel flex-1 text-center">Cancel</a>
         <button type="submit" class="btn-save flex-1 flex items-center justify-center gap-2">
-          <i class="fas fa-save"></i> Perbarui
+          <i class="fas fa-save"></i> Update
         </button>
       </div>
     </form>
@@ -289,7 +289,7 @@ function editTransaction() {
             reader.readAsDataURL(file);
         },
         async deleteAttachment() {
-            if (!confirm('Hapus lampiran ini?')) return;
+            if (!confirm('Delete this attachment?')) return;
             try {
                 const response = await fetch(`/api/transactions/${this.txId}/attachment`, {
                     method: 'DELETE',
@@ -304,11 +304,11 @@ function editTransaction() {
                     // Refresh page to update UI
                     window.location.reload();
                 } else {
-                    alert('Gagal menghapus lampiran');
+                    alert('Failed to delete attachment');
                 }
             } catch (error) {
                 console.error('Error:', error);
-                alert('Terjadi kesalahan saat menghapus lampiran');
+                alert('Error occurred while deleting attachment');
             }
         }
     }

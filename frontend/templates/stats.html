@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Statistik — Sribuu{% endblock %}
+{% block title %}Statistics — Sribuu{% endblock %}
 
 {% block head %}
 <style>
@@ -34,7 +34,7 @@
       <i class="fas fa-arrow-left text-lg"></i>
     </a>
     <h1 class="text-xl font-bold text-stone-800 dark:text-gray-100">
-      <i class="fas fa-chart-pie text-emerald-500 mr-2"></i>Statistik
+      <i class="fas fa-chart-pie text-emerald-500 mr-2"></i>Statistics
     </h1>
   </div>
 
@@ -49,17 +49,17 @@
       <div class="flex gap-1">
         <button @click="setView('month')"
                 :class="view === 'month' ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300' : 'text-stone-500 dark:text-gray-400 hover:bg-stone-100 dark:hover:bg-gray-700'"
-                class="px-3 py-1.5 rounded-lg text-xs font-medium transition">Bulan</button>
+                class="px-3 py-1.5 rounded-lg text-xs font-medium transition">Month</button>
         <button @click="setView('week')"
                 :class="view === 'week' ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300' : 'text-stone-500 dark:text-gray-400 hover:bg-stone-100 dark:hover:bg-gray-700'"
-                class="px-3 py-1.5 rounded-lg text-xs font-medium transition">Minggu</button>
+                class="px-3 py-1.5 rounded-lg text-xs font-medium transition">Week</button>
         <button @click="setView('year')"
                 :class="view === 'year' ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300' : 'text-stone-500 dark:text-gray-400 hover:bg-stone-100 dark:hover:bg-gray-700'"
-                class="px-3 py-1.5 rounded-lg text-xs font-medium transition">Tahun</button>
+                class="px-3 py-1.5 rounded-lg text-xs font-medium transition">Year</button>
       </div>
       <a :href="`/api/reports/monthly?year=${year}&month=${month}`"
          class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-medium transition"
-         title="Download laporan PDF bulan ini">
+         title="Download monthly PDF report">
         <i class="fas fa-file-pdf"></i> Download PDF
       </a>
     </div>
@@ -72,15 +72,15 @@
       <p class="text-2xl font-bold text-stone-700 dark:text-gray-100">Rp {{ "{:,.0f}".format(summary.total) }}</p>
     </div>
     <div class="card stat-card text-center">
-      <p class="text-xs text-stone-400 dark:text-gray-400 uppercase tracking-wide mb-1">Transaksi</p>
+      <p class="text-xs text-stone-400 dark:text-gray-400 uppercase tracking-wide mb-1">Transactions</p>
       <p class="text-2xl font-bold text-stone-700 dark:text-gray-100">{{ summary.count }}</p>
     </div>
     <div class="card stat-card text-center">
-      <p class="text-xs text-stone-400 dark:text-gray-400 uppercase tracking-wide mb-1">Rata/Hari</p>
+      <p class="text-xs text-stone-400 dark:text-gray-400 uppercase tracking-wide mb-1">Avg/Day</p>
       <p class="text-2xl font-bold text-stone-700 dark:text-gray-100">Rp {{ "{:,.0f}".format(summary.avg_per_day) }}</p>
     </div>
     <div class="card stat-card text-center">
-      <p class="text-xs text-stone-400 dark:text-gray-400 uppercase tracking-wide mb-1">Tertinggi</p>
+      <p class="text-xs text-stone-400 dark:text-gray-400 uppercase tracking-wide mb-1">Highest</p>
       <p class="text-2xl font-bold text-stone-700 dark:text-gray-100">Rp {{ "{:,.0f}".format(summary.highest) }}</p>
     </div>
   </div>
@@ -88,7 +88,7 @@
   <!-- Pie Chart — Pengeluaran per Kategori -->
   <div class="card">
     <h2 class="font-semibold text-stone-700 dark:text-gray-200 text-sm uppercase tracking-wide mb-4">
-      <i class="fas fa-chart-pie text-emerald-500 mr-1"></i> Pengeluaran per Kategori
+      <i class="fas fa-chart-pie text-emerald-500 mr-1"></i> Expenses by Category
     </h2>
 
     <div class="flex flex-col md:flex-row items-center gap-5">
@@ -113,7 +113,7 @@
         </div>
         {% endfor %}
         {% else %}
-        <p class="text-sm text-stone-400 dark:text-gray-500 text-center py-4">Belum ada data untuk periode ini</p>
+        <p class="text-sm text-stone-400 dark:text-gray-500 text-center py-4">No data for this period</p>
         {% endif %}
       </div>
     </div>
@@ -123,13 +123,13 @@
   <div class="card">
     <div class="flex items-center justify-between mb-4">
       <h2 class="font-semibold text-stone-700 dark:text-gray-200 text-sm uppercase tracking-wide">
-        <i class="fas fa-chart-bar text-emerald-500 mr-1"></i> Tren Harian
+        <i class="fas fa-chart-bar text-emerald-500 mr-1"></i> Daily Trend
       </h2>
       <div class="flex gap-1">
         <button @click="setTrendRange(7)" :class="trendRange === 7 ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300' : 'text-stone-400 dark:text-gray-500 hover:bg-stone-100 dark:hover:bg-gray-700'"
-                class="px-3 py-1 rounded-lg text-xs font-medium transition">7 Hari</button>
+                class="px-3 py-1 rounded-lg text-xs font-medium transition">7 Days</button>
         <button @click="setTrendRange(30)" :class="trendRange === 30 ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300' : 'text-stone-400 dark:text-gray-500 hover:bg-stone-100 dark:hover:bg-gray-700'"
-                class="px-3 py-1 rounded-lg text-xs font-medium transition">30 Hari</button>
+                class="px-3 py-1 rounded-lg text-xs font-medium transition">30 Days</button>
       </div>
     </div>
 
@@ -138,14 +138,14 @@
     </div>
 
     {% if not daily_trend %}
-    <p class="text-xs text-stone-400 dark:text-gray-500 text-center mt-3">Belum ada data tren harian</p>
+    <p class="text-xs text-stone-400 dark:text-gray-500 text-center mt-3">No daily trend data yet</p>
     {% endif %}
   </div>
 
   <!-- Month-over-Month Comparison -->
   <div class="card">
     <h2 class="font-semibold text-stone-700 dark:text-gray-200 text-sm uppercase tracking-wide mb-3">
-      <i class="fas fa-calendar-alt text-emerald-500 mr-1"></i> Perbandingan Bulanan
+      <i class="fas fa-calendar-alt text-emerald-500 mr-1"></i> Monthly Comparison
     </h2>
 
     {% if month_comparisons %}
@@ -168,23 +168,23 @@
         {% if loop.first and month_comparisons | length > 1 and mc.amount < month_comparisons[1].amount %}
         {% set diff = month_comparisons[1].amount - mc.amount %}
         {% set pct = (diff / month_comparisons[1].amount * 100) | round | int %}
-        <p class="text-xs text-emerald-600 dark:text-emerald-400 mt-0.5">▼ Rp {{ "{:,.0f}".format(diff) }} ({{ pct }}% lebih hemat!)</p>
+        <p class="text-xs text-emerald-600 dark:text-emerald-400 mt-0.5">▼ Rp {{ "{:,.0f}".format(diff) }} ({{ pct }}% more savings!)</p>
         {% elif loop.first and month_comparisons | length > 1 and mc.amount > month_comparisons[1].amount %}
         {% set diff = mc.amount - month_comparisons[1].amount %}
-        <p class="text-xs text-amber-600 dark:text-amber-400 mt-0.5">▲ Rp {{ "{:,.0f}".format(diff) }} dari bulan lalu</p>
+        <p class="text-xs text-amber-600 dark:text-amber-400 mt-0.5">▲ Rp {{ "{:,.0f}".format(diff) }} from last month</p>
         {% endif %}
       </div>
       {% endfor %}
     </div>
     {% else %}
-    <p class="text-sm text-stone-400 dark:text-gray-500 text-center py-4">Belum ada data perbandingan</p>
+    <p class="text-sm text-stone-400 dark:text-gray-500 text-center py-4">No comparison data yet</p>
     {% endif %}
   </div>
 
   <!-- Top Tags -->
   <div class="card">
     <h2 class="font-semibold text-stone-700 dark:text-gray-200 text-sm uppercase tracking-wide mb-3">
-      <i class="fas fa-hashtag text-emerald-500 mr-1"></i> Tag Terpopuler Bulan Ini
+      <i class="fas fa-hashtag text-emerald-500 mr-1"></i> Top Tags This Month
     </h2>
     {% if top_tags %}
     <div class="flex flex-wrap gap-2">
@@ -197,7 +197,7 @@
       {% endfor %}
     </div>
     {% else %}
-    <p class="text-sm text-stone-400 dark:text-gray-500 text-center py-4">Belum ada tag bulan ini. Gunakan #tag di catatan transaksi.</p>
+    <p class="text-sm text-stone-400 dark:text-gray-500 text-center py-4">No tags this month. Use #tags in transaction notes.</p>
     {% endif %}
   </div>
 
@@ -214,9 +214,9 @@ document.addEventListener('alpine:init', () => {
     trendRange: 7,
 
     get monthLabel() {
-      const names = ['Januari','Februari','Maret','April','Mei','Juni',
-                     'Juli','Agustus','September','Oktober','November','Desember'];
-      if (this.view === 'year') return `Tahun ${this.year}`;
+      const names = ['January','February','March','April','May','June',
+                     'July','August','September','October','November','December'];
+      if (this.view === 'year') return `Year ${this.year}`;
       return `${names[this.month - 1]} ${this.year}`;
     },
 
@@ -312,7 +312,7 @@ document.addEventListener('alpine:init', () => {
         data: {
           labels: days,
           datasets: [{
-            label: 'Pengeluaran',
+            label: 'Expenses',
             data: amounts,
             backgroundColor: colors,
             borderRadius: 6,

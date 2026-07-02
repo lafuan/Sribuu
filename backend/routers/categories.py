@@ -50,7 +50,7 @@ async def create_cat(
     return StandardResponse(
         status="success",
         data=result,
-        message="Kategori berhasil ditambahkan",
+        message="Category added",
     ).model_dump()
 
 
@@ -69,7 +69,7 @@ async def update_cat(
     return StandardResponse(
         status="success",
         data=result,
-        message="Kategori berhasil diperbarui",
+        message="Category updated",
     ).model_dump()
 
 
@@ -86,7 +86,7 @@ async def delete_cat(
 
     return StandardResponse(
         status="success",
-        message="Kategori berhasil dihapus",
+        message="Category deleted",
     ).model_dump()
 
 

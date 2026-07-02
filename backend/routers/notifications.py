@@ -130,7 +130,7 @@ async def check_budget_alerts(
                         "category_icon": category.icon if category else "📦",
                         "category_id": budget.category_id,
                         "percentage": round(percentage, 1),
-                        "message": f"Anggaran {category.icon if category else '📦'} {category.name if category else 'Unknown'} sudah TERLEWATI! ({round(percentage, 1)}%)",
+                        "message": f"Budget for {category.icon if category else '📦'} {category.name if category else 'Unknown'} EXCEEDED! ({round(percentage, 1)}%)",
                         "urgent": True,
                     })
                 elif percentage >= 80:
@@ -140,7 +140,7 @@ async def check_budget_alerts(
                         "category_icon": category.icon if category else "📦",
                         "category_id": budget.category_id,
                         "percentage": round(percentage, 1),
-                        "message": f"Anggaran {category.icon if category else '📦'} {category.name if category else 'Unknown'} sudah {round(percentage, 1)}% terpakai!",
+                        "message": f"Budget for {category.icon if category else '📦'} {category.name if category else 'Unknown'} is {round(percentage, 1)}% used!",
                         "urgent": False,
                     })
 

@@ -11,6 +11,9 @@ concurrency:
   group: deploy
   cancel-in-progress: false
 
+permissions:
+  contents: read
+
 jobs:
   deploy:
     name: "🚀 Deploy to VPS"
@@ -48,7 +51,7 @@ jobs:
 
             echo "=== Starting new container ==="
             sudo docker run -d --name sribuu --network host --restart always \
-              -e DATABASE_URL="postgresql+asyncpg://sribuu:sribuu_dev_2026@localhost:5432/sribuu" \
+              -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
               -e SECRET_KEY="${{ secrets.SECRET_KEY }}" \
               -e DEBUG="false" \
               ghcr.io/lafuan/sribuu:latest
@@ -76,7 +79,7 @@ jobs:
             IMAGE_TAG=$(sudo docker images ghcr.io/lafuan/sribuu --format "{{.Tag}}" | grep -v latest | tail -1)
             if [ -n "$IMAGE_TAG" ]; then
               sudo docker run -d --name sribuu --network host --restart always \
-                -e DATABASE_URL="postgresql+asyncpg://sribuu:sribuu_dev_2026@localhost:5432/sribuu" \
+                -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
                 -e SECRET_KEY="${{ secrets.SECRET_KEY }}" \
                 -e DEBUG="false" \
                 "ghcr.io/lafuan/sribuu:$IMAGE_TAG"
@@ -90,7 +93,7 @@ jobs:
     needs: [deploy]
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"

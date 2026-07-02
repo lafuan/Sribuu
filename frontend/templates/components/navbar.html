@@ -12,28 +12,28 @@
     <!-- Desktop Navigation -->
     <nav class="hidden sm:flex items-center gap-6">
       <a href="{{ url_for('dashboard') }}" class="text-sm font-medium text-stone-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition {% if request.url.path == '/' or request.url.path == '/dashboard' %}text-emerald-600 dark:text-emerald-400{% endif %}">
-        <i class="fas fa-home mr-1"></i> Beranda
+        <i class="fas fa-home mr-1"></i> Home
       </a>
       <a href="{{ url_for('transactions_list') }}" class="text-sm font-medium text-stone-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition {% if '/transactions' in request.url.path %}text-emerald-600 dark:text-emerald-400{% endif %}">
-        <i class="fas fa-list mr-1"></i> Riwayat
+        <i class="fas fa-list mr-1"></i> History
       </a>
       <a href="{{ url_for('budgets_page') }}" class="text-sm font-medium text-stone-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition {% if '/budgets' in request.url.path %}text-emerald-600 dark:text-emerald-400{% endif %}">
-        <i class="fas fa-coins mr-1"></i> Anggaran
+        <i class="fas fa-coins mr-1"></i> Budget
       </a>
       <a href="{{ url_for('bills_page') }}" class="text-sm font-medium text-stone-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition {% if '/bills' in request.url.path %}text-emerald-600 dark:text-emerald-400{% endif %}">
-        <i class="fas fa-bell mr-1"></i> Tagihan
+        <i class="fas fa-bell mr-1"></i> Bills
       </a>
       <a href="{{ url_for('subscriptions_page') }}" class="text-sm font-medium text-stone-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition {% if '/subscriptions' in request.url.path %}text-emerald-600 dark:text-emerald-400{% endif %}">
         <i class="fas fa-sync-alt mr-1"></i> Subscription
       </a>
       <a href="{{ url_for('stats') }}" class="text-sm font-medium text-stone-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition {% if '/stats' in request.url.path %}text-emerald-600 dark:text-emerald-400{% endif %}">
-        <i class="fas fa-chart-pie mr-1"></i> Statistik
+        <i class="fas fa-chart-pie mr-1"></i> Statistics
       </a>
       <a href="{{ url_for('annual_summary') }}" class="text-sm font-medium text-stone-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition {% if '/annual-summary' in request.url.path %}text-emerald-600 dark:text-emerald-400{% endif %}">
-        <i class="fas fa-calendar-check mr-1"></i> Tahunan
+        <i class="fas fa-calendar-check mr-1"></i> Annual
       </a>
       <a href="{{ url_for('settings') }}" class="text-sm font-medium text-stone-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition {% if '/settings' in request.url.path %}text-emerald-600 dark:text-emerald-400{% endif %}">
-        <i class="fas fa-cog mr-1"></i> Pengaturan
+        <i class="fas fa-cog mr-1"></i> Settings
       </a>
     </nav>
 
@@ -41,7 +41,7 @@
     <div class="flex items-center gap-3" x-data="{ open: false }">
       <!-- Dark Mode Toggle -->
       <button @click="toggle()" class="w-8 h-8 bg-stone-100 dark:bg-stone-700 rounded-full flex items-center justify-center hover:bg-stone-200 dark:hover:bg-stone-600 transition relative"
-              :title="isDark ? 'Mode Terang' : 'Mode Gelap'">
+              :title="isDark ? 'Light Mode' : 'Dark Mode'">
         <template x-if="!isDark">
           <i class="fas fa-moon text-stone-500 dark:text-stone-300"></i>
         </template>
@@ -71,14 +71,14 @@
           <p class="text-xs text-stone-400 dark:text-gray-400">{{ current_user.email }}</p>
         </div>
         <a href="{{ url_for('settings') }}" class="block px-4 py-2 text-sm text-stone-600 dark:text-gray-300 hover:bg-stone-50 dark:hover:bg-gray-700">
-          <i class="fas fa-cog mr-2 text-stone-400 dark:text-gray-500"></i> Pengaturan
+          <i class="fas fa-cog mr-2 text-stone-400 dark:text-gray-500"></i> Settings
         </a>
         <a href="{{ url_for('page_logout') }}" class="block px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20">
-          <i class="fas fa-sign-out-alt mr-2"></i> Keluar
+          <i class="fas fa-sign-out-alt mr-2"></i> Logout
         </a>
       </div>
       {% else %}
-      <a href="{{ url_for('login_page') }}" class="text-sm font-medium text-emerald-600 hover:text-emerald-700">Masuk</a>
+      <a href="{{ url_for('login_page') }}" class="text-sm font-medium text-emerald-600 hover:text-emerald-700">Login</a>
       {% endif %}
     </div>
   </div>
@@ -90,19 +90,19 @@
   <div class="flex justify-around py-2">
     <a href="{{ url_for('dashboard') }}" class="flex flex-col items-center {% if request.url.path == '/' or request.url.path == '/dashboard' %}text-emerald-600 dark:text-emerald-400{% else %}text-stone-400 dark:text-gray-500{% endif %}">
       <i class="fas fa-home text-lg"></i>
-      <span class="text-[10px] font-medium">Beranda</span>
+      <span class="text-[10px] font-medium">Home</span>
     </a>
     <a href="{{ url_for('transactions_list') }}" class="flex flex-col items-center {% if '/transactions' in request.url.path %}text-emerald-600 dark:text-emerald-400{% else %}text-stone-400 dark:text-gray-500{% endif %}">
       <i class="fas fa-list text-lg"></i>
-      <span class="text-[10px]">Riwayat</span>
+      <span class="text-[10px]">History</span>
     </a>
     <a href="{{ url_for('budgets_page') }}" class="flex flex-col items-center {% if '/budgets' in request.url.path %}text-emerald-600 dark:text-emerald-400{% else %}text-stone-400 dark:text-gray-500{% endif %}">
       <i class="fas fa-coins text-lg"></i>
-      <span class="text-[10px]">Anggaran</span>
+      <span class="text-[10px]">Budget</span>
     </a>
     <a href="{{ url_for('bills_page') }}" class="flex flex-col items-center {% if '/bills' in request.url.path %}text-emerald-600 dark:text-emerald-400{% else %}text-stone-400 dark:text-gray-500{% endif %}">
       <i class="fas fa-bell text-lg"></i>
-      <span class="text-[10px]">Tagihan</span>
+      <span class="text-[10px]">Bills</span>
     </a>
     <a href="{{ url_for('subscriptions_page') }}" class="flex flex-col items-center {% if '/subscriptions' in request.url.path %}text-emerald-600 dark:text-emerald-400{% else %}text-stone-400 dark:text-gray-500{% endif %}">
       <i class="fas fa-sync-alt text-lg"></i>
@@ -110,15 +110,15 @@
     </a>
     <a href="{{ url_for('stats') }}" class="flex flex-col items-center {% if '/stats' in request.url.path %}text-emerald-600 dark:text-emerald-400{% else %}text-stone-400 dark:text-gray-500{% endif %}">
       <i class="fas fa-chart-pie text-lg"></i>
-      <span class="text-[10px]">Statistik</span>
+      <span class="text-[10px]">Statistics</span>
     </a>
     <a href="{{ url_for('annual_summary') }}" class="flex flex-col items-center {% if '/annual-summary' in request.url.path %}text-emerald-600 dark:text-emerald-400{% else %}text-stone-400 dark:text-gray-500{% endif %}">
       <i class="fas fa-calendar-check text-lg"></i>
-      <span class="text-[10px]">Tahunan</span>
+      <span class="text-[10px]">Annual</span>
     </a>
     <a href="{{ url_for('settings') }}" class="flex flex-col items-center {% if '/settings' in request.url.path %}text-emerald-600 dark:text-emerald-400{% else %}text-stone-400 dark:text-gray-500{% endif %}">
       <i class="fas fa-cog text-lg"></i>
-      <span class="text-[10px]">Pengaturan</span>
+      <span class="text-[10px]">Settings</span>
     </a>
   </div>
 </nav>
