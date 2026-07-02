@@ -20,6 +20,15 @@ from sqlalchemy.orm import relationship
 from ..database import Base
 
 
+def _utc_now() -> datetime:
+    """Return current UTC datetime as naive (no tzinfo).
+    
+    asyncpg expects timezone-naive datetimes for TIMESTAMP WITHOUT TIME ZONE columns.
+    Using timezone-aware datetimes causes: "can't subtract offset-naive and offset-aware datetimes"
+    """
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -29,8 +38,8 @@ class User(Base):
     password_hash = Column(String(128), nullable=False)
     notification_enabled = Column(Integer, nullable=False, default=0)
     reminder_time = Column(String(5), nullable=True, default="20:00")
-    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
-    updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, nullable=False, default=_utc_now)
+    updated_at = Column(DateTime, nullable=False, default=_utc_now, onupdate=_utc_now)
 
     transactions = relationship("Transaction", back_populates="user", cascade="all, delete-orphan")
     categories = relationship("Category", back_populates="user", cascade="all, delete-orphan")
@@ -52,7 +61,7 @@ class Category(Base):
     color = Column(String(7), nullable=False, default="#6b7280")
     is_default = Column(Integer, nullable=False, default=0)
     is_active = Column(Integer, nullable=False, default=1)
-    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, nullable=False, default=_utc_now)
 
     user = relationship("User", back_populates="categories")
     transactions = relationship("Transaction", back_populates="category")
@@ -70,7 +79,7 @@ class PaymentMethod(Base):
     icon = Column(String(5), nullable=False, default="💵")
     is_default = Column(Integer, nullable=False, default=0)
     is_active = Column(Integer, nullable=False, default=1)
-    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, nullable=False, default=_utc_now)
 
     transactions = relationship("Transaction", back_populates="payment_method")
 
@@ -95,8 +104,8 @@ class Transaction(Base):
     notes = Column(Text, nullable=True)
     attachment_path = Column(String(255), nullable=True)
     transaction_date = Column(Date, nullable=False)
-    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
-    updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, nullable=False, default=_utc_now)
+    updated_at = Column(DateTime, nullable=False, default=_utc_now, onupdate=_utc_now)
 
     user = relationship("User", back_populates="transactions")
     category = relationship("Category", back_populates="transactions")
@@ -119,8 +128,8 @@ class TransactionTemplate(Base):
     notes = Column(Text, nullable=True)
     label = Column(String(50), nullable=False)  # Nama label tombol, misal "Makan Siang"
     sort_order = Column(Integer, nullable=False, default=0)
-    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
-    updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, nullable=False, default=_utc_now)
+    updated_at = Column(DateTime, nullable=False, default=_utc_now, onupdate=_utc_now)
 
     user = relationship("User", backref="transaction_templates")
     category = relationship("Category")
@@ -145,7 +154,7 @@ class WeeklySummary(Base):
     top_transactions = Column(Text, nullable=True)    # JSON string: [{amount, notes, category_name, date}]
     prev_week_total = Column(Integer, nullable=False, default=0)
     percentage_change = Column(Integer, nullable=False, default=0)  # dalam % (0 = no prev data)
-    generated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    generated_at = Column(DateTime, nullable=False, default=_utc_now)
 
     user = relationship("User", backref="weekly_summaries")
 
@@ -165,8 +174,8 @@ class Budget(Base):
     year = Column(Integer, nullable=False)
     amount = Column(Integer, nullable=False)  # dalam Rupiah (integer)
     rollover = Column(Integer, nullable=False, default=0)  # sisa budget bulan lalu
-    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
-    updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, nullable=False, default=_utc_now)
+    updated_at = Column(DateTime, nullable=False, default=_utc_now, onupdate=_utc_now)
 
     user = relationship("User", back_populates="budgets")
     category = relationship("Category", back_populates="budgets")
@@ -189,8 +198,8 @@ class Bill(Base):
     frequency = Column(String(10), nullable=False, default="monthly")
     is_paid = Column(Integer, nullable=False, default=0)
     paid_transaction_id = Column(Integer, ForeignKey("transactions.id", ondelete="SET NULL"), nullable=True)
-    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
-    updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, nullable=False, default=_utc_now)
+    updated_at = Column(DateTime, nullable=False, default=_utc_now, onupdate=_utc_now)
 
     user = relationship("User", backref="bills")
     category = relationship("Category")
@@ -215,8 +224,8 @@ class Subscription(Base):
     occurrence_count = Column(Integer, nullable=False, default=1)
     last_detected_date = Column(Date, nullable=True)
     first_detected_date = Column(Date, nullable=True)
-    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
-    updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, nullable=False, default=_utc_now)
+    updated_at = Column(DateTime, nullable=False, default=_utc_now, onupdate=_utc_now)
 
     user = relationship("User", backref="subscriptions")
     category = relationship("Category")
@@ -240,8 +249,8 @@ class Rule(Base):
     priority = Column(Integer, nullable=False, default=0)
     match_count = Column(Integer, nullable=False, default=0)
     last_matched_at = Column(DateTime, nullable=True)
-    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
-    updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, nullable=False, default=_utc_now)
+    updated_at = Column(DateTime, nullable=False, default=_utc_now, onupdate=_utc_now)
 
     user = relationship("User", backref="rules")
     category = relationship("Category")

@@ -15,7 +15,8 @@ WIB = timezone(__import__("datetime").timedelta(hours=7))
 
 
 def _now_utc() -> datetime:
-    return datetime.now(timezone.utc)
+    """Return current UTC datetime as naive (no tzinfo) — compatible with TIMESTAMP WITHOUT TIME ZONE."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 def _rule_to_response(rule: Rule) -> dict:
