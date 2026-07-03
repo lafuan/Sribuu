@@ -60,7 +60,7 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
 # Jalankan dengan 2 workers (cocok VPS 2 Core)
 # Gunakan --forwarded-allow-ips='*' karena di belakang Nginx reverse proxy
 CMD ["uvicorn", "backend.main:app", \
-     "--host", "0.0.0.0", \
+     "--host", "127.0.0.1", \
      "--port", "8000", \
      "--workers", "2", \
      "--forwarded-allow-ips", "*"]
