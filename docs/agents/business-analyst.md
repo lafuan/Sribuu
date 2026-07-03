@@ -41,6 +41,9 @@ Each report includes:
 
 ## Recent Activity
 
+### 2026-07-03
+- Issue [#200](https://github.com/lafuan/Sribuu/issues/200): [BA Agent] 👨‍👩‍👧‍👦 Dompet Bersama (Shared Wallet) — Fitur Keuangan Bersama untuk Pasangan & Keluarga — ⏳ OPEN
+
 ### 2026-07-02
 - Issue [#177](https://github.com/lafuan/Sribuu/issues/177): 🤖 AI-Powered Auto-Categorization — Smart Category Prediction untuk Setiap Transaksi — ⏳ OPEN
 

@@ -66,6 +66,9 @@ The Security Agent performs comprehensive security auditing across five dimensio
 
 ## Recent Activity
 
+### 2026-07-03
+- Issue [#205](https://github.com/lafuan/Sribuu/issues/205): [Agent] Security Audit: UFW inactive & PasswordAuthentication enabled on VPS — ⏳ OPEN
+
 ### 2026-07-02
 - Issue [#183](https://github.com/lafuan/Sribuu/issues/183): CRITICAL: Security gaps — password SSH auth enabled, no firewall — ⏳ OPEN
 

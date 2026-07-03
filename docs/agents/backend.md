@@ -44,6 +44,13 @@ The Backend Agent audits the FastAPI backend codebase for code smells, architect
 
 ## Recent Activity
 
+### 2026-07-03
+- Issue [#214](https://github.com/lafuan/Sribuu/issues/214): 🐌 N+1 Query: Nested loop sparkline query in stats_service (6 months × N categories) — ⏳ OPEN
+- Issue [#207](https://github.com/lafuan/Sribuu/issues/207): Critical: stats_service.py is a 1623-line god object — violates SRP, multiple functions >200 lines, untested code — ⏳ OPEN
+- Issue [#206](https://github.com/lafuan/Sribuu/issues/206): Critical: pages.py violates Dependency Rule — direct model/database imports (24 occurrences) — ⏳ OPEN
+- Issue [#203](https://github.com/lafuan/Sribuu/issues/203): 🔴 Notification router has no service layer — business logic and DB operations in route handlers — ⏳ OPEN
+- Issue [#202](https://github.com/lafuan/Sribuu/issues/202): 🔴 Mixed DB session lifecycle: pages.py uses 17 manual get_db_session() calls instead of Depends(get_db) — leak risk — ⏳ OPEN
+
 ### 2026-07-02
 - Issue [#188](https://github.com/lafuan/Sribuu/issues/188): Systemic Clean Architecture violation: business logic leaked into routers — ⏳ OPEN
 - Issue [#187](https://github.com/lafuan/Sribuu/issues/187): stats_service.py is 1602 lines with 11 functions exceeding 50 lines — extreme SRP violation — ⏳ OPEN

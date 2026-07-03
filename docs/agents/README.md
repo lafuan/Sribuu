@@ -17,27 +17,27 @@ Sribuu uses a fleet of autonomous AI agents for continuous quality monitoring an
 | [Mobile](mobile.md) | 06:00, 18:00 WIB | Flutter iOS code quality, build health, dependency audit | `mobile` |
 | [Daily Progress](daily-progress.md) | 23:00 WIB | Compiles all daily agent activity into one report | `documentation` |
 
-## Today's Activity (2026-07-02)
+## Today's Activity (2026-07-03)
 
 | Agent | Issues Created | Status |
 |-------|---------------|--------|
-| Backend Agent | 4 | 4 open, 0 closed |
-| Database Agent | 3 | 3 open, 0 closed |
-| DevOps Agent | 2 | 2 open, 0 closed |
-| QA Agent | 1 | 1 open, 0 closed |
+| Backend Agent | 5 | 5 open, 0 closed |
+| Mobile Agent | 3 | 3 open, 0 closed |
+| DevOps Agent | 1 | 1 open, 0 closed |
 | Security Agent | 1 | 1 open, 0 closed |
+| Frontend Agent | 1 | 1 open, 0 closed |
 | BA Agent | 1 | 1 open, 0 closed |
-| Frontend Agent | 0 | — |
-| Mobile Agent | 0 | — |
+| Database Agent | 0 | — |
+| QA Agent | 0 | — |
 | Scrum Master Agent | 0 | — |
 
 **Total**: 12 agent issues today (12 open, 0 closed 😬 no backlog reduction!)
 
 ### CI Status
 - ✅ **3 CI runs** succeeded
-- ✅ **2 Docker builds** succeeded
-- ✅ **2 Deploys** succeeded
-- ✅ **1 PR merged**: [#178](https://github.com/lafuan/Sribuu/pull/178) — fix: resolve deploy register 500 — tz-aware datetime mismatch + security hardening by lafuan
+- ✅ **3 Docker builds** succeeded
+- ✅ **3 Deploys** succeeded
+- ✅ **3 PRs merged**: [#212](https://github.com/lafuan/Sribuu/pull/212) — fix: apply_rules_to_existing — remove nonexistent Transaction.type and nullable category_id filter, [#211](https://github.com/lafuan/Sribuu/pull/211) — fix: bind uvicorn to 127.0.0.1 — prevent direct port 8000 access bypassing nginx SSL, [#201](https://github.com/lafuan/Sribuu/pull/201) — fix: add parent_transaction_id.is_(None) filter to prevent split transaction double-counting
 
 ## How Agents Work
 

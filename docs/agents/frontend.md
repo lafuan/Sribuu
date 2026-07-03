@@ -51,6 +51,9 @@ The Frontend Agent audits the Jinja2 + HTMX + Tailwind frontend for UI inconsist
 
 ## Recent Activity
 
+### 2026-07-03
+- Issue [#204](https://github.com/lafuan/Sribuu/issues/204): Frontend Audit: Inline styles stuck at 27, modals missing ARIA, HTMX loading gap persists — ⏳ OPEN
+
 ### 2026-07-01
 - Issue [#164](https://github.com/lafuan/Sribuu/issues/164): [Frontend Agent] Heading hierarchy violations (missing H1s, duplicate H1s) + unpurged Tailwind CSS — ⏳ OPEN
 - Issue [#163](https://github.com/lafuan/Sribuu/issues/163): [Frontend Agent] Heading hierarchy violations (missing H1s, duplicate H1s) + unpurged Tailwind CSS — ✅ CLOSED

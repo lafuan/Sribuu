@@ -61,4 +61,9 @@ The Mobile Agent audits the Flutter iOS app for code quality, build health, and 
 
 ## Recent Activity
 
+### 2026-07-03
+- Issue [#210](https://github.com/lafuan/Sribuu/issues/210): 📦 Dependabot tidak mencakup Flutter/pub dependencies — ⏳ OPEN
+- Issue [#209](https://github.com/lafuan/Sribuu/issues/209): 🔧 iOS Podfile hilang - webview_flutter native plugin tidak akan terinstall — ⏳ OPEN
+- Issue [#208](https://github.com/lafuan/Sribuu/issues/208): 🐛 Widget test references non-existent MyApp class (widget_test.dart broken) — ⏳ OPEN
+
 _(Updated daily at 23:00 WIB by Daily Progress Recorder)_
