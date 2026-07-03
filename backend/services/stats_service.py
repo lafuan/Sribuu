@@ -162,6 +162,7 @@ async def get_stats_by_category(
         .join(Transaction, Transaction.category_id == Category.id)
         .where(
             Transaction.user_id == user_id,
+            Transaction.parent_transaction_id.is_(None),
             Transaction.transaction_date >= date_from,
             Transaction.transaction_date <= date_to,
         )
@@ -219,6 +220,7 @@ async def get_daily_trend(
         )
         .where(
             Transaction.user_id == user_id,
+            Transaction.parent_transaction_id.is_(None),
             Transaction.transaction_date >= date_from,
             Transaction.transaction_date <= date_to,
         )
@@ -276,6 +278,7 @@ async def get_monthly_stats(
         )
         .where(
             Transaction.user_id == user_id,
+            Transaction.parent_transaction_id.is_(None),
             Transaction.transaction_date >= month_start,
             Transaction.transaction_date <= month_end,
         )
@@ -328,6 +331,7 @@ async def get_monthly_stats(
         select(func.coalesce(func.sum(Transaction.amount), 0))
         .where(
             Transaction.user_id == user_id,
+            Transaction.parent_transaction_id.is_(None),
             Transaction.transaction_date >= prev_start,
             Transaction.transaction_date <= prev_end,
         )
@@ -385,6 +389,7 @@ async def get_spending_pace(
         select(func.coalesce(func.sum(Transaction.amount), 0))
         .where(
             Transaction.user_id == user_id,
+            Transaction.parent_transaction_id.is_(None),
             Transaction.transaction_date >= month_start,
             Transaction.transaction_date <= today,
         )
@@ -480,6 +485,7 @@ async def get_monthly_comparison(
             )
             .where(
                 Transaction.user_id == user_id,
+                Transaction.parent_transaction_id.is_(None),
                 Transaction.transaction_date >= month_start,
                 Transaction.transaction_date <= month_end,
             )
@@ -549,6 +555,7 @@ async def get_period_comparison(
             func.count(Transaction.id),
         ).where(
             Transaction.user_id == user_id,
+            Transaction.parent_transaction_id.is_(None),
             Transaction.transaction_date >= curr_start,
             Transaction.transaction_date <= curr_end,
         )
@@ -562,6 +569,7 @@ async def get_period_comparison(
             func.count(Transaction.id),
         ).where(
             Transaction.user_id == user_id,
+            Transaction.parent_transaction_id.is_(None),
             Transaction.transaction_date >= prev_start,
             Transaction.transaction_date <= prev_end,
         )
@@ -585,6 +593,7 @@ async def get_period_comparison(
         .join(Transaction, Transaction.category_id == Category.id, isouter=True)
         .where(
             Transaction.user_id == user_id,
+            Transaction.parent_transaction_id.is_(None),
             Transaction.transaction_date >= curr_start,
             Transaction.transaction_date <= curr_end,
         )
@@ -610,6 +619,7 @@ async def get_period_comparison(
         .join(Transaction, Transaction.category_id == Category.id, isouter=True)
         .where(
             Transaction.user_id == user_id,
+            Transaction.parent_transaction_id.is_(None),
             Transaction.transaction_date >= prev_start,
             Transaction.transaction_date <= prev_end,
         )
@@ -682,6 +692,7 @@ async def get_period_comparison(
                     .where(
                         Transaction.user_id == user_id,
                         Transaction.category_id == cat_id,
+                        Transaction.parent_transaction_id.is_(None),
                         Transaction.transaction_date >= month_start,
                         Transaction.transaction_date <= month_end,
                     )
@@ -782,6 +793,7 @@ async def generate_weekly_summary(
             func.count(Transaction.id),
         ).where(
             Transaction.user_id == user_id,
+            Transaction.parent_transaction_id.is_(None),
             Transaction.transaction_date >= monday,
             Transaction.transaction_date <= sunday,
         )
@@ -807,6 +819,7 @@ async def generate_weekly_summary(
         .join(Transaction, Transaction.category_id == Category.id)
         .where(
             Transaction.user_id == user_id,
+            Transaction.parent_transaction_id.is_(None),
             Transaction.transaction_date >= monday,
             Transaction.transaction_date <= sunday,
         )
@@ -856,6 +869,7 @@ async def generate_weekly_summary(
     result = await db.execute(
         select(func.coalesce(func.sum(Transaction.amount), 0)).where(
             Transaction.user_id == user_id,
+            Transaction.parent_transaction_id.is_(None),
             Transaction.transaction_date >= prev_monday,
             Transaction.transaction_date <= prev_sunday,
         )
@@ -1030,6 +1044,7 @@ async def annual_summary_stats(  # pragma: no cover
             func.count(Transaction.id),
         ).where(
             Transaction.user_id == user_id,
+            Transaction.parent_transaction_id.is_(None),
             Transaction.transaction_date >= year_start,
             Transaction.transaction_date <= year_end,
         )
@@ -1060,6 +1075,7 @@ async def annual_summary_stats(  # pragma: no cover
                 func.count(Transaction.id),
             ).where(
                 Transaction.user_id == user_id,
+                Transaction.parent_transaction_id.is_(None),
                 Transaction.transaction_date >= month_start,
                 Transaction.transaction_date <= month_end,
             )
@@ -1093,6 +1109,7 @@ async def annual_summary_stats(  # pragma: no cover
         .join(Transaction, Transaction.category_id == Category.id)
         .where(
             Transaction.user_id == user_id,
+            Transaction.parent_transaction_id.is_(None),
             Transaction.transaction_date >= year_start,
             Transaction.transaction_date <= year_end,
         )
@@ -1164,6 +1181,7 @@ async def annual_summary_stats(  # pragma: no cover
         select(func.coalesce(func.sum(Transaction.amount), 0))
         .where(
             Transaction.user_id == user_id,
+            Transaction.parent_transaction_id.is_(None),
             Transaction.transaction_date >= prev_year_start,
             Transaction.transaction_date <= prev_year_end,
         )
@@ -1240,6 +1258,7 @@ async def get_cash_flow_forecast(
             func.count(Transaction.id),
         ).where(
             Transaction.user_id == user_id,
+            Transaction.parent_transaction_id.is_(None),
             Transaction.transaction_date >= current_month_start,
             Transaction.transaction_date <= today,
         )
@@ -1263,6 +1282,7 @@ async def get_cash_flow_forecast(
         result = await db.execute(
             select(func.coalesce(func.sum(Transaction.amount), 0)).where(
                 Transaction.user_id == user_id,
+                Transaction.parent_transaction_id.is_(None),
                 Transaction.transaction_date >= month_start,
                 Transaction.transaction_date <= month_end,
             )
@@ -1302,6 +1322,7 @@ async def get_cash_flow_forecast(
             .join(Transaction, Transaction.category_id == Category.id)
             .where(
                 Transaction.user_id == user_id,
+                Transaction.parent_transaction_id.is_(None),
                 Transaction.transaction_date >= month_start,
                 Transaction.transaction_date <= month_end,
             )
