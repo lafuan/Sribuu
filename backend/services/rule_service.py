@@ -156,16 +156,15 @@ async def apply_rules_to_transaction(
 async def apply_rules_to_existing(
     db: AsyncSession, user_id: int, days: int = 30
 ) -> dict:
-    """Re-run rules on existing uncategorized transactions."""
+    """Re-run rules on existing transactions (within cutoff, excluding child splits)."""
     from datetime import timedelta
     cutoff = datetime.now(WIB).date() - timedelta(days=days)
 
     result = await db.execute(
         select(Transaction).where(
             Transaction.user_id == user_id,
-            Transaction.type == "expense",
-            Transaction.category_id.is_(None),
             Transaction.transaction_date >= cutoff,
+            Transaction.parent_transaction_id.is_(None),
         ).order_by(Transaction.transaction_date.desc())
     )
     transactions = result.scalars().all()
