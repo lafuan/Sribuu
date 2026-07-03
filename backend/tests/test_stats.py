@@ -405,6 +405,72 @@ class TestWeeklySummary:
         assert data["total_amount"] >= 0
 
 
+class TestSankey:
+    """Test GET /api/stats/sankey"""
+
+    async def test_sankey_empty(self, auth_client):
+        """Sankey endpoint returns empty data when no transactions."""
+        response = await auth_client.get("/api/stats/sankey")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "success"
+        sankey_data = data["data"]
+        assert sankey_data["total_income"] == 0
+        assert sankey_data["total_expense"] == 0
+        assert "nodes" in sankey_data
+        assert "links" in sankey_data
+        assert sankey_data["month_label"]
+
+    async def test_sankey_with_data(self, auth_client):
+        """Sankey endpoint returns category breakdown when transactions exist."""
+        cat_resp = await auth_client.get("/api/categories")
+        cats = cat_resp.json()["data"]["categories"]
+
+        from datetime import date
+        today = date.today()
+
+        # Create transactions in two categories
+        await auth_client.post(
+            "/api/transactions",
+            json={"amount": 50000, "category_id": cats[0]["id"], "transaction_date": today.isoformat()},
+        )
+        await auth_client.post(
+            "/api/transactions",
+            json={"amount": 30000, "category_id": cats[1]["id"], "transaction_date": today.isoformat()},
+        )
+
+        response = await auth_client.get("/api/stats/sankey")
+        assert response.status_code == 200
+        data = response.json()
+        sankey_data = data["data"]
+        assert sankey_data["total_expense"] == 80000
+        # Should have source node + 2 category nodes
+        assert len(sankey_data["nodes"]) >= 3
+        # Should have 2 links (source → each category)
+        assert len(sankey_data["links"]) == 2
+
+    async def test_sankey_htmx_returns_html(self, auth_client):
+        """Sankey endpoint with HTMX header returns HTML fragment."""
+        response = await auth_client.get(
+            "/api/stats/sankey",
+            headers={"HX-Request": "true"},
+        )
+        assert response.status_code == 200
+        assert "text/html" in response.headers.get("content-type", "")
+
+    async def test_sankey_custom_month(self, auth_client):
+        """Sankey endpoint with custom month/year params."""
+        from datetime import date
+        today = date.today()
+        response = await auth_client.get(
+            f"/api/stats/sankey?year={today.year}&month={today.month}"
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["data"]["year"] == today.year
+        assert data["data"]["month"] == today.month
+
+
 class TestAnnualSummary:
     """Test GET /api/stats/annual-summary"""
 

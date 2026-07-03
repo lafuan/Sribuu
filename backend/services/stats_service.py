@@ -1447,9 +1447,10 @@ async def get_cash_flow_forecast(
 async def get_sankey_data(
     db: AsyncSession, user_id: int, year: int | None = None, month: int | None = None
 ) -> dict:
-    """Sankey diagram: Income → Categories → Subcategories/Transactions.
+    """Sankey diagram: Pengeluaran → Categories.
 
     Returns nodes + links in D3.js Sankey format.
+    Uses only columns that exist in the current schema (no income/expense type, no parent_id).
     """
     today = _today_wib()
     if year is None:
@@ -1460,23 +1461,21 @@ async def get_sankey_data(
     month_start = _start_of_month(year, month)
     month_end = _end_of_month(year, month)
 
-    # --- Total income bulan ini ---
-    income_result = await db.execute(
+    # --- Total pengeluaran bulan ini (all transactions are expenses) ---
+    total_result = await db.execute(
         select(func.coalesce(func.sum(Transaction.amount), 0)).where(
             Transaction.user_id == user_id,
-            Transaction.type == "income",
-            func.date(Transaction.date) >= month_start,
-            func.date(Transaction.date) <= month_end,
+            Transaction.transaction_date >= month_start,
+            Transaction.transaction_date <= month_end,
         )
     )
-    total_income = income_result.scalar() or 0
+    total_expense = total_result.scalar() or 0
 
-    # --- Pengeluaran per kategori + subkategori ---
+    # --- Pengeluaran per kategori ---
     expense_result = await db.execute(
         select(
             Category.id,
             Category.name,
-            Category.parent_id,
             Category.icon,
             Category.color,
             func.coalesce(func.sum(Transaction.amount), 0).label("total"),
@@ -1484,140 +1483,67 @@ async def get_sankey_data(
         .join(Transaction, Transaction.category_id == Category.id)
         .where(
             Transaction.user_id == user_id,
-            Transaction.type == "expense",
-            func.date(Transaction.date) >= month_start,
-            func.date(Transaction.date) <= month_end,
+            Transaction.transaction_date >= month_start,
+            Transaction.transaction_date <= month_end,
         )
-        .group_by(Category.id, Category.name, Category.parent_id, Category.icon, Category.color)
+        .group_by(Category.id, Category.name, Category.icon, Category.color)
         .order_by(func.sum(Transaction.amount).desc())
     )
     rows = expense_result.all()
 
     # Build nodes and links
-    nodes = []
-    links = []
-    node_map = {}  # name → index
+    nodes: list[dict] = []
+    links: list[dict] = []
+    node_map: dict[str, int] = {}  # name → index
 
     def _add_node(name: str, node_type: str = "category", extra: dict | None = None) -> int:
         if name not in node_map:
             idx = len(nodes)
             node_map[name] = idx
-            node_info = {"name": name, "type": node_type}
+            node_info: dict = {"name": name, "type": node_type}
             if extra:
                 node_info.update(extra)
             nodes.append(node_info)
             return idx
         return node_map[name]
 
-    # Node 0: Income source
-    income_idx = _add_node("Pemasukan", "income", {"total": total_income})
+    # Node 0: Source (Total Pengeluaran) — acts as income root for sankey flow
+    source_idx = _add_node("Total Pengeluaran", "income", {"total": total_expense})
 
-    if total_income == 0 and not rows:
+    if total_expense == 0:
         # No data at all
         return {
-            "nodes": [{"name": "Pemasukan", "type": "income", "total": 0},
+            "nodes": [{"name": "Total Pengeluaran", "type": "income", "total": 0},
                       {"name": "Tidak ada data", "type": "category"}],
             "links": [{"source": 0, "target": 1, "value": 1}],
             "total_income": 0,
             "total_expense": 0,
             "month": month,
             "year": year,
-            "month_label": get_month_label(month),
+            "month_label": get_month_label(year, month),
         }
 
-    # Separate parent categories and subcategories
-    parent_categories = {}
-    subcategories = {}
-
-    for cat_id, cat_name, parent_id, icon, color, total in rows:
+    # Build links: Source → Category (no subcategory hierarchy since schema has no parent_id)
+    actual_total = 0
+    for cat_id, cat_name, icon, color, total in rows:
         if total is None or total == 0:
             continue
-        if parent_id is None:
-            parent_categories[cat_name] = {
-                "id": cat_id,
-                "total": total,
-                "icon": icon,
-                "color": color,
-            }
-        else:
-            subcategories[(parent_id, cat_name)] = {
-                "id": cat_id,
-                "name": cat_name,
-                "total": total,
-                "icon": icon,
-                "color": color,
-            }
+        actual_total += total
 
-    total_expense = 0
-
-    # Build links: Income → Category → Subcategory
-    for parent_name, pdata in parent_categories.items():
-        parent_total = pdata["total"]
-        total_expense += parent_total
-
-        # Add parent category node
-        parent_idx = _add_node(
-            parent_name,
+        cat_idx = _add_node(
+            cat_name,
             "category",
-            {"icon": pdata.get("icon", ""), "color": pdata.get("color", ""), "total": parent_total},
+            {"icon": icon or "", "color": color or "", "total": total},
         )
+        links.append({"source": source_idx, "target": cat_idx, "value": total})
 
-        # Link: Income → Category
-        links.append({"source": income_idx, "target": parent_idx, "value": parent_total})
-
-        # Find subcategories under this parent
-        parent_subs = [(name, d) for (pid, name), d in subcategories.items() if pid == pdata["id"]]
-        subs_total = sum(d["total"] for _, d in parent_subs)
-
-        if parent_subs and subs_total > 0:
-            remaining = parent_total - subs_total
-            for sub_name, sdata in parent_subs:
-                sub_idx = _add_node(
-                    sub_name,
-                    "subcategory",
-                    {"icon": sdata.get("icon", ""), "color": sdata.get("color", ""), "total": sdata["total"]},
-                )
-                links.append({"source": parent_idx, "target": sub_idx, "value": sdata["total"]})
-
-            # If there's remainder (uncategorized under parent), add "Lainnya" node
-            if remaining > 0:
-                other_idx = _add_node(
-                    f"Lainnya ({parent_name})",
-                    "subcategory",
-                    {"total": remaining},
-                )
-                links.append({"source": parent_idx, "target": other_idx, "value": remaining})
-        elif parent_total > 0:
-            # No subcategories — add terminal "Lainnya" for remaining
-            other_idx = _add_node(
-                f"Lainnya ({parent_name})",
-                "subcategory",
-                {"total": parent_total},
-            )
-            links.append({"source": parent_idx, "target": other_idx, "value": parent_total})
-
-    # Uncategorized expenses (transactions without category)
-    uncat_result = await db.execute(
-        select(func.coalesce(func.sum(Transaction.amount), 0)).where(
-            Transaction.user_id == user_id,
-            Transaction.type == "expense",
-            Transaction.category_id.is_(None),
-            func.date(Transaction.date) >= month_start,
-            func.date(Transaction.date) <= month_end,
-        )
-    )
-    uncategorized = uncat_result.scalar() or 0
-    if uncategorized > 0:
-        total_expense += uncategorized
-        uncat_idx = _add_node("Tanpa Kategori", "category", {"total": uncategorized})
-        links.append({"source": income_idx, "target": uncat_idx, "value": uncategorized})
-
+    # Return with total_income = total_expense so the Sankey diagram visual works
     return {
         "nodes": nodes,
         "links": links,
-        "total_income": total_income,
+        "total_income": total_expense,
         "total_expense": total_expense,
         "month": month,
         "year": year,
-        "month_label": get_month_label(month),
+        "month_label": get_month_label(year, month),
     }
