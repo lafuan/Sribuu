@@ -1010,7 +1010,7 @@ async def get_top_tags(
     ]
 
 
-async def annual_summary_stats(  # pragma: no cover
+async def annual_summary_stats(
     db: AsyncSession,
     user_id: int,
     year: int | None = None,
@@ -1063,37 +1063,32 @@ async def annual_summary_stats(  # pragma: no cover
     total_expense = total_amount
     total_income = total_amount  # placeholder — income tracking is separate concern
 
-    # --- Monthly breakdown ---
+    # --- Monthly breakdown (single GROUP BY query instead of 12 queries) ---
+    monthly_result = await db.execute(
+        select(
+            func.extract("month", Transaction.transaction_date).label("month"),
+            func.coalesce(func.sum(Transaction.amount), 0).label("total"),
+            func.count(Transaction.id).label("tx_count"),
+        ).where(
+            Transaction.user_id == user_id,
+            Transaction.parent_transaction_id.is_(None),
+            Transaction.transaction_date >= year_start,
+            Transaction.transaction_date <= year_end,
+        ).group_by(func.extract("month", Transaction.transaction_date))
+        .order_by(func.extract("month", Transaction.transaction_date))
+    )
+    monthly_rows = {(int(r.month)): {"total": int(r.total), "count": int(r.tx_count)} for r in monthly_result.all()}
+
     monthly_data = []
     for month_num in range(1, 13):
-        month_start = _start_of_month(year, month_num)
-        month_end = _end_of_month(year, month_num)
-
-        result = await db.execute(
-            select(
-                func.coalesce(func.sum(Transaction.amount), 0),
-                func.count(Transaction.id),
-            ).where(
-                Transaction.user_id == user_id,
-                Transaction.parent_transaction_id.is_(None),
-                Transaction.transaction_date >= month_start,
-                Transaction.transaction_date <= month_end,
-            )
-        )
-        month_total, month_count = result.one()
-        month_total = int(month_total)
-
-        # Get income (if any transactions with negative amount — not applicable here)
-        # For savings: we don't have income data, so we'll just show expense
-        savings_rate = 0.0  # Cannot calculate without income data
-
+        row = monthly_rows.get(month_num, {"total": 0, "count": 0})
         monthly_data.append({
             "month": month_num,
             "month_label": get_month_label(year, month_num),
-            "total_amount": month_total,
-            "total_amount_formatted": format_rupiah(month_total),
-            "transaction_count": month_count,
-            "savings_rate": savings_rate,
+            "total_amount": row["total"],
+            "total_amount_formatted": format_rupiah(row["total"]),
+            "transaction_count": row["count"],
+            "savings_rate": 0.0,
         })
 
     # --- Top 5 spending categories ---
