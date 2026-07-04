@@ -1278,8 +1278,6 @@ async def get_cash_flow_forecast(
         })
 
     # Single query: total per month
-    month_bounds = [(mi["start"], mi["end"]) for mi in months_info]
-    total_sums = {}
     result = await db.execute(
         select(
             Transaction.transaction_date,
