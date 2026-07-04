@@ -6,7 +6,7 @@ Menggunakan ReportLab untuk PDF generation dan Matplotlib untuk chart.
 
 import io
 import logging
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timedelta
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
