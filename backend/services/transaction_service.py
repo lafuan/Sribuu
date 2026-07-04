@@ -29,13 +29,7 @@ from ..utils.formatting import (
     format_rupiah,
     parse_tags,
 )
-
-WIB = timezone(timedelta(hours=7))
-
-
-def _today_wib() -> date:
-    """Tanggal hari ini di WIB."""
-    return datetime.now(WIB).date()
+from ..utils.time import today_wib
 
 
 def _build_transaction_response(tx, cat, pm) -> TransactionResponse:
@@ -110,7 +104,7 @@ async def create_transaction(
                 },
             )
 
-    tx_date = data.transaction_date or _today_wib()
+    tx_date = data.transaction_date or today_wib()
 
     tx = Transaction(
         user_id=user_id,

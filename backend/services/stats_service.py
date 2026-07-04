@@ -16,29 +16,14 @@ from ..utils.formatting import (
     get_month_label,
     parse_tags,
 )
-
-WIB = timezone(timedelta(hours=7))
-
-
-def _today_wib() -> date:
-    return datetime.now(WIB).date()
-
-
-def _start_of_month(year: int, month: int) -> date:
-    return date(year, month, 1)
-
-
-def _end_of_month(year: int, month: int) -> date:
-    if month == 12:
-        return date(year, month, 31)
-    return date(year, month + 1, 1) - timedelta(days=1)
+from ..utils.time import today_wib, start_of_month, end_of_month
 
 
 async def get_dashboard(
     db: AsyncSession, user_id: int
 ) -> dict:
     """Data dashboard: ringkasan hari ini, bulan ini, top kategori, transaksi terbaru."""
-    today = _today_wib()
+    today = today_wib()
     month_start = today.replace(day=1)
 
     # --- Hari ini ---
@@ -144,7 +129,7 @@ async def get_stats_by_category(
     date_to: date | None = None,
 ) -> dict:
     """Distribusi pengeluaran per kategori."""
-    today = _today_wib()
+    today = today_wib()
     if not date_from:
         date_from = today.replace(day=1)
     if not date_to:
@@ -205,7 +190,7 @@ async def get_daily_trend(
     date_to: date | None = None,
 ) -> dict:
     """Tren pengeluaran harian."""
-    today = _today_wib()
+    today = today_wib()
     if not date_from:
         date_from = today - timedelta(days=6)  # 7 hari terakhir
     if not date_to:
@@ -261,14 +246,14 @@ async def get_monthly_stats(
     month: int | None = None,
 ) -> dict:
     """Statistik bulanan detail dengan perbandingan bulan sebelumnya."""
-    today = _today_wib()
+    today = today_wib()
     if not year:
         year = today.year
     if not month:
         month = today.month
 
-    month_start = _start_of_month(year, month)
-    month_end = _end_of_month(year, month)
+    month_start = start_of_month(year, month)
+    month_end = end_of_month(year, month)
 
     # Total bulan ini
     result = await db.execute(
@@ -324,8 +309,8 @@ async def get_monthly_stats(
         prev_month = 12
         prev_year -= 1
 
-    prev_start = _start_of_month(prev_year, prev_month)
-    prev_end = _end_of_month(prev_year, prev_month)
+    prev_start = start_of_month(prev_year, prev_month)
+    prev_end = end_of_month(prev_year, prev_month)
 
     result = await db.execute(
         select(func.coalesce(func.sum(Transaction.amount), 0))
@@ -370,14 +355,14 @@ async def get_spending_pace(
     year: int | None = None,
 ) -> dict:
     """Hitung spending pace bulan ini: rata-rata harian, proyeksi akhir bulan, perbandingan budget."""
-    today = _today_wib()
+    today = today_wib()
     if not year:
         year = today.year
     if not month:
         month = today.month
 
-    month_start = _start_of_month(year, month)
-    month_end = _end_of_month(year, month)
+    month_start = start_of_month(year, month)
+    month_end = end_of_month(year, month)
 
     # Hari yang sudah berlalu (paling tidak 1)
     days_elapsed = (today - month_start).days + 1
@@ -463,7 +448,7 @@ async def get_monthly_comparison(
     if months < 1:
         months = 3
 
-    today = _today_wib()
+    today = today_wib()
     months_data = []
     max_amount = 0
 
@@ -475,8 +460,8 @@ async def get_monthly_comparison(
             m += 12
             y -= 1
 
-        month_start = _start_of_month(y, m)
-        month_end = _end_of_month(y, m)
+        month_start = start_of_month(y, m)
+        month_end = end_of_month(y, m)
 
         result = await db.execute(
             select(
@@ -526,19 +511,19 @@ async def get_period_comparison(
     Returns:
         dict dengan overall comparison dan per-category breakdown + sparkline
     """
-    today = _today_wib()
+    today = today_wib()
     ANOMALY_THRESHOLD = anomaly_threshold
 
     if period == "month":
         # Current month
         curr_start = today.replace(day=1)
-        curr_end = _end_of_month(today.year, today.month)
+        curr_end = end_of_month(today.year, today.month)
 
         # Previous month
         prev_month = today.month - 1 or 12
         prev_year = today.year if today.month > 1 else today.year - 1
         prev_start = date(prev_year, prev_month, 1)
-        prev_end = _end_of_month(prev_year, prev_month)
+        prev_end = end_of_month(prev_year, prev_month)
     else:  # week
         curr_monday = today - timedelta(days=today.weekday())
         curr_sunday = curr_monday + timedelta(days=6)
@@ -680,8 +665,8 @@ async def get_period_comparison(
             while m <= 0:
                 m += 12
                 y -= 1
-            month_start = _start_of_month(y, m)
-            month_end = _end_of_month(y, m)
+            month_start = start_of_month(y, m)
+            month_end = end_of_month(y, m)
 
             for cat_id in all_cat_ids:
                 if cat_id not in sparkline_data:
@@ -766,7 +751,7 @@ async def generate_weekly_summary(
     Returns:
         dict dengan data ringkasan mingguan
     """
-    today = _today_wib()
+    today = today_wib()
     iso_year, iso_week, _ = today.isocalendar()
 
     # Cek apakah sudah ada summary untuk minggu ini
@@ -1030,7 +1015,7 @@ async def annual_summary_stats(
         - total_transactions: jumlah transaksi tahun ini
         - streak: longest consecutive recording streak
     """
-    today = _today_wib()
+    today = today_wib()
     if year is None:
         year = today.year
 
@@ -1240,9 +1225,9 @@ async def get_cash_flow_forecast(
     Returns:
         dict dengan daily forecast, warnings, dan confidence score.
     """
-    today = _today_wib()
+    today = today_wib()
     current_month_start = today.replace(day=1)
-    current_month_end = _end_of_month(today.year, today.month)
+    current_month_end = end_of_month(today.year, today.month)
     days_in_month = (current_month_end - current_month_start).days + 1
     days_remaining = (current_month_end - today).days
 
@@ -1269,8 +1254,8 @@ async def get_cash_flow_forecast(
         while m <= 0:
             m += 12
             y -= 1
-        ms = _start_of_month(y, m)
-        me = _end_of_month(y, m)
+        ms = start_of_month(y, m)
+        me = end_of_month(y, m)
         months_info.append({
             "year": y, "month": m, "weight": weight,
             "start": ms, "end": me,
@@ -1460,14 +1445,14 @@ async def get_sankey_data(
     Returns nodes + links in D3.js Sankey format.
     Uses only columns that exist in the current schema (no income/expense type, no parent_id).
     """
-    today = _today_wib()
+    today = today_wib()
     if year is None:
         year = today.year
     if month is None:
         month = today.month
 
-    month_start = _start_of_month(year, month)
-    month_end = _end_of_month(year, month)
+    month_start = start_of_month(year, month)
+    month_end = end_of_month(year, month)
 
     # --- Total pengeluaran bulan ini (all transactions are expenses) ---
     total_result = await db.execute(
