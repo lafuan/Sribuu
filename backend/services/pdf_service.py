@@ -6,7 +6,7 @@ Menggunakan ReportLab untuk PDF generation dan Matplotlib untuk chart.
 
 import io
 import logging
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timedelta
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -27,10 +27,10 @@ from reportlab.platypus import (
 
 from ..models import Budget, Category, Transaction
 from ..utils.formatting import BULAN_ID, format_rupiah
+from ..utils.time import today_wib, start_of_month, end_of_month, WIB
 
 logger = logging.getLogger(__name__)
 
-WIB = timezone(timedelta(hours=7))
 WIDTH, HEIGHT = A4  # 595.27 x 841.89 points
 MARGIN = 2 * cm
 
@@ -53,20 +53,6 @@ CAT_COLORS = [
 ]
 
 FONT_NAME = "Helvetica"
-
-
-def _today_wib() -> date:
-    return datetime.now(WIB).date()
-
-
-def _start_of_month(year: int, month: int) -> date:
-    return date(year, month, 1)
-
-
-def _end_of_month(year: int, month: int) -> date:
-    if month == 12:
-        return date(year, month, 31)
-    return date(year, month + 1, 1) - timedelta(days=1)
 
 
 def _generate_pie_chart(categories: list[dict], total: int) -> io.BytesIO:
@@ -174,8 +160,8 @@ async def _get_monthly_data(
     db: AsyncSession, user_id: int, year: int, month: int
 ) -> dict:
     """Fetch all data needed for monthly PDF report."""
-    month_start = _start_of_month(year, month)
-    month_end = _end_of_month(year, month)
+    month_start = start_of_month(year, month)
+    month_end = end_of_month(year, month)
 
     # --- Total bulan ini ---
     result = await db.execute(
@@ -194,7 +180,7 @@ async def _get_monthly_data(
 
     # --- Daily average ---
     days_in_month = (month_end - month_start).days + 1
-    today = _today_wib()
+    today = today_wib()
     effective_days = min((today - month_start).days + 1, days_in_month)
     daily_avg = total_amount // effective_days if effective_days > 0 else 0
 
@@ -316,8 +302,8 @@ async def _get_monthly_data(
         prev_month = 12
         prev_year -= 1
 
-    prev_start = _start_of_month(prev_year, prev_month)
-    prev_end = _end_of_month(prev_year, prev_month)
+    prev_start = start_of_month(prev_year, prev_month)
+    prev_end = end_of_month(prev_year, prev_month)
 
     result = await db.execute(
         select(func.coalesce(func.sum(Transaction.amount), 0)).where(
@@ -626,7 +612,7 @@ async def generate_monthly_report_pdf(
     """Generate PDF report for a specific month.
 
     Returns (filename, BytesIO buffer)."""
-    today = _today_wib()
+    today = today_wib()
     if not year:
         year = today.year
     if not month:
