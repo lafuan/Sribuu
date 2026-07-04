@@ -1260,76 +1260,89 @@ async def get_cash_flow_forecast(
     )
     current_month_spent = int(result.one()[0])
 
-    # --- 2. Get previous 3 months total spending for weighted average ---
-    months_data = []  # type: ignore[assignment]
-    weights = [0.5, 0.3, 0.2]  # most recent gets highest weight
-
-    for i, offset in enumerate([1, 2, 3]):
+    # --- 2. Get previous 3 months total spending (single GROUP BY query) ---
+    three_months_offsets = [(1, 0.5), (2, 0.3), (3, 0.2)]
+    months_info = []
+    for offset, weight in three_months_offsets:
         m = today.month - offset
         y = today.year
         while m <= 0:
             m += 12
             y -= 1
-
-        month_start = _start_of_month(y, m)
-        month_end = _end_of_month(y, m)
-
-        result = await db.execute(
-            select(func.coalesce(func.sum(Transaction.amount), 0)).where(
-                Transaction.user_id == user_id,
-                Transaction.parent_transaction_id.is_(None),
-                Transaction.transaction_date >= month_start,
-                Transaction.transaction_date <= month_end,
-            )
-        )
-        total = int(result.scalar() or 0)
-        days_in_that_month = (month_end - month_start).days + 1
-        daily_avg = total / days_in_that_month if days_in_that_month > 0 else 0
-
-        months_data.append({
-            "month": m,
-            "year": y,
+        ms = _start_of_month(y, m)
+        me = _end_of_month(y, m)
+        months_info.append({
+            "year": y, "month": m, "weight": weight,
+            "start": ms, "end": me,
             "label": get_month_label(y, m),
+        })
+
+    # Single query: total per month
+    result = await db.execute(
+        select(
+            Transaction.transaction_date,
+            func.coalesce(func.sum(Transaction.amount), 0).label("total"),
+        ).where(
+            Transaction.user_id == user_id,
+            Transaction.parent_transaction_id.is_(None),
+            Transaction.transaction_date >= months_info[2]["start"],
+            Transaction.transaction_date <= months_info[0]["end"],
+        ).group_by(Transaction.transaction_date)
+    )
+    date_totals = {row.transaction_date: int(row.total) for row in result.all()}
+
+    months_data = []
+    for mi in months_info:
+        total = sum(v for d, v in date_totals.items() if mi["start"] <= d <= mi["end"])
+        days_in_month = (mi["end"] - mi["start"]).days + 1
+        daily_avg = total / days_in_month if days_in_month > 0 else 0
+        months_data.append({
+            "month": mi["month"],
+            "year": mi["year"],
+            "label": mi["label"],
             "total": total,
             "daily_avg": daily_avg,
-            "weight": weights[i],
+            "weight": mi["weight"],
         })
 
     # --- 3. Calculate weighted average daily spending ---
     weighted_daily = sum(m["daily_avg"] * m["weight"] for m in months_data)
 
-    # Also calculate per-category weighted daily for recurring detection
+    # --- 3b. Per-category weighted daily (single GROUP BY query across 3 months) ---
     category_daily: dict[int, dict] = {}
-    for m_data in months_data:
-        y, m = m_data["year"], m_data["month"]
-        month_start = _start_of_month(y, m)
-        month_end = _end_of_month(y, m)
-        days_in_that_month = (month_end - month_start).days + 1
-
-        result = await db.execute(
-            select(
-                Category.id,
-                Category.name,
-                Category.icon,
-                Category.color,
-                func.coalesce(func.sum(Transaction.amount), 0).label("total"),
-            )
-            .join(Transaction, Transaction.category_id == Category.id)
-            .where(
-                Transaction.user_id == user_id,
-                Transaction.parent_transaction_id.is_(None),
-                Transaction.transaction_date >= month_start,
-                Transaction.transaction_date <= month_end,
-            )
-            .group_by(Category.id)
+    cat_result = await db.execute(
+        select(
+            func.extract("month", Transaction.transaction_date).label("tx_month"),
+            func.extract("year", Transaction.transaction_date).label("tx_year"),
+            Category.id,
+            Category.name,
+            Category.icon,
+            Category.color,
+            func.coalesce(func.sum(Transaction.amount), 0).label("total"),
         )
-        for row in result.all():
-            cat_id = row.id
-            if cat_id not in category_daily:
-                category_daily[cat_id] = {"name": row.name, "icon": row.icon, "color": row.color, "totals": []}
-            category_daily[cat_id]["totals"].append({"total": row.total, "weight": m_data["weight"]})
+        .join(Transaction, Transaction.category_id == Category.id)
+        .where(
+            Transaction.user_id == user_id,
+            Transaction.parent_transaction_id.is_(None),
+            Transaction.transaction_date >= months_info[2]["start"],
+            Transaction.transaction_date <= months_info[0]["end"],
+        )
+        .group_by(
+            func.extract("month", Transaction.transaction_date),
+            func.extract("year", Transaction.transaction_date),
+            Category.id,
+        )
+    )
+    cat_rows = cat_result.all()
+    weight_map = {(mi["year"], mi["month"]): mi["weight"] for mi in months_info}
+    for row in cat_rows:
+        cat_id = row.id
+        key = (int(row.tx_year), int(row.tx_month))
+        wt = weight_map.get(key, 0.2)
+        if cat_id not in category_daily:
+            category_daily[cat_id] = {"name": row.name, "icon": row.icon, "color": row.color, "totals": []}
+        category_daily[cat_id]["totals"].append({"total": row.total, "weight": wt})
 
-    # Weighted per-category daily
     for _cat_id, cat_data in category_daily.items():
         weighted = sum(t["total"] / 30 * t["weight"] for t in cat_data["totals"])  # approximate
         cat_data["weighted_daily"] = weighted
