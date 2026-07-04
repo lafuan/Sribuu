@@ -41,6 +41,9 @@ Each report includes:
 
 ## Recent Activity
 
+### 2026-07-04
+- Issue [#217](https://github.com/lafuan/Sribuu/issues/217): [BA Agent] 🎯 Tabungan Goals — Target & Progress Tracker untuk Tujuan Keuangan — ⏳ OPEN
+
 ### 2026-07-03
 - Issue [#200](https://github.com/lafuan/Sribuu/issues/200): [BA Agent] 👨‍👩‍👧‍👦 Dompet Bersama (Shared Wallet) — Fitur Keuangan Bersama untuk Pasangan & Keluarga — ⏳ OPEN
 
@@ -51,4 +54,3 @@ Each report includes:
 - Issue [#161](https://github.com/lafuan/Sribuu/issues/161): [BA Agent] 💬 Natural Language Expense Input — Catat Pengeluaran dengan Bahasa Sehari-hari + AI — ⏳ OPEN
 
 _(Updated daily at 23:00 WIB by Daily Progress Recorder)_
-```

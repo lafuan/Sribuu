@@ -44,11 +44,24 @@ The Backend Agent audits the FastAPI backend codebase for code smells, architect
 
 ## Recent Activity
 
+### 2026-07-04
+- Issue [#239](https://github.com/lafuan/Sribuu/issues/239): Deploy smoke test fails 3x consecutively — /api/categories returns 401, no rollback image, container left stopped — ⏳ OPEN
+- Issue [#238](https://github.com/lafuan/Sribuu/issues/238): payment_methods.py + pages.py: zero PaymentMethod service layer — 7x duplicate queries, Dependency Rule violation — ⏳ OPEN
+- Issue [#237](https://github.com/lafuan/Sribuu/issues/237): expense_templates.py: mixed DB session lifecycle — manual get_db_session() alongside Depends(get_db) — ⏳ OPEN
+- Issue [#236](https://github.com/lafuan/Sribuu/issues/236): notification_service check_budget_alerts fetches ALL active categories (not just user's) — ⏳ OPEN
+- Issue [#235](https://github.com/lafuan/Sribuu/issues/235): Missing Connection Pool Configuration in database.py — ✅ CLOSED
+- Issue [#234](https://github.com/lafuan/Sribuu/issues/234): Missing Index: parent_transaction_id on transactions table — ✅ CLOSED
+- Issue [#233](https://github.com/lafuan/Sribuu/issues/233): 🚨 CRITICAL: N+1 Query Patterns in Stats & Transaction Services — ✅ CLOSED
+- Issue [#223](https://github.com/lafuan/Sribuu/issues/223): 🔴 Duplicate date helpers / queries across 3 services — DRY violation + bug risk — ✅ CLOSED
+- Issue [#222](https://github.com/lafuan/Sribuu/issues/222): 🔴 Duplicate TemplateResponse block in dashboard_page — duplicated template context dict (30+ lines) — ✅ CLOSED
+- Issue [#221](https://github.com/lafuan/Sribuu/issues/221): 🔴 N+1 Cascade: get_cash_flow_forecast fires 3 + N_category queries in nested loops — ✅ CLOSED
+- Issue [#220](https://github.com/lafuan/Sribuu/issues/220): 🔴 N+1 Query: annual_summary_stats executes 12 queries in loop — marked # pragma: no cover (zero tests) — ✅ CLOSED
+
 ### 2026-07-03
 - Issue [#214](https://github.com/lafuan/Sribuu/issues/214): 🐌 N+1 Query: Nested loop sparkline query in stats_service (6 months × N categories) — ⏳ OPEN
 - Issue [#207](https://github.com/lafuan/Sribuu/issues/207): Critical: stats_service.py is a 1623-line god object — violates SRP, multiple functions >200 lines, untested code — ⏳ OPEN
 - Issue [#206](https://github.com/lafuan/Sribuu/issues/206): Critical: pages.py violates Dependency Rule — direct model/database imports (24 occurrences) — ⏳ OPEN
-- Issue [#203](https://github.com/lafuan/Sribuu/issues/203): 🔴 Notification router has no service layer — business logic and DB operations in route handlers — ⏳ OPEN
+- Issue [#203](https://github.com/lafuan/Sribuu/issues/203): 🔴 Notification router has no service layer — business logic and DB operations in route handlers — ✅ CLOSED
 - Issue [#202](https://github.com/lafuan/Sribuu/issues/202): 🔴 Mixed DB session lifecycle: pages.py uses 17 manual get_db_session() calls instead of Depends(get_db) — leak risk — ⏳ OPEN
 
 ### 2026-07-02
@@ -60,18 +73,4 @@ The Backend Agent audits the FastAPI backend codebase for code smells, architect
 ### 2026-07-01
 - Issue [#167](https://github.com/lafuan/Sribuu/issues/167): pages.py is 1052 lines with 19 routes — violates Single Responsibility Principle — ⏳ OPEN
 - Issue [#166](https://github.com/lafuan/Sribuu/issues/166): 18 deprecated datetime.utcnow() calls in models and services — ✅ CLOSED
-- Issue [#165](https://github.com/lafuan/Sribuu/issues/165): Duplicate datetime helper functions across services (DRY violation) — ⏳ OPEN
-
-### 2026-06-30
-- Issue [#117](https://github.com/lafuan/Sribuu/issues/117): [Backend Agent] Refactor pages.py (1048 lines) → Modular Router Split — ⏳ OPEN
-- Issue [#118](https://github.com/lafuan/Sribuu/issues/118): [Backend Agent] Replace deprecated datetime.utcnow() (17 occurences) — ⏳ OPEN
-- Issue [#119](https://github.com/lafuan/Sribuu/issues/119): [Backend Agent] Split stats_service.py (1604 lines) + Add Caching Layer — ⏳ OPEN
-- Issue [#128](https://github.com/lafuan/Sribuu/issues/128): 🔴 CI Broken: Ruff lint errors blocking main pipeline (10 failures across 3 files) — ✅ CLOSED
-- Issue [#136](https://github.com/lafuan/Sribuu/issues/136): 🔴 God Class: stats_service.py (1,602 lines) — needs decomposition — ⏳ OPEN
-- Issue [#137](https://github.com/lafuan/Sribuu/issues/137): 🟡 datetime.utcnow() deprecated — 18 occurrences across backend — ⏳ OPEN
-- Issue [#138](https://github.com/lafuan/Sribuu/issues/138): 🟡 Duplicated Code: PaymentMethod query repeated 5× in pages.py — ⏳ OPEN
-- Issue [#146](https://github.com/lafuan/Sribuu/issues/146): CRITICAL: stats_service.py is 1,602 lines with 4 functions over 200 lines — ⏳ OPEN
-- Issue [#147](https://github.com/lafuan/Sribuu/issues/147): CRITICAL: E2E login test fails — asserts 'Masuk' but page title is 'Login — Sribuu' (i18n mismatch) — ⏳ OPEN
-- Issue [#148](https://github.com/lafuan/Sribuu/issues/148): Clean Code: pages.py (1,052 lines) has duplicated PaymentMethod queries — ⏳ OPEN
-- Issue [#149](https://github.com/lafuan/Sribuu/issues/149): Clean Code: 18 deprecated datetime.utcnow() calls in models/__init__.py and stats_service.py — ⏳ OPEN
-- Issue [#150](https://github.com/lafuan/Sribuu/issues/150): Clean Code: 10 models crammed into single models/__init__.py (247 lines) — ⏳ OPEN
+- Issue [#165](https://github.com/lafuan/Sribuu/issues/165): Duplicate datetime helper functions across services (DRY violation) — ✅ CLOSED

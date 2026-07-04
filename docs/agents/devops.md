@@ -56,14 +56,18 @@ The DevOps Agent monitors server health, CI/CD pipeline safety, and deployment r
 
 ## Recent Activity
 
+### 2026-07-04
+- Issue [#224](https://github.com/lafuan/Sribuu/issues/224): [agent] 🚨 Deploy CI still broken (run 28690700259) — smoke + rollback both failed — ✅ CLOSED
+- Issue [#219](https://github.com/lafuan/Sribuu/issues/219): [agent] 🚨 Deploy CI broken: inline smoke test expects 200 on auth-required endpoints — ✅ CLOSED
+
 ### 2026-07-03
 - Issue [#213](https://github.com/lafuan/Sribuu/issues/213): [CRITICAL] Security gaps: password SSH auth enabled + UFW disabled — ⏳ OPEN
 
 ### 2026-07-02
 - Issue [#180](https://github.com/lafuan/Sribuu/issues/180): ⚠️ Nginx Permission Denied on manifest.json — PWA manifest blocked (recurring) — ⏳ OPEN
-- Issue [#179](https://github.com/lafuan/Sribuu/issues/179): [CRITICAL] Deploy rollback mechanism is broken — failed deploys leave broken containers in production — ⏳ OPEN
+- Issue [#179](https://github.com/lafuan/Sribuu/issues/179): [CRITICAL] Deploy rollback mechanism is broken — failed deploys leave broken containers in production — ✅ CLOSED
 
 ### 2026-07-01
-- Issue [#169](https://github.com/lafuan/Sribuu/issues/169): [CRITICAL] Deploy smoke test failing: Register returns 500 - timezone-aware datetime mismatch — ⏳ OPEN
+- Issue [#169](https://github.com/lafuan/Sribuu/issues/169): [CRITICAL] Deploy smoke test failing: Register returns 500 - timezone-aware datetime mismatch — ✅ CLOSED
 
 _(Updated daily at 23:00 WIB by Daily Progress Recorder)_
