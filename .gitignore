@@ -1,17 +1,26 @@
-__pycache__/
-*.py[cod]
-*.db
-.env
-.venv/
-venv/
-*.egg-info/
-dist/
-!frontend/static/dist/output.css
-build/
-.hermes/
+# Dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# Testing
+/coverage
+
+# Production
+/build
+/dist
+.wrangler/
+
+# Misc
 .DS_Store
+*.pem
 *.log
-.cache/
-.idea/
-.vscode/
-report.html
+
+# Environment
+.env
+.env*.local
+*.env
+!.env.example
+
+# Local History
+.history

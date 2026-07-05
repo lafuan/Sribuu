@@ -1,0 +1,20 @@
+# Top-level configuration
+name = "sribuu"
+main = "src/index.ts"
+compatibility_date = "2024-07-06"
+
+# ---------------------------------------------------------------------------
+# The following bindings will be uncommented and configured as we migrate
+# the database and storage in the next phases.
+# ---------------------------------------------------------------------------
+
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "sribuu-db"
+# database_id = "<ID_DATABASE_D1_ANDA>"
+# migrations_dir = "drizzle" # atau 'migrations'
+
+# [[r2_buckets]]
+# binding = "ASSETS"
+# bucket_name = "sribuu-assets"
+# preview_bucket_name = "sribuu-assets-preview"
