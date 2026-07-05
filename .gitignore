@@ -1,0 +1,26 @@
+# Dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# Testing
+/coverage
+
+# Production
+/build
+/dist
+.wrangler/
+
+# Misc
+.DS_Store
+*.pem
+*.log
+
+# Environment
+.env
+.env*.local
+*.env
+!.env.example
+
+# Local History
+.history

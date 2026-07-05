@@ -1,0 +1,21 @@
+{
+  "name": "sribuu-worker",
+  "version": "1.0.0",
+  "description": "Sribuu - Personal finance tracker on Cloudflare Workers",
+  "main": "src/index.ts",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "hono": "^4.11.6"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250706.0",
+    "typescript": "^5.9.3"
+  }
+}
