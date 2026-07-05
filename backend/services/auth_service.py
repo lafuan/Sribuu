@@ -6,6 +6,7 @@ from fastapi import Depends, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from ..config import settings
 from ..database import get_db
 from ..models import User
 from ..schemas.auth import LoginRequest, PasswordChangeRequest, RegisterRequest
@@ -95,7 +96,7 @@ def set_token_cookie(response, token: str) -> None:
         key="access_token",
         value=token,
         httponly=True,
-        secure=False,  # True in production with HTTPS
+        secure=not settings.DEBUG,  # True in production (DEBUG=False)
         samesite="lax",
         max_age=get_token_expiry_days() * 86400,
         path="/",
@@ -108,7 +109,7 @@ def clear_token_cookie(response) -> None:
         key="access_token",
         path="/",
         httponly=True,
-        secure=False,
+        secure=not settings.DEBUG,
         samesite="lax",
     )
 

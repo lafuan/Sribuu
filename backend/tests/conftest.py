@@ -15,6 +15,8 @@ TEST_DB_URL = f"sqlite+aiosqlite:///{TEST_DB_FILE}"
 
 # Override DATABASE_URL sebelum import backend modules
 os.environ["DATABASE_URL"] = TEST_DB_URL
+os.environ["SECRET_KEY"] = "test-secret-key-for-ci"
+
 
 from backend.database import Base, get_db  # noqa: E402
 from backend.services.seed import seed_all  # noqa: E402

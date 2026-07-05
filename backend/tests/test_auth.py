@@ -1,4 +1,41 @@
 """Tests untuk modul autentikasi: register, login, logout, me, password."""
+import pytest
+from unittest.mock import MagicMock
+
+
+class TestCookieSecurity:
+    """Test that the access_token cookie security is set correctly."""
+
+    @pytest.mark.parametrize(
+        "debug_mode, expected_secure_flag",
+        [
+            (True, False),  # In debug mode, cookie should NOT be secure
+            (False, True),  # In production (not debug), cookie MUST be secure
+        ],
+    )
+    async def test_cookie_security_on_login(
+        self, client, test_user, monkeypatch, debug_mode, expected_secure_flag
+    ):
+        """Verify 'secure' flag on login based on DEBUG setting."""
+        # Create a mock settings object
+        mock_settings = MagicMock()
+        mock_settings.DEBUG = debug_mode
+
+        # Patch the settings object within the auth_service module's namespace
+        monkeypatch.setattr("backend.services.auth_service.settings", mock_settings)
+
+        response = await client.post(
+            "/api/auth/login",
+            json={"email": test_user["email"], "password": test_user["password"]},
+        )
+
+        assert response.status_code == 200
+        cookie_header = response.headers["set-cookie"]
+        assert "access_token=" in cookie_header
+
+        # Check for the 'Secure' flag in the cookie string.
+        has_secure_flag = "Secure" in [p.strip() for p in cookie_header.split(";")]
+        assert has_secure_flag is expected_secure_flag
 
 
 class TestRegister:
