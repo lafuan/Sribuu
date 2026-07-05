@@ -66,6 +66,9 @@ The Security Agent performs comprehensive security auditing across five dimensio
 
 ## Recent Activity
 
+### 2026-07-05
+- Issue [#258](https://github.com/lafuan/Sribuu/issues/258): [Security Agent] 🔴 HIGH: Hermes agent exposed on 0.0.0.0:9119 (second instance) — OPEN
+
 ### 2026-07-03
 - Issue [#205](https://github.com/lafuan/Sribuu/issues/205): [Agent] Security Audit: UFW inactive & PasswordAuthentication enabled on VPS — ⏳ OPEN
 

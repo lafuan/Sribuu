@@ -56,6 +56,9 @@ The DevOps Agent monitors server health, CI/CD pipeline safety, and deployment r
 
 ## Recent Activity
 
+### 2026-07-05
+- Issue [#257](https://github.com/lafuan/Sribuu/issues/257): [Infra] Security audit: PasswordAuthentication enabled, no firewall, weak SSH posture — OPEN
+
 ### 2026-07-04
 - Issue [#224](https://github.com/lafuan/Sribuu/issues/224): [agent] 🚨 Deploy CI still broken (run 28690700259) — smoke + rollback both failed — ✅ CLOSED
 - Issue [#219](https://github.com/lafuan/Sribuu/issues/219): [agent] 🚨 Deploy CI broken: inline smoke test expects 200 on auth-required endpoints — ✅ CLOSED

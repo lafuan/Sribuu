@@ -41,6 +41,9 @@ Each report includes:
 
 ## Recent Activity
 
+### 2026-07-05
+- Issue [#253](https://github.com/lafuan/Sribuu/issues/253): [BA Agent] 📸 Scan Struk + AI Auto-Kategorisasi — Catat Pengeluaran dengan 1 Foto — OPEN
+
 ### 2026-07-04
 - Issue [#217](https://github.com/lafuan/Sribuu/issues/217): [BA Agent] 🎯 Tabungan Goals — Target & Progress Tracker untuk Tujuan Keuangan — ⏳ OPEN
 
