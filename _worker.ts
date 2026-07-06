@@ -146,7 +146,11 @@ app.get('/:file{[a-z][a-z0-9._-]*}', async (c) => {
 })
 
 // --- Health Check ---
-app.get('/api/health', (c) => c.json({ status: 'ok', platform: 'cloudflare-pages', timestamp: Date.now() }))
+app.get('/api/health', (c) => {
+  const hasSecret = !!c.env.JWT_SECRET
+  const secretLen = c.env.JWT_SECRET ? c.env.JWT_SECRET.length : 0
+  return c.json({ status: 'ok', platform: 'cloudflare-pages', timestamp: Date.now(), hasSecret, secretLen })
+})
 
 // --- Register ---
 app.post('/api/auth/register', async (c) => {
