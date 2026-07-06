@@ -44,6 +44,7 @@ for fname in sorted(os.listdir(public_dir)):
 
 lines.append('}')
 
+os.makedirs('src', exist_ok=True)
 with open('src/static.ts', 'w', encoding='utf-8') as f:
     f.write('\n'.join(lines) + '\n')
 
