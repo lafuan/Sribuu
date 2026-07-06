@@ -246,29 +246,30 @@ app.get('/api/payment-methods', authMiddleware, async (c) => {
 })
 
 // --- Transactions ---
+// Schema: id, user_id, category_id, payment_method_id, parent_transaction_id,
+//         amount (INTEGER), notes (TEXT), attachment_path, transaction_date
+// Income/expense determined by sign of amount (positive=expense? no, negative=expense in frontend)
+
 app.get('/api/transactions', authMiddleware, async (c) => {
   try {
     const userId = c.get('userId') as number
     const url = new URL(c.req.url)
     const month = url.searchParams.get('month')
     const year = url.searchParams.get('year')
-    const type = url.searchParams.get('type')
     const categoryId = url.searchParams.get('category_id')
     const limit = Math.min(parseInt(url.searchParams.get('limit') || '50'), 200)
     const offset = parseInt(url.searchParams.get('offset') || '0')
 
-    let query = 'SELECT t.id, t.amount, t.type, t.description as notes, t.transaction_date, t.category_id, t.payment_method_id, c.name as category_name, c.icon as category_icon, c.color as category_color FROM transactions t LEFT JOIN categories c ON t.category_id = c.id WHERE t.user_id = ?'
+    let query = 'SELECT t.id, t.amount, t.notes, t.transaction_date, t.category_id, t.payment_method_id, c.name as category_name, c.icon as category_icon, c.color as category_color FROM transactions t LEFT JOIN categories c ON t.category_id = c.id WHERE t.user_id = ?'
     const params: any[] = [userId]
 
     if (month && year) {
       query += ' AND strftime(\'%m\', t.transaction_date) = ? AND strftime(\'%Y\', t.transaction_date) = ?'
       params.push(month.padStart(2, '0'), year)
     }
-    if (type) { query += ' AND t.type = ?'; params.push(type) }
     if (categoryId) { query += ' AND t.category_id = ?'; params.push(parseInt(categoryId)) }
 
-    // Count query (without LIMIT/OFFSET)
-    let countQuery = query.replace(/SELECT .+? FROM/, 'SELECT COUNT(*) as total FROM').replace(/ ORDER BY .+$/, '')
+    const countQuery = query.replace(/SELECT .+? FROM/, 'SELECT COUNT(*) as total FROM').replace(/ ORDER BY .+$/, '')
     const countParams = [...params]
     query += ' ORDER BY t.transaction_date DESC, t.id DESC LIMIT ? OFFSET ?'
     params.push(limit, offset)
@@ -289,18 +290,20 @@ app.post('/api/transactions', authMiddleware, async (c) => {
     const userId = c.get('userId') as number
     const body = await c.req.json()
     const { amount, transaction_date, category_id, payment_method_id } = body
-    const notes = body.notes ?? body.description ?? ''
-    const type = body.type || 'expense'
+    const notes = body.notes ?? ''
 
     if (!amount) return c.json({ error: 'amount is required' }, 400)
+    // Frontend sends positive amounts for expenses; income would be negative amounts
+    const finalCategory = category_id || 1 // fallback to first category
 
     const { meta } = await c.env.sribuu_db.prepare(
-      'INSERT INTO transactions (user_id, amount, type, description, transaction_date, category_id, payment_method_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
-    ).bind(userId, amount, type, notes, transaction_date || new Date().toISOString().split('T')[0], category_id || null, payment_method_id || null).run()
+      'INSERT INTO transactions (user_id, amount, notes, transaction_date, category_id, payment_method_id) VALUES (?, ?, ?, ?, ?, ?)'
+    ).bind(userId, amount, notes, transaction_date || new Date().toISOString().split('T')[0], finalCategory, payment_method_id || null).run()
 
-    const { results } = await c.env.sribuu_db.prepare('SELECT * FROM transactions WHERE id = ?').bind(meta.last_row_id).all()
-    const newTx = (results as any[])[0]
-    return c.json(newTx, 201)
+    const { results } = await c.env.sribuu_db.prepare(
+      'SELECT t.id, t.amount, t.notes, t.transaction_date, t.category_id, t.payment_method_id, c.name as category_name, c.icon as category_icon, c.color as category_color FROM transactions t LEFT JOIN categories c ON t.category_id = c.id WHERE t.id = ?'
+    ).bind(meta.last_row_id).all()
+    return c.json((results as any[])[0], 201)
   } catch (err) {
     console.error('Create transaction error:', err)
     return c.json({ error: 'Failed to create transaction' }, 500)
@@ -312,7 +315,7 @@ app.get('/api/transactions/:id', authMiddleware, async (c) => {
     const userId = c.get('userId') as number
     const txId = parseInt(c.req.param('id'))
     const tx = await c.env.sribuu_db.prepare(
-      `SELECT t.id, t.amount, t.type, t.description as notes, t.transaction_date, t.category_id, t.payment_method_id,
+      `SELECT t.id, t.amount, t.notes, t.transaction_date, t.category_id, t.payment_method_id,
               c.name as category_name, c.icon as category_icon, c.color as category_color
        FROM transactions t
        LEFT JOIN categories c ON t.category_id = c.id
@@ -338,11 +341,8 @@ app.put('/api/transactions/:id', authMiddleware, async (c) => {
     const updates: string[] = []
     const params: any[] = []
     for (const [key, val] of Object.entries(body)) {
-      if (['amount', 'type', 'transaction_date', 'category_id', 'payment_method_id'].includes(key)) {
+      if (['amount', 'transaction_date', 'category_id', 'payment_method_id', 'notes'].includes(key)) {
         updates.push(`${key} = ?`)
-        params.push(val)
-      } else if (key === 'notes') {
-        updates.push('description = ?')
         params.push(val)
       }
     }
@@ -350,7 +350,9 @@ app.put('/api/transactions/:id', authMiddleware, async (c) => {
     params.push(txId, userId)
     await c.env.sribuu_db.prepare(`UPDATE transactions SET ${updates.join(', ')} WHERE id = ? AND user_id = ?`).bind(...params).run()
 
-    const { results } = await c.env.sribuu_db.prepare('SELECT * FROM transactions WHERE id = ?').bind(txId).all()
+    const { results } = await c.env.sribuu_db.prepare(
+      'SELECT t.id, t.amount, t.notes, t.transaction_date, t.category_id, t.payment_method_id, c.name as category_name, c.icon as category_icon, c.color as category_color FROM transactions t LEFT JOIN categories c ON t.category_id = c.id WHERE t.id = ?'
+    ).bind(txId).all()
     return c.json((results as any[])[0])
   } catch (err) {
     console.error('Update transaction error:', err)
