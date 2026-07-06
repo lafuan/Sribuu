@@ -163,25 +163,170 @@ app.get('/api/payment-methods', authMiddleware, async (c) => {
   }
 })
 
-// --- Transactions: recent ---
+// ============================================================
+//  TRANSACTION CRUD
+// ============================================================
+
+const TX_COLS = `t.id, t.amount, t.notes, t.transaction_date,
+  t.category_id, t.payment_method_id,
+  c.name as category_name, c.icon as category_icon, c.color as category_color,
+  p.name as payment_method_name`
+
+// --- List transactions (with optional filters) ---
 app.get('/api/transactions', authMiddleware, async (c) => {
   try {
     const userId = c.get('userId') as number
-    const { results } = await c.env.sribuu_db.prepare(
-      `SELECT t.id, t.amount, t.notes, t.transaction_date, 
-              c.name as category_name, c.icon as category_icon, c.color as category_color,
-              p.name as payment_method_name
-       FROM transactions t
-       LEFT JOIN categories c ON t.category_id = c.id
-       LEFT JOIN payment_methods p ON t.payment_method_id = p.id
-       WHERE t.user_id = ?
-       ORDER BY t.transaction_date DESC, t.created_at DESC
-       LIMIT 50`
-    ).bind(userId).all()
-    return c.json(results)
+    const limit = Math.min(Number(c.req.query('limit')) || 50, 200)
+    const offset = Number(c.req.query('offset')) || 0
+    const catId = c.req.query('category_id')
+    const month = c.req.query('month')
+    const year = c.req.query('year')
+
+    let sql = `SELECT ${TX_COLS} FROM transactions t
+      LEFT JOIN categories c ON t.category_id = c.id
+      LEFT JOIN payment_methods p ON t.payment_method_id = p.id
+      WHERE t.user_id = ?`
+    const binds: any[] = [userId]
+
+    if (catId) { sql += ' AND t.category_id = ?'; binds.push(Number(catId)) }
+    if (month) { sql += " AND strftime('%m', t.transaction_date) = ?"; binds.push(month.padStart(2, '0')) }
+    if (year) { sql += " AND strftime('%Y', t.transaction_date) = ?"; binds.push(year) }
+
+    sql += ' ORDER BY t.transaction_date DESC, t.created_at DESC LIMIT ? OFFSET ?'
+    binds.push(limit, offset)
+
+    const { results } = await c.env.sribuu_db.prepare(sql).bind(...binds).all()
+
+    // Also get total count (without limit/offset)
+    let countSql = 'SELECT COUNT(*) as total FROM transactions t WHERE t.user_id = ?'
+    const countBinds: any[] = [userId]
+    if (catId) { countSql += ' AND t.category_id = ?'; countBinds.push(Number(catId)) }
+    if (month) { countSql += " AND strftime('%m', t.transaction_date) = ?"; countBinds.push(month.padStart(2, '0')) }
+    if (year) { countSql += " AND strftime('%Y', t.transaction_date) = ?"; countBinds.push(year) }
+    const { total } = await c.env.sribuu_db.prepare(countSql).bind(...countBinds).first() as any
+
+    return c.json({ transactions: results, total, limit, offset })
   } catch (err) {
     console.error('/api/transactions error:', err)
     return c.json({ error: 'Failed to load transactions' }, 500)
+  }
+})
+
+// --- Create transaction ---
+app.post('/api/transactions', authMiddleware, async (c) => {
+  try {
+    const userId = c.get('userId') as number
+    const { category_id, payment_method_id, amount, notes, transaction_date } = await c.req.json()
+
+    if (!amount || !transaction_date) {
+      return c.json({ error: 'amount and transaction_date are required' }, 400)
+    }
+
+    const { meta } = await c.env.sribuu_db.prepare(
+      `INSERT INTO transactions (user_id, category_id, payment_method_id, amount, notes, transaction_date)
+       VALUES (?, ?, ?, ?, ?, ?)`
+    ).bind(userId, category_id || null, payment_method_id || null, amount, notes || null, transaction_date).run()
+
+    const tx = await c.env.sribuu_db.prepare(
+      `SELECT ${TX_COLS} FROM transactions t
+       LEFT JOIN categories c ON t.category_id = c.id
+       LEFT JOIN payment_methods p ON t.payment_method_id = p.id
+       WHERE t.id = ?`
+    ).bind(meta.last_row_id).first()
+
+    return c.json(tx, 201)
+  } catch (err) {
+    console.error('POST /api/transactions error:', err)
+    return c.json({ error: 'Failed to create transaction' }, 500)
+  }
+})
+
+// --- Get single transaction ---
+app.get('/api/transactions/:id', authMiddleware, async (c) => {
+  try {
+    const userId = c.get('userId') as number
+    const id = c.req.param('id')
+
+    const tx = await c.env.sribuu_db.prepare(
+      `SELECT ${TX_COLS} FROM transactions t
+       LEFT JOIN categories c ON t.category_id = c.id
+       LEFT JOIN payment_methods p ON t.payment_method_id = p.id
+       WHERE t.id = ? AND t.user_id = ?`
+    ).bind(id, userId).first()
+
+    if (!tx) return c.json({ error: 'Transaction not found' }, 404)
+    return c.json(tx)
+  } catch (err) {
+    console.error('GET /api/transactions/:id error:', err)
+    return c.json({ error: 'Failed to get transaction' }, 500)
+  }
+})
+
+// --- Update transaction ---
+app.put('/api/transactions/:id', authMiddleware, async (c) => {
+  try {
+    const userId = c.get('userId') as number
+    const id = c.req.param('id')
+
+    // Check ownership
+    const existing = await c.env.sribuu_db.prepare(
+      'SELECT id FROM transactions WHERE id = ? AND user_id = ?'
+    ).bind(id, userId).first()
+    if (!existing) return c.json({ error: 'Transaction not found' }, 404)
+
+    const { category_id, payment_method_id, amount, notes, transaction_date } = await c.req.json()
+
+    // Build dynamic UPDATE
+    const fields: string[] = []
+    const binds: any[] = []
+    if (amount !== undefined) { fields.push('amount = ?'); binds.push(amount) }
+    if (category_id !== undefined) { fields.push('category_id = ?'); binds.push(category_id || null) }
+    if (payment_method_id !== undefined) { fields.push('payment_method_id = ?'); binds.push(payment_method_id || null) }
+    if (notes !== undefined) { fields.push('notes = ?'); binds.push(notes) }
+    if (transaction_date !== undefined) { fields.push('transaction_date = ?'); binds.push(transaction_date) }
+
+    if (fields.length === 0) return c.json({ error: 'No fields to update' }, 400)
+
+    fields.push("updated_at = datetime('now')")
+    binds.push(id, userId)
+
+    await c.env.sribuu_db.prepare(
+      `UPDATE transactions SET ${fields.join(', ')} WHERE id = ? AND user_id = ?`
+    ).bind(...binds).run()
+
+    const tx = await c.env.sribuu_db.prepare(
+      `SELECT ${TX_COLS} FROM transactions t
+       LEFT JOIN categories c ON t.category_id = c.id
+       LEFT JOIN payment_methods p ON t.payment_method_id = p.id
+       WHERE t.id = ?`
+    ).bind(id).first()
+
+    return c.json(tx)
+  } catch (err) {
+    console.error('PUT /api/transactions/:id error:', err)
+    return c.json({ error: 'Failed to update transaction' }, 500)
+  }
+})
+
+// --- Delete transaction ---
+app.delete('/api/transactions/:id', authMiddleware, async (c) => {
+  try {
+    const userId = c.get('userId') as number
+    const id = c.req.param('id')
+
+    const existing = await c.env.sribuu_db.prepare(
+      'SELECT id FROM transactions WHERE id = ? AND user_id = ?'
+    ).bind(id, userId).first()
+    if (!existing) return c.json({ error: 'Transaction not found' }, 404)
+
+    await c.env.sribuu_db.prepare(
+      'DELETE FROM transactions WHERE id = ? AND user_id = ?'
+    ).bind(id, userId).run()
+
+    return c.json({ message: 'Transaction deleted' })
+  } catch (err) {
+    console.error('DELETE /api/transactions/:id error:', err)
+    return c.json({ error: 'Failed to delete transaction' }, 500)
   }
 })
 
