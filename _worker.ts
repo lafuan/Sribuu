@@ -324,9 +324,9 @@ app.post('/api/transactions', authMiddleware, async (c) => {
     const { results } = await c.env.sribuu_db.prepare('SELECT * FROM transactions WHERE id = ?').bind(meta.last_row_id).all()
     const newTx = (results as any[])[0]
     return c.json(newTx, 201)
-  } catch (err) {
+  } catch (err: any) {
     console.error('Create transaction error:', err)
-    return c.json({ error: 'Failed to create transaction' }, 500)
+    return c.json({ error: 'Failed to create transaction', detail: err.message, cause: err.cause?.message }, 500)
   }
 })
 
