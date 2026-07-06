@@ -33,8 +33,36 @@ jobs:
       - name: Flutter pub get
         run: flutter pub get
 
-      - name: Build iOS IPA (unsigned)
+      - name: Build iOS (archive + IPA)
         run: flutter build ipa --release --no-codesign
+
+      - name: Generate unsigned IPA (fallback if flutter build ipa skipped IPA)
+        if: failure()
+        run: |
+          # flutter build ipa may produce only .xcarchive, skip to manual IPA
+          APP_PATH="build/ios/archive/Runner.xcarchive/Products/Applications/Runner.app"
+          if [ -d "$APP_PATH" ]; then
+            mkdir -p build/ios/ipa
+            mkdir -p Payload && cp -R "$APP_PATH" Payload/
+            cd Payload && zip -qr "../build/ios/ipa/Sribuu-unsigned.ipa" Runner.app && cd ..
+            rm -rf Payload
+            echo "✅ IPA created manually"
+          fi
+
+      - name: Verify IPA
+        run: |
+          if ls build/ios/ipa/*.ipa 1>/dev/null 2>&1; then
+            SIZE=$(stat -c%s build/ios/ipa/*.ipa 2>/dev/null || stat -f%z build/ios/ipa/*.ipa 2>/dev/null)
+            echo "✅ IPA found (${SIZE} bytes)"
+            ls -lh build/ios/ipa/*.ipa
+            if [ "${SIZE:-0}" -lt 1048576 ]; then
+              echo "⚠️  IPA is suspiciously small (<1MB)"
+            fi
+          else
+            echo "❌ No IPA generated!"
+            find build/ios -name "*.ipa" -o -name "*.app" -type d 2>/dev/null
+            exit 1
+          fi
 
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
@@ -42,12 +70,4 @@ jobs:
           name: sribuu-ios-unsigned
           path: flutter_app/build/ios/ipa/*.ipa
           retention-days: 7
-
-      - name: Upload to Release (if tag push)
-        if: startsWith(github.ref, 'refs/tags/')
-        run: |
-          gh release upload ${{ github.ref_name }} \
-            build/ios/ipa/*.ipa \
-            --clobber
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          if-no-files-found: error
