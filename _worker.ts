@@ -151,8 +151,10 @@ app.get('/api/health', (c) => c.json({ status: 'ok', platform: 'cloudflare-pages
 // --- Debug: Run migrations ---
 app.get('/api/debug/migrate', async (c) => {
   try {
-    const tables = [
-      `CREATE TABLE IF NOT EXISTS transactions (
+    // Drop and recreate transactions with correct schema
+    const statements = [
+      `DROP TABLE IF EXISTS transactions`,
+      `CREATE TABLE transactions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER NOT NULL,
         amount REAL NOT NULL,
@@ -180,7 +182,7 @@ app.get('/api/debug/migrate', async (c) => {
       `CREATE INDEX IF NOT EXISTS idx_rules_user_id ON rules(user_id)`
     ]
     const results: any[] = []
-    for (const sql of tables) {
+    for (const sql of statements) {
       try {
         await c.env.sribuu_db.prepare(sql).run()
         results.push({ sql: sql.substring(0, 60) + '...', status: 'ok' })
@@ -189,8 +191,8 @@ app.get('/api/debug/migrate', async (c) => {
       }
     }
     // Check tables exist
-    const check = await c.env.sribuu_db.prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name").all()
-    return c.json({ results, tables: (check.results || []).map((r: any) => r.name) })
+    const check = await c.env.sribuu_db.prepare("SELECT name, sql FROM sqlite_master WHERE type='table' ORDER BY name").all()
+    return c.json({ results, tables: (check.results || []).map((r: any) => ({ name: r.name, sql: (r.sql || '').substring(0, 120) })) })
   } catch (err: any) {
     return c.json({ error: err.message }, 500)
   }
