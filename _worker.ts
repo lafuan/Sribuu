@@ -148,56 +148,6 @@ app.get('/:file{[a-z][a-z0-9._-]*}', async (c) => {
 // --- Health Check ---
 app.get('/api/health', (c) => c.json({ status: 'ok', platform: 'cloudflare-pages', timestamp: Date.now() }))
 
-// --- Debug: Run migrations ---
-app.get('/api/debug/migrate', async (c) => {
-  try {
-    // Drop and recreate transactions with correct schema
-    const statements = [
-      `DROP TABLE IF EXISTS transactions`,
-      `CREATE TABLE transactions (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL,
-        amount REAL NOT NULL,
-        type TEXT NOT NULL,
-        description TEXT NOT NULL,
-        transaction_date TEXT NOT NULL,
-        category_id INTEGER,
-        created_at TEXT DEFAULT (datetime('now')),
-        updated_at TEXT DEFAULT (datetime('now'))
-      )`,
-      `CREATE TABLE IF NOT EXISTS rules (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER,
-        name TEXT NOT NULL,
-        description TEXT,
-        condition TEXT NOT NULL,
-        action TEXT NOT NULL,
-        priority INTEGER DEFAULT 0,
-        is_active INTEGER DEFAULT 1,
-        created_at TEXT DEFAULT (datetime('now')),
-        updated_at TEXT DEFAULT (datetime('now'))
-      )`,
-      `CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON transactions(user_id)`,
-      `CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(transaction_date)`,
-      `CREATE INDEX IF NOT EXISTS idx_rules_user_id ON rules(user_id)`
-    ]
-    const results: any[] = []
-    for (const sql of statements) {
-      try {
-        await c.env.sribuu_db.prepare(sql).run()
-        results.push({ sql: sql.substring(0, 60) + '...', status: 'ok' })
-      } catch (e: any) {
-        results.push({ sql: sql.substring(0, 60) + '...', status: 'error', error: e.message })
-      }
-    }
-    // Check tables exist
-    const check = await c.env.sribuu_db.prepare("SELECT name, sql FROM sqlite_master WHERE type='table' ORDER BY name").all()
-    return c.json({ results, tables: (check.results || []).map((r: any) => ({ name: r.name, sql: (r.sql || '').substring(0, 120) })) })
-  } catch (err: any) {
-    return c.json({ error: err.message }, 500)
-  }
-})
-
 // --- Register ---
 app.post('/api/auth/register', async (c) => {
   try {
@@ -326,9 +276,9 @@ app.post('/api/transactions', authMiddleware, async (c) => {
     const { results } = await c.env.sribuu_db.prepare('SELECT * FROM transactions WHERE id = ?').bind(meta.last_row_id).all()
     const newTx = (results as any[])[0]
     return c.json(newTx, 201)
-  } catch (err: any) {
+  } catch (err) {
     console.error('Create transaction error:', err)
-    return c.json({ error: 'Failed to create transaction', detail: err.message, cause: err.cause?.message }, 500)
+    return c.json({ error: 'Failed to create transaction' }, 500)
   }
 })
 
