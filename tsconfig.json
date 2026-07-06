@@ -8,9 +8,8 @@
     "types": ["@cloudflare/workers-types"],
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx",
-    "outDir": "./dist",
-    "rootDir": "./src"
+    "outDir": "./dist"
   },
-  "include": ["src/**/*.ts"],
+  "include": ["functions/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }
