@@ -1,4 +1,5 @@
 {
+  "pages_build_output_dir": ".",
   "d1_databases": [
     {
       "binding": "sribuu_db",
