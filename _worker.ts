@@ -307,8 +307,7 @@ app.post('/api/transactions', authMiddleware, async (c) => {
     return c.json((results as any[])[0], 201)
   } catch (err) {
     console.error('Create transaction error:', err)
-    const msg = err instanceof Error ? err.message : String(err)
-    return c.json({ error: 'Failed to create transaction', detail: msg }, 500)
+    return c.json({ error: 'Failed to create transaction' }, 500)
   }
 })
 
