@@ -24,4 +24,6 @@
 
 # Local History
 .history
+# Generated build artifacts
 _worker.js
+/src/static.ts

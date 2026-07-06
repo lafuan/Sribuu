@@ -4,7 +4,7 @@
   "description": "Sribuu - Personal finance tracker on Cloudflare Pages",
   "main": "_worker.ts",
   "scripts": {
-    "build": "esbuild _worker.ts --bundle --format=esm --platform=browser --outfile=_worker.js",
+    "build": "python3 build.py",
     "deploy": "npm run build && wrangler pages deploy . --project-name sribuu --branch main",
     "dev": "wrangler pages dev .",
     "test": "echo \"Error: no test specified\" && exit 1"

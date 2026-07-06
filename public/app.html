@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0f0f11">
+  <title>Sribuu — Dashboard</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <h1>📒 Sribuu</h1>
+      <div class="user-badge" onclick="showLogout()">
+        <span id="user-name" style="font-size:13px;color:var(--text-secondary)"></span>
+        <div class="avatar" id="user-avatar">?</div>
+      </div>
+    </header>
+
+    <!-- Balance Card -->
+    <div class="balance-card">
+      <small>Total Bulan Ini</small>
+      <div class="amount" id="month-balance">Rp0</div>
+      <div class="stats-row">
+        <div class="stat-item">Pemasukan<br><span id="month-income" style="color:#86efac">Rp0</span></div>
+        <div class="stat-item">Pengeluaran<br><span id="month-expense" style="color:#fca5a5">Rp0</span></div>
+        <div class="stat-item">Transaksi<br><span id="month-count">0</span></div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+      <button class="qa-btn primary" onclick="openAddTx()">➕ Tambah</button>
+      <button class="qa-btn" onclick="setFilter({})">📋 Semua</button>
+    </div>
+
+    <!-- Categories Filter -->
+    <div class="section-header">
+      <h2>Transaksi <span id="tx-count" style="color:var(--text-secondary);font-weight:400"></span></h2>
+      <button class="filter-btn" onclick="openMonthPicker()">📅 Filter</button>
+    </div>
+    <div class="filter-bar" id="filter-bar"></div>
+
+    <!-- Transaction List -->
+    <div class="tx-list" id="tx-list">
+      <div class="tx-empty">Memuat transaksi...</div>
+    </div>
+
+    <!-- Bottom Nav -->
+    <nav class="bottom-nav">
+      <a href="/app" class="active"><span class="nav-icon">🏠</span>Beranda</a>
+      <a href="#" onclick="openAddTx()"><span class="nav-icon">➕</span>Tambah</a>
+      <a href="#" onclick="logout()"><span class="nav-icon">🚪</span>Keluar</a>
+    </nav>
+  </div>
+
+  <!-- Transaction Modal -->
+  <div class="modal-overlay" id="tx-modal" onclick="if(event.target===this)closeModal()">
+    <div class="modal" style="position:relative">
+      <button class="modal-close" onclick="closeModal()">✕</button>
+      <h2 id="modal-title">Transaksi Baru</h2>
+      <form id="tx-form" onsubmit="event.preventDefault();submitTx()">
+        <input type="hidden" id="tx-id">
+        
+        <div class="form-group">
+          <label>Tanggal</label>
+          <input type="date" id="tx-date" required>
+        </div>
+        
+        <div class="form-group">
+          <label>Jumlah (Rp)</label>
+          <input type="number" id="tx-amount" min="0" step="1000" placeholder="15000" required>
+        </div>
+        
+        <div class="form-group">
+          <label>Kategori</label>
+          <select id="tx-category"></select>
+        </div>
+        
+        <div class="form-group">
+          <label>Metode Pembayaran</label>
+          <select id="tx-payment"></select>
+        </div>
+        
+        <div class="form-group">
+          <label>Catatan</label>
+          <textarea id="tx-notes" placeholder="Contoh: Nasi goreng + es teh" rows="2"></textarea>
+        </div>
+        
+        <button type="submit" class="btn-submit" id="tx-submit">Simpan</button>
+        <button type="button" class="btn-submit" id="tx-delete" style="display:none;margin-top:8px;background:var(--red)" onclick="deleteTx()">Hapus</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script src="/app.js"></script>
+  <script>
+    // ===== App init =====
+    (async function() {
+      const user = JSON.parse(localStorage.getItem('user') || '{}')
+      document.getElementById('user-name').textContent = user.name || ''
+      document.getElementById('user-avatar').textContent = (user.name || '?').charAt(0).toUpperCase()
+      
+      await loadMeta()
+      await loadTransactions()
+      await loadMonthlyStats()
+    })()
+
+    // ===== Monthly Stats =====
+    async function loadMonthlyStats() {
+      try {
+        const now = new Date()
+        const month = String(now.getMonth() + 1).padStart(2, '0')
+        const year = now.getFullYear()
+        
+        const data = await API.getTransactions({ month, year })
+        let income = 0, expense = 0
+        data.transactions.forEach(tx => {
+          if (tx.amount > 0) income += tx.amount
+          else expense += Math.abs(tx.amount)
+        })
+        
+        document.getElementById('month-income').textContent = `Rp${formatMoney(income)}`
+        document.getElementById('month-expense').textContent = `Rp${formatMoney(expense)}`
+        document.getElementById('month-count').textContent = data.total
+        document.getElementById('month-balance').textContent = `Rp${formatMoney(income - expense)}`
+      } catch (e) { /* pass */ }
+    }
+
+    // ===== Logout confirm =====
+    function showLogout() {
+      if (confirm('Keluar dari akun ini?')) logout()
+    }
+
+    // ===== Month picker =====
+    function openMonthPicker() {
+      const now = new Date()
+      const month = prompt('Bulan (1-12):', now.getMonth() + 1)
+      if (month === null) return
+      const year = prompt('Tahun (e.g. 2026):', now.getFullYear())
+      if (year === null) return
+      setFilter({ month, year })
+    }
+  </script>
+</body>
+</html>

@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import bcrypt from 'bcryptjs'
+import { STATIC_FILES } from './src/static'
 
 // --- Environment bindings ---
 export interface Env {
@@ -60,7 +61,35 @@ async function authMiddleware(c: any, next: any) {
 app.use('*', cors())
 
 // ============================================================
-//  PUBLIC ROUTES
+//  STATIC FILES (embedded at build time)
+// ============================================================
+
+app.get('/*', async (c) => {
+  const url = new URL(c.req.url)
+
+  // API routes handled separately
+  if (url.pathname.startsWith('/api/')) return c.notFound()
+
+  // Map short paths
+  const pathMap: Record<string, string> = {
+    '/': '/index.html',
+    '/app': '/app.html',
+  }
+  const filePath = pathMap[url.pathname] || url.pathname
+  const file = STATIC_FILES[filePath]
+
+  if (!file) return c.notFound()
+
+  return new Response(file.content, {
+    headers: {
+      'Content-Type': file.mime,
+      'Cache-Control': 'public, max-age=3600',
+    }
+  })
+})
+
+// ============================================================
+//  API ROUTES
 // ============================================================
 
 app.get('/', (c) => c.text('Hello from Sribuu on Cloudflare Pages!'))
