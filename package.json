@@ -7,7 +7,12 @@
     "build": "python3 build.py",
     "deploy": "npm run build && wrangler pages deploy . --project-name sribuu --branch main",
     "dev": "wrangler pages dev .",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:ci": "npm run type-check && npm run test",
+    "check": "npm run type-check && npm run test && npm run test:e2e"
   },
   "keywords": [],
   "author": "",
@@ -17,7 +22,10 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250706.0",
+    "@playwright/test": "^1.61.1",
+    "concurrently": "^10.0.3",
     "esbuild": "^0.24.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.9"
   }
 }

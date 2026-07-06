@@ -27,3 +27,6 @@
 # Generated build artifacts
 _worker.js
 /src/static.ts
+
+# Playwright test output
+/test-results/
