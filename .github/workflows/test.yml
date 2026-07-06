@@ -21,6 +21,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Build (generate static.ts)
+        run: python3 build.py
+
       - name: Type check
         run: npm run type-check
 

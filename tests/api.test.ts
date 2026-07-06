@@ -280,7 +280,7 @@ describe('API Routes', () => {
     it('returns ok status', async () => {
       const res = await app.request('/api/health')
       expect(res.status).toBe(200)
-      const body = await res.json()
+      const body: any = await res.json() as { status: string; platform: string; timestamp: number }
       expect(body.status).toBe('ok')
       expect(body.platform).toBe('cloudflare-pages')
       expect(body.timestamp).toBeGreaterThan(0)
@@ -299,7 +299,7 @@ describe('API Routes', () => {
         body: JSON.stringify({ name: 'Test', email: 'test@test.com', password: TEST_PASSWORD })
       }, env(mockDb))
       expect(res.status).toBe(201)
-      const body = await res.json()
+      const body: any = await res.json()
       expect(body.user.name).toBe('Test')
       expect(body.user.email).toBe('test@test.com')
       expect(body.token).toBeTruthy()
@@ -313,7 +313,7 @@ describe('API Routes', () => {
         body: JSON.stringify({ name: 'Test' })
       }, env(mockDb))
       expect(res.status).toBe(400)
-      const body = await res.json()
+      const body: any = await res.json()
       expect(body.error).toContain('required')
     })
 
@@ -324,7 +324,7 @@ describe('API Routes', () => {
         body: JSON.stringify({ name: 'Test', email: 'test@test.com', password: '12345' })
       }, env(mockDb))
       expect(res.status).toBe(400)
-      const body = await res.json()
+      const body: any = await res.json()
       expect(body.error).toContain('6 characters')
     })
 
@@ -333,7 +333,7 @@ describe('API Routes', () => {
       await app.request('/api/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body }, env(mockDb))
       const res = await app.request('/api/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body }, env(mockDb))
       expect(res.status).toBe(409)
-      const data = await res.json()
+      const data: any = await res.json()
       expect(data.error).toContain('already registered')
     })
   })
@@ -360,7 +360,7 @@ describe('API Routes', () => {
         body: JSON.stringify({ email: 'test@test.com', password: TEST_PASSWORD })
       }, env(mockDb))
       expect(res.status).toBe(200)
-      const body = await res.json()
+      const body: any = await res.json()
       expect(body.user.name).toBe('Test')
       expect(body.user.email).toBe('test@test.com')
       expect(body.token).toBeTruthy()
@@ -412,7 +412,7 @@ describe('API Routes', () => {
         headers: { 'Authorization': `Bearer ${token}` }
       }, env(mockDb))
       expect(res.status).toBe(200)
-      const body = await res.json()
+      const body: any = await res.json()
       expect(body.id).toBe(1)
       expect(body.email).toBe('test@test.com')
     })
@@ -441,7 +441,7 @@ describe('API Routes', () => {
         headers: { 'Authorization': `Bearer ${token}` }
       }, env(mockDb))
       expect(res.status).toBe(200)
-      const body = await res.json()
+      const body: any = await res.json()
       expect(Array.isArray(body)).toBe(true)
       expect(body.length).toBeGreaterThanOrEqual(3)
       expect(body[0].name).toBeDefined()
@@ -459,7 +459,7 @@ describe('API Routes', () => {
         headers: { 'Authorization': `Bearer ${token}` }
       }, env(mockDb))
       expect(res.status).toBe(200)
-      const body = await res.json()
+      const body: any = await res.json()
       expect(Array.isArray(body)).toBe(true)
       expect(body.length).toBe(2)
       expect(body[0].name).toBe('Cash')
@@ -486,7 +486,7 @@ describe('API Routes', () => {
         body: JSON.stringify({ amount: 50000, transaction_date: '2026-07-06', category_id: 1, notes: 'Lunch' })
       }, env(mockDb))
       expect(res.status).toBe(201)
-      const body = await res.json()
+      const body: any = await res.json()
       expect(body.amount).toBe(50000)
       expect(body.notes).toBe('Lunch')
       expect(body.transaction_date).toBe('2026-07-06')
@@ -504,7 +504,7 @@ describe('API Routes', () => {
         headers: { 'Authorization': `Bearer ${token}` }
       }, env(mockDb))
       expect(res.status).toBe(200)
-      const body = await res.json()
+      const body: any = await res.json()
       expect(body.transactions).toBeDefined()
       expect(body.total).toBeGreaterThanOrEqual(1)
     })
@@ -520,7 +520,7 @@ describe('API Routes', () => {
         headers: { 'Authorization': `Bearer ${token}` }
       }, env(mockDb))
       expect(res.status).toBe(200)
-      const body = await res.json()
+      const body: any = await res.json()
       expect(body.amount).toBe(25000)
     })
 
@@ -540,7 +540,7 @@ describe('API Routes', () => {
         headers: { 'Authorization': `Bearer ${token}` }
       }, env(mockDb))
       expect(res.status).toBe(200)
-      const body = await res.json()
+      const body: any = await res.json()
       expect(body.total).toBe(1) // Only February transaction
     })
 
@@ -563,7 +563,7 @@ describe('API Routes', () => {
         headers: { 'Authorization': `Bearer ${token}` }
       }, env(mockDb))
       expect(res.status).toBe(200)
-      const body = await res.json()
+      const body: any = await res.json()
       expect(body.income).toBe(0)
       expect(body.expense).toBe(0)
       expect(body.balance).toBe(0)

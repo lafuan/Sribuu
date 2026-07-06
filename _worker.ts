@@ -29,7 +29,7 @@ const authMiddleware = async (c: any, next: any) => {
 //  APP
 // ============================================================
 
-const app = new Hono<{ Bindings: Env }>()
+const app = new Hono<{ Bindings: Env; Variables: { userId: number; userEmail: string; userName: string } }>()
 
 app.use('/*', cors())
 
@@ -187,11 +187,11 @@ app.get('/api/transactions', authMiddleware, async (c) => {
     query += ' ORDER BY t.transaction_date DESC, t.id DESC LIMIT ? OFFSET ?'
     params.push(limit, offset)
 
-    const [ { results }, { total } ] = await Promise.all([
+    const [ { results }, count ] = await Promise.all([
       c.env.sribuu_db.prepare(query).bind(...params).all(),
       c.env.sribuu_db.prepare(countQuery).bind(...countParams).first()
     ])
-    return c.json({ transactions: results, total: total ?? 0 })
+    return c.json({ transactions: results, total: (count as any)?.total ?? 0 })
   } catch (err) {
     console.error('Transactions error:', err)
     return c.json({ error: 'Failed to fetch transactions' }, 500)
