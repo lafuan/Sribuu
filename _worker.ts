@@ -260,7 +260,8 @@ app.get('/api/transactions', authMiddleware, async (c) => {
     const limit = Math.min(parseInt(url.searchParams.get('limit') || '50'), 200)
     const offset = parseInt(url.searchParams.get('offset') || '0')
 
-    let query = 'SELECT t.id, t.amount, t.notes, t.transaction_date, t.category_id, t.payment_method_id, c.name as category_name, c.icon as category_icon, c.color as category_color FROM transactions t LEFT JOIN categories c ON t.category_id = c.id WHERE t.user_id = ?'
+    // Old schema: description field, type column, no payment_method_id
+    let query = 'SELECT t.id, t.amount, t.description as notes, t.transaction_date, t.category_id, NULL as payment_method_id, c.name as category_name, c.icon as category_icon, c.color as category_color FROM transactions t LEFT JOIN categories c ON t.category_id = c.id WHERE t.user_id = ?'
     const params: any[] = [userId]
 
     if (month && year) {
@@ -289,19 +290,19 @@ app.post('/api/transactions', authMiddleware, async (c) => {
   try {
     const userId = c.get('userId') as number
     const body = await c.req.json()
-    const { amount, transaction_date, category_id, payment_method_id } = body
-    const notes = body.notes ?? ''
+    const { amount, transaction_date, category_id } = body
 
     if (!amount) return c.json({ error: 'amount is required' }, 400)
-    // Frontend sends positive amounts for expenses; income would be negative amounts
-    const finalCategory = category_id || 1 // fallback to first category
+    // Old schema: description (maps to notes), type column, no payment_method_id
+    const finalCategory = category_id || 1
+    const notesText = body.notes ?? ''
 
     const { meta } = await c.env.sribuu_db.prepare(
-      'INSERT INTO transactions (user_id, amount, notes, transaction_date, category_id, payment_method_id) VALUES (?, ?, ?, ?, ?, ?)'
-    ).bind(userId, amount, notes, transaction_date || new Date().toISOString().split('T')[0], finalCategory, payment_method_id || null).run()
+      'INSERT INTO transactions (user_id, amount, type, description, transaction_date, category_id) VALUES (?, ?, ?, ?, ?, ?)'
+    ).bind(userId, amount, 'expense', notesText, transaction_date || new Date().toISOString().split('T')[0], finalCategory).run()
 
     const { results } = await c.env.sribuu_db.prepare(
-      'SELECT t.id, t.amount, t.notes, t.transaction_date, t.category_id, t.payment_method_id, c.name as category_name, c.icon as category_icon, c.color as category_color FROM transactions t LEFT JOIN categories c ON t.category_id = c.id WHERE t.id = ?'
+      'SELECT t.id, t.amount, t.description as notes, t.transaction_date, t.category_id, NULL as payment_method_id, c.name as category_name, c.icon as category_icon, c.color as category_color FROM transactions t LEFT JOIN categories c ON t.category_id = c.id WHERE t.id = ?'
     ).bind(meta.last_row_id).all()
     return c.json((results as any[])[0], 201)
   } catch (err) {
@@ -316,7 +317,7 @@ app.get('/api/transactions/:id', authMiddleware, async (c) => {
     const userId = c.get('userId') as number
     const txId = parseInt(c.req.param('id'))
     const tx = await c.env.sribuu_db.prepare(
-      `SELECT t.id, t.amount, t.notes, t.transaction_date, t.category_id, t.payment_method_id,
+      `SELECT t.id, t.amount, t.description as notes, t.transaction_date, t.category_id, NULL as payment_method_id,
               c.name as category_name, c.icon as category_icon, c.color as category_color
        FROM transactions t
        LEFT JOIN categories c ON t.category_id = c.id
@@ -342,8 +343,11 @@ app.put('/api/transactions/:id', authMiddleware, async (c) => {
     const updates: string[] = []
     const params: any[] = []
     for (const [key, val] of Object.entries(body)) {
-      if (['amount', 'transaction_date', 'category_id', 'payment_method_id', 'notes'].includes(key)) {
+      if (['amount', 'transaction_date', 'category_id'].includes(key)) {
         updates.push(`${key} = ?`)
+        params.push(val)
+      } else if (key === 'notes') {
+        updates.push('description = ?')
         params.push(val)
       }
     }
@@ -352,7 +356,7 @@ app.put('/api/transactions/:id', authMiddleware, async (c) => {
     await c.env.sribuu_db.prepare(`UPDATE transactions SET ${updates.join(', ')} WHERE id = ? AND user_id = ?`).bind(...params).run()
 
     const { results } = await c.env.sribuu_db.prepare(
-      'SELECT t.id, t.amount, t.notes, t.transaction_date, t.category_id, t.payment_method_id, c.name as category_name, c.icon as category_icon, c.color as category_color FROM transactions t LEFT JOIN categories c ON t.category_id = c.id WHERE t.id = ?'
+      'SELECT t.id, t.amount, t.description as notes, t.transaction_date, t.category_id, NULL as payment_method_id, c.name as category_name, c.icon as category_icon, c.color as category_color FROM transactions t LEFT JOIN categories c ON t.category_id = c.id WHERE t.id = ?'
     ).bind(txId).all()
     return c.json((results as any[])[0])
   } catch (err) {
