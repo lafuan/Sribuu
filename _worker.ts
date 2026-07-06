@@ -146,34 +146,7 @@ app.get('/:file{[a-z][a-z0-9._-]*}', async (c) => {
 })
 
 // --- Health Check ---
-app.get('/api/health', (c) => {
-  const hasSecret = !!c.env.JWT_SECRET
-  const secretLen = c.env.JWT_SECRET ? c.env.JWT_SECRET.length : 0
-  return c.json({ status: 'ok', platform: 'cloudflare-pages', timestamp: Date.now(), hasSecret, secretLen })
-})
-
-// --- Debug: JWT token verification ---
-app.post('/api/debug/verify-token', async (c) => {
-  try {
-    const { token } = await c.req.json()
-    if (!token) return c.json({ error: 'no token' }, 400)
-    const payload = await verifyJWT(token, c.env.JWT_SECRET)
-    if (!payload) {
-      // Try to decode without verifying
-      const parts = token.split('.')
-      return c.json({ 
-        verified: false, 
-        parts: parts.length,
-        header: parts.length >= 1 ? atob(parts[0].replace(/-/g,'+').replace(/_/g,'/').padEnd(parts[0].length + (4-parts[0].length%4)%4, '=')) : null,
-        body: parts.length >= 2 ? atob(parts[1].replace(/-/g,'+').replace(/_/g,'/').padEnd(parts[1].length + (4-parts[1].length%4)%4, '=')) : null,
-        sigLen: parts.length >= 3 ? parts[2].length : 0
-      })
-    }
-    return c.json({ verified: true, payload })
-  } catch (err: any) {
-    return c.json({ error: err.message, stack: err.stack }, 500)
-  }
-})
+app.get('/api/health', (c) => c.json({ status: 'ok', platform: 'cloudflare-pages', timestamp: Date.now() }))
 
 // --- Register ---
 app.post('/api/auth/register', async (c) => {
