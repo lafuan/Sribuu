@@ -123,26 +123,26 @@ app.use('/*', cors())
 
 // --- Static File Serving ---
 app.get('/', async (c) => {
-  const html = STATIC_FILES['index.html']
-  if (html) return c.html(html)
+  const file = STATIC_FILES['index.html']
+  if (file) return c.html(file.content)
   return c.text('Not Found', 404)
 })
 
 app.get('/app', async (c) => {
-  const html = STATIC_FILES['app.html']
-  if (html) return c.html(html)
+  const file = STATIC_FILES['app.html']
+  if (file) return c.html(file.content)
   return c.text('Not Found', 404)
 })
 
 app.get('/manifest.json', async (c) => {
-  const json = STATIC_FILES['manifest.json']
-  if (json) return c.json(JSON.parse(json))
+  const file = STATIC_FILES['manifest.json']
+  if (file) return c.json(JSON.parse(file.content))
   return c.text('Not Found', 404)
 })
 
 app.get('/sw.js', async (c) => {
-  const sw = STATIC_FILES['sw.js']
-  if (sw) return c.text(sw, 200, { 'Content-Type': 'application/javascript' })
+  const file = STATIC_FILES['sw.js']
+  if (file) return c.text(file.content, 200, { 'Content-Type': 'application/javascript' })
   return c.text('Not Found', 404)
 })
 
