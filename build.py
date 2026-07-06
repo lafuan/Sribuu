@@ -51,7 +51,7 @@ with open('src/static.ts', 'w', encoding='utf-8') as f:
 print(f"Generated src/static.ts ({len(os.listdir(public_dir))} files)")
 
 # Build with esbuild
-ret = os.system('npx esbuild _worker.ts --bundle --outfile=_worker.js --format=esm --external:__STATIC_CONTENT_MANIFEST --platform=node 2>&1')
+ret = os.system('npx esbuild _worker.ts --bundle --outfile=_worker.js --format=esm --external:__STATIC_CONTENT_MANIFEST --platform=browser 2>&1')
 if ret != 0:
     print("esbuild failed!")
     sys.exit(1)

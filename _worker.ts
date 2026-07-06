@@ -1,6 +1,5 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
-import bcrypt from 'bcryptjs'
 import { STATIC_FILES } from './src/static'
 
 // --- Environment bindings ---
@@ -9,91 +8,145 @@ export interface Env {
   JWT_SECRET: string
 }
 
-const app = new Hono<{ Bindings: Env; Variables: { userId: number; userEmail: string } }>()
+// ============================================================
+//  PASSWORD HASHING with Web Crypto API (no bcryptjs needed)
+// ============================================================
 
-// --- JWT helpers (Web Crypto API) ---
-function b64url(input: ArrayBuffer): string {
-  return btoa(String.fromCharCode(...new Uint8Array(input)))
-    .replace(/=/g, '')
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
+const PBKDF2_ITERATIONS = 100000
+const SALT_BYTES = 16
+const KEY_LENGTH = 32
+
+function base64url(buf: ArrayBuffer): string {
+  const bytes = new Uint8Array(buf)
+  let binary = ''
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i])
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 }
 
-function fromB64url(str: string): Uint8Array {
-  str = str.replace(/-/g, '+').replace(/_/g, '/')
-  while (str.length % 4) str += '='
-  return Uint8Array.from(atob(str), c => c.charCodeAt(0))
+function fromBase64url(s: string): Uint8Array {
+  s = s.replace(/-/g, '+').replace(/_/g, '/')
+  while (s.length % 4) s += '='
+  const binary = atob(s)
+  const bytes = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+  return bytes
 }
 
-async function signJWT(payload: Record<string, unknown>, secret: string): Promise<string> {
-  const header = b64url(new TextEncoder().encode(JSON.stringify({ alg: 'HS256', typ: 'JWT' })))
-  const body = b64url(new TextEncoder().encode(JSON.stringify(payload)))
+async function hashPassword(password: string): Promise<string> {
+  const salt = crypto.getRandomValues(new Uint8Array(SALT_BYTES))
+  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits'])
+  const hash = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', salt, iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' },
+    key,
+    KEY_LENGTH * 8
+  )
+  return `$pbkdf2-sha256$${PBKDF2_ITERATIONS}$${base64url(salt)}$${base64url(hash)}`
+}
+
+async function verifyPassword(password: string, stored: string): Promise<boolean> {
+  const parts = stored.split('$')
+  if (parts[0] !== '' || parts[1] !== 'pbkdf2-sha256') throw new Error('Unsupported hash format')
+  const iterations = parseInt(parts[2], 10)
+  const salt = fromBase64url(parts[3])
+  const expectedHash = parts[4]
+  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits'])
+  const hash = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', salt, iterations, hash: 'SHA-256' },
+    key,
+    KEY_LENGTH * 8
+  )
+  const hashStr = base64url(hash)
+  // Constant-time comparison
+  if (hashStr.length !== expectedHash.length) return false
+  let result = 0
+  for (let i = 0; i < hashStr.length; i++) result |= hashStr.charCodeAt(i) ^ expectedHash.charCodeAt(i)
+  return result === 0
+}
+
+// ============================================================
+//  JWT (Web Crypto + HMAC-SHA256)
+// ============================================================
+
+function base64urlEncode(obj: any): string {
+  return base64url(new TextEncoder().encode(JSON.stringify(obj)))
+}
+
+function base64urlDecode<T>(s: string): T {
+  return JSON.parse(new TextDecoder().decode(fromBase64url(s)))
+}
+
+async function signJWT(payload: Record<string, any>, secret: string): Promise<string> {
+  const header = base64urlEncode({ alg: 'HS256', typ: 'JWT' })
+  const body = base64urlEncode(payload)
   const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
-  const sig = b64url(await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(`${header}.${body}`)))
-  return `${header}.${body}.${sig}`
+  const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(`${header}.${body}`))
+  return `${header}.${body}.${base64url(sig)}`
 }
 
-async function verifyJWT(token: string, secret: string): Promise<Record<string, unknown> | null> {
+async function verifyJWT(token: string, secret: string): Promise<Record<string, any> | null> {
+  const parts = token.split('.')
+  if (parts.length !== 3) return null
+  const [headerB64, bodyB64, sigB64] = parts
   try {
-    const parts = token.split('.')
-    if (parts.length !== 3) return null
     const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['verify'])
-    const valid = await crypto.subtle.verify('HMAC', key, fromB64url(parts[2]), new TextEncoder().encode(`${parts[0]}.${parts[1]}`))
+    const valid = await crypto.subtle.verify('HMAC', key, fromBase64url(sigB64), new TextEncoder().encode(`${headerB64}.${bodyB64}`))
     if (!valid) return null
-    const payload = JSON.parse(new TextDecoder().decode(fromB64url(parts[1])))
+    const payload = base64urlDecode<any>(bodyB64)
     if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) return null
     return payload
   } catch { return null }
 }
 
-// --- Auth middleware ---
-async function authMiddleware(c: any, next: any) {
+// ============================================================
+//  MIDDLEWARE
+// ============================================================
+
+const authMiddleware = async (c: any, next: any) => {
   const auth = c.req.header('Authorization')
-  if (!auth?.startsWith('Bearer ')) return c.json({ error: 'Unauthorized' }, 401)
-  const payload = await verifyJWT(auth.slice(7), c.env.JWT_SECRET)
+  if (!auth || !auth.startsWith('Bearer ')) return c.json({ error: 'Unauthorized' }, 401)
+  const token = auth.slice(7)
+  const payload = await verifyJWT(token, c.env.JWT_SECRET)
   if (!payload) return c.json({ error: 'Invalid or expired token' }, 401)
-  c.set('userId', payload.sub as number)
-  c.set('userEmail', payload.email as string)
+  c.set('userId', payload.sub)
+  c.set('userEmail', payload.email)
+  c.set('userName', payload.name)
   await next()
 }
 
-// --- Middleware ---
-app.use('*', cors())
-
 // ============================================================
-//  STATIC FILES (embedded at build time)
+//  APP
 // ============================================================
 
-app.get('/*', async (c) => {
-  const url = new URL(c.req.url)
+const app = new Hono<{ Bindings: Env }>()
 
-  // API routes handled separately
-  if (url.pathname.startsWith('/api/')) return c.notFound()
+app.use('/*', cors())
 
-  // Map short paths
-  const pathMap: Record<string, string> = {
-    '/': '/index.html',
-    '/app': '/app.html',
-  }
-  const filePath = pathMap[url.pathname] || url.pathname
-  const file = STATIC_FILES[filePath]
-
-  if (!file) return c.notFound()
-
-  return new Response(file.content, {
-    headers: {
-      'Content-Type': file.mime,
-      'Cache-Control': 'public, max-age=3600',
-    }
-  })
+// --- Static File Serving ---
+app.get('/', async (c) => {
+  const html = STATIC_FILES['index.html']
+  if (html) return c.html(html)
+  return c.text('Not Found', 404)
 })
 
-// ============================================================
-//  API ROUTES
-// ============================================================
+app.get('/app', async (c) => {
+  const html = STATIC_FILES['app.html']
+  if (html) return c.html(html)
+  return c.text('Not Found', 404)
+})
 
-app.get('/', (c) => c.text('Hello from Sribuu on Cloudflare Pages!'))
+app.get('/manifest.json', async (c) => {
+  const json = STATIC_FILES['manifest.json']
+  if (json) return c.json(JSON.parse(json))
+  return c.text('Not Found', 404)
+})
 
+app.get('/sw.js', async (c) => {
+  const sw = STATIC_FILES['sw.js']
+  if (sw) return c.text(sw, 200, { 'Content-Type': 'application/javascript' })
+  return c.text('Not Found', 404)
+})
+
+// --- Health Check ---
 app.get('/api/health', (c) => c.json({ status: 'ok', platform: 'cloudflare-pages', timestamp: Date.now() }))
 
 // --- Register ---
@@ -107,11 +160,10 @@ app.post('/api/auth/register', async (c) => {
       return c.json({ error: 'Password must be at least 6 characters' }, 400)
     }
 
-    // Check existing user
     const existing = await c.env.sribuu_db.prepare('SELECT id FROM users WHERE email = ?').bind(email).first()
     if (existing) return c.json({ error: 'Email already registered' }, 409)
 
-    const hash = bcrypt.hashSync(password, 10)
+    const hash = await hashPassword(password)
     const { meta } = await c.env.sribuu_db.prepare(
       'INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)'
     ).bind(name, email, hash).run()
@@ -138,7 +190,7 @@ app.post('/api/auth/login', async (c) => {
 
     if (!user) return c.json({ error: 'Invalid email or password' }, 401)
 
-    const valid = bcrypt.compareSync(password, user.password_hash)
+    const valid = await verifyPassword(password, user.password_hash)
     if (!valid) return c.json({ error: 'Invalid email or password' }, 401)
 
     const token = await signJWT({
@@ -174,196 +226,221 @@ app.get('/api/categories', authMiddleware, async (c) => {
     ).bind(userId).all()
     return c.json(results)
   } catch (err) {
-    console.error('/api/categories error:', err)
-    return c.json({ error: 'Failed to load categories' }, 500)
+    console.error('Categories error:', err)
+    return c.json({ error: 'Failed to fetch categories' }, 500)
   }
 })
 
-// --- Payment methods ---
-app.get('/api/payment-methods', authMiddleware, async (c) => {
-  try {
-    const { results } = await c.env.sribuu_db.prepare(
-      'SELECT id, name, icon FROM payment_methods WHERE is_active = 1 ORDER BY name ASC'
-    ).all()
-    return c.json(results)
-  } catch (err) {
-    console.error('/api/payment-methods error:', err)
-    return c.json({ error: 'Failed to load payment methods' }, 500)
-  }
-})
-
-// ============================================================
-//  TRANSACTION CRUD
-// ============================================================
-
-const TX_COLS = `t.id, t.amount, t.notes, t.transaction_date,
-  t.category_id, t.payment_method_id,
-  c.name as category_name, c.icon as category_icon, c.color as category_color,
-  p.name as payment_method_name`
-
-// --- List transactions (with optional filters) ---
+// --- Transactions ---
 app.get('/api/transactions', authMiddleware, async (c) => {
   try {
     const userId = c.get('userId') as number
-    const limit = Math.min(Number(c.req.query('limit')) || 50, 200)
-    const offset = Number(c.req.query('offset')) || 0
-    const catId = c.req.query('category_id')
-    const month = c.req.query('month')
-    const year = c.req.query('year')
+    const url = new URL(c.req.url)
+    const month = url.searchParams.get('month')
+    const year = url.searchParams.get('year')
+    const type = url.searchParams.get('type')
+    const categoryId = url.searchParams.get('category_id')
+    const limit = Math.min(parseInt(url.searchParams.get('limit') || '50'), 200)
+    const offset = parseInt(url.searchParams.get('offset') || '0')
 
-    let sql = `SELECT ${TX_COLS} FROM transactions t
-      LEFT JOIN categories c ON t.category_id = c.id
-      LEFT JOIN payment_methods p ON t.payment_method_id = p.id
-      WHERE t.user_id = ?`
-    const binds: any[] = [userId]
+    let query = 'SELECT t.id, t.amount, t.type, t.description, t.transaction_date, t.category_id, c.name as category_name, c.icon as category_icon, c.color as category_color FROM transactions t LEFT JOIN categories c ON t.category_id = c.id WHERE t.user_id = ?'
+    const params: any[] = [userId]
 
-    if (catId) { sql += ' AND t.category_id = ?'; binds.push(Number(catId)) }
-    if (month) { sql += " AND strftime('%m', t.transaction_date) = ?"; binds.push(month.padStart(2, '0')) }
-    if (year) { sql += " AND strftime('%Y', t.transaction_date) = ?"; binds.push(year) }
+    if (month && year) {
+      query += ' AND strftime(\'%m\', t.transaction_date) = ? AND strftime(\'%Y\', t.transaction_date) = ?'
+      params.push(month.padStart(2, '0'), year)
+    }
+    if (type) { query += ' AND t.type = ?'; params.push(type) }
+    if (categoryId) { query += ' AND t.category_id = ?'; params.push(parseInt(categoryId)) }
 
-    sql += ' ORDER BY t.transaction_date DESC, t.created_at DESC LIMIT ? OFFSET ?'
-    binds.push(limit, offset)
+    query += ' ORDER BY t.transaction_date DESC, t.id DESC LIMIT ? OFFSET ?'
+    params.push(limit, offset)
 
-    const { results } = await c.env.sribuu_db.prepare(sql).bind(...binds).all()
-
-    // Also get total count (without limit/offset)
-    let countSql = 'SELECT COUNT(*) as total FROM transactions t WHERE t.user_id = ?'
-    const countBinds: any[] = [userId]
-    if (catId) { countSql += ' AND t.category_id = ?'; countBinds.push(Number(catId)) }
-    if (month) { countSql += " AND strftime('%m', t.transaction_date) = ?"; countBinds.push(month.padStart(2, '0')) }
-    if (year) { countSql += " AND strftime('%Y', t.transaction_date) = ?"; countBinds.push(year) }
-    const { total } = await c.env.sribuu_db.prepare(countSql).bind(...countBinds).first() as any
-
-    return c.json({ transactions: results, total, limit, offset })
+    const { results } = await c.env.sribuu_db.prepare(query).bind(...params).all()
+    return c.json(results)
   } catch (err) {
-    console.error('/api/transactions error:', err)
-    return c.json({ error: 'Failed to load transactions' }, 500)
+    console.error('Transactions error:', err)
+    return c.json({ error: 'Failed to fetch transactions' }, 500)
   }
 })
 
-// --- Create transaction ---
 app.post('/api/transactions', authMiddleware, async (c) => {
   try {
     const userId = c.get('userId') as number
-    const { category_id, payment_method_id, amount, notes, transaction_date } = await c.req.json()
-
-    if (!amount || !transaction_date) {
-      return c.json({ error: 'amount and transaction_date are required' }, 400)
-    }
+    const { amount, type, description, transaction_date, category_id } = await c.req.json()
+    if (!amount || !type || !description) return c.json({ error: 'amount, type, and description are required' }, 400)
 
     const { meta } = await c.env.sribuu_db.prepare(
-      `INSERT INTO transactions (user_id, category_id, payment_method_id, amount, notes, transaction_date)
-       VALUES (?, ?, ?, ?, ?, ?)`
-    ).bind(userId, category_id || null, payment_method_id || null, amount, notes || null, transaction_date).run()
+      'INSERT INTO transactions (user_id, amount, type, description, transaction_date, category_id) VALUES (?, ?, ?, ?, ?, ?)'
+    ).bind(userId, amount, type, description, transaction_date || new Date().toISOString().split('T')[0], category_id || null).run()
 
-    const tx = await c.env.sribuu_db.prepare(
-      `SELECT ${TX_COLS} FROM transactions t
-       LEFT JOIN categories c ON t.category_id = c.id
-       LEFT JOIN payment_methods p ON t.payment_method_id = p.id
-       WHERE t.id = ?`
-    ).bind(meta.last_row_id).first()
-
-    return c.json(tx, 201)
+    const { results } = await c.env.sribuu_db.prepare('SELECT * FROM transactions WHERE id = ?').bind(meta.last_row_id).all()
+    const newTx = (results as any[])[0]
+    return c.json(newTx, 201)
   } catch (err) {
-    console.error('POST /api/transactions error:', err)
+    console.error('Create transaction error:', err)
     return c.json({ error: 'Failed to create transaction' }, 500)
   }
 })
 
-// --- Get single transaction ---
-app.get('/api/transactions/:id', authMiddleware, async (c) => {
-  try {
-    const userId = c.get('userId') as number
-    const id = c.req.param('id')
-
-    const tx = await c.env.sribuu_db.prepare(
-      `SELECT ${TX_COLS} FROM transactions t
-       LEFT JOIN categories c ON t.category_id = c.id
-       LEFT JOIN payment_methods p ON t.payment_method_id = p.id
-       WHERE t.id = ? AND t.user_id = ?`
-    ).bind(id, userId).first()
-
-    if (!tx) return c.json({ error: 'Transaction not found' }, 404)
-    return c.json(tx)
-  } catch (err) {
-    console.error('GET /api/transactions/:id error:', err)
-    return c.json({ error: 'Failed to get transaction' }, 500)
-  }
-})
-
-// --- Update transaction ---
 app.put('/api/transactions/:id', authMiddleware, async (c) => {
   try {
     const userId = c.get('userId') as number
-    const id = c.req.param('id')
+    const txId = parseInt(c.req.param('id'))
+    const body = await c.req.json()
 
-    // Check ownership
-    const existing = await c.env.sribuu_db.prepare(
-      'SELECT id FROM transactions WHERE id = ? AND user_id = ?'
-    ).bind(id, userId).first()
+    const existing = await c.env.sribuu_db.prepare('SELECT id FROM transactions WHERE id = ? AND user_id = ?').bind(txId, userId).first()
     if (!existing) return c.json({ error: 'Transaction not found' }, 404)
 
-    const { category_id, payment_method_id, amount, notes, transaction_date } = await c.req.json()
+    const updates: string[] = []
+    const params: any[] = []
+    for (const [key, val] of Object.entries(body)) {
+      if (['amount', 'type', 'description', 'transaction_date', 'category_id'].includes(key)) {
+        updates.push(`${key} = ?`)
+        params.push(val)
+      }
+    }
+    if (updates.length === 0) return c.json({ error: 'No valid fields to update' }, 400)
+    params.push(txId, userId)
+    await c.env.sribuu_db.prepare(`UPDATE transactions SET ${updates.join(', ')} WHERE id = ? AND user_id = ?`).bind(...params).run()
 
-    // Build dynamic UPDATE
-    const fields: string[] = []
-    const binds: any[] = []
-    if (amount !== undefined) { fields.push('amount = ?'); binds.push(amount) }
-    if (category_id !== undefined) { fields.push('category_id = ?'); binds.push(category_id || null) }
-    if (payment_method_id !== undefined) { fields.push('payment_method_id = ?'); binds.push(payment_method_id || null) }
-    if (notes !== undefined) { fields.push('notes = ?'); binds.push(notes) }
-    if (transaction_date !== undefined) { fields.push('transaction_date = ?'); binds.push(transaction_date) }
-
-    if (fields.length === 0) return c.json({ error: 'No fields to update' }, 400)
-
-    fields.push("updated_at = datetime('now')")
-    binds.push(id, userId)
-
-    await c.env.sribuu_db.prepare(
-      `UPDATE transactions SET ${fields.join(', ')} WHERE id = ? AND user_id = ?`
-    ).bind(...binds).run()
-
-    const tx = await c.env.sribuu_db.prepare(
-      `SELECT ${TX_COLS} FROM transactions t
-       LEFT JOIN categories c ON t.category_id = c.id
-       LEFT JOIN payment_methods p ON t.payment_method_id = p.id
-       WHERE t.id = ?`
-    ).bind(id).first()
-
-    return c.json(tx)
+    const { results } = await c.env.sribuu_db.prepare('SELECT * FROM transactions WHERE id = ?').bind(txId).all()
+    return c.json((results as any[])[0])
   } catch (err) {
-    console.error('PUT /api/transactions/:id error:', err)
+    console.error('Update transaction error:', err)
     return c.json({ error: 'Failed to update transaction' }, 500)
   }
 })
 
-// --- Delete transaction ---
 app.delete('/api/transactions/:id', authMiddleware, async (c) => {
   try {
     const userId = c.get('userId') as number
-    const id = c.req.param('id')
-
-    const existing = await c.env.sribuu_db.prepare(
-      'SELECT id FROM transactions WHERE id = ? AND user_id = ?'
-    ).bind(id, userId).first()
+    const txId = parseInt(c.req.param('id'))
+    const existing = await c.env.sribuu_db.prepare('SELECT id FROM transactions WHERE id = ? AND user_id = ?').bind(txId, userId).first()
     if (!existing) return c.json({ error: 'Transaction not found' }, 404)
-
-    await c.env.sribuu_db.prepare(
-      'DELETE FROM transactions WHERE id = ? AND user_id = ?'
-    ).bind(id, userId).run()
-
-    return c.json({ message: 'Transaction deleted' })
+    await c.env.sribuu_db.prepare('DELETE FROM transactions WHERE id = ? AND user_id = ?').bind(txId, userId).run()
+    return c.json({ success: true })
   } catch (err) {
-    console.error('DELETE /api/transactions/:id error:', err)
+    console.error('Delete transaction error:', err)
     return c.json({ error: 'Failed to delete transaction' }, 500)
   }
 })
 
-// --- Error handler ---
-app.onError((err, c) => {
-  console.error('Worker Error:', err.message)
-  return c.text(`Error: ${err.message}`, 500)
+// ============================================================
+//  STATS & SUMMARY
+// ============================================================
+
+app.get('/api/stats/summary', authMiddleware, async (c) => {
+  try {
+    const userId = c.get('userId') as number
+    const url = new URL(c.req.url)
+    const month = url.searchParams.get('month')
+    const year = url.searchParams.get('year')
+
+    let incomeQuery = 'SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE user_id = ? AND type = \'income\''
+    let expenseQuery = 'SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE user_id = ? AND type = \'expense\''
+    const params: any[] = [userId]
+    const params2: any[] = [userId]
+
+    if (month && year) {
+      const filter = ' AND strftime(\'%m\', transaction_date) = ? AND strftime(\'%Y\', transaction_date) = ?'
+      incomeQuery += filter
+      expenseQuery += filter
+      params.push(month.padStart(2, '0'), year)
+      params2.push(month.padStart(2, '0'), year)
+    }
+
+    const [income, expense] = await Promise.all([
+      c.env.sribuu_db.prepare(incomeQuery).bind(...params).first(),
+      c.env.sribuu_db.prepare(expenseQuery).bind(...params2).first()
+    ])
+    const incomeTotal = (income as any)?.total || 0
+    const expenseTotal = (expense as any)?.total || 0
+    return c.json({ income: incomeTotal, expense: expenseTotal, balance: incomeTotal - expenseTotal })
+  } catch (err) {
+    console.error('Stats error:', err)
+    return c.json({ error: 'Failed to get summary' }, 500)
+  }
 })
 
-// Cloudflare Pages Advanced Mode
+// ============================================================
+//  RULES ENGINE
+// ============================================================
+
+app.get('/api/rules', authMiddleware, async (c) => {
+  try {
+    const userId = c.get('userId') as number
+    const { results } = await c.env.sribuu_db.prepare(
+      'SELECT * FROM rules WHERE user_id = ? OR user_id IS NULL ORDER BY priority ASC, created_at DESC'
+    ).bind(userId).all()
+    return c.json(results)
+  } catch (err) {
+    console.error('Rules error:', err)
+    return c.json({ error: 'Failed to fetch rules' }, 500)
+  }
+})
+
+app.post('/api/rules', authMiddleware, async (c) => {
+  try {
+    const userId = c.get('userId') as number
+    const { name, description, condition, action, priority } = await c.req.json()
+    if (!name || !condition || !action) return c.json({ error: 'name, condition, and action are required' }, 400)
+    const { meta } = await c.env.sribuu_db.prepare(
+      'INSERT INTO rules (user_id, name, description, condition, action, priority) VALUES (?, ?, ?, ?, ?, ?)'
+    ).bind(userId, name, description || '', JSON.stringify(condition), JSON.stringify(action), priority || 0).run()
+    const { results } = await c.env.sribuu_db.prepare('SELECT * FROM rules WHERE id = ?').bind(meta.last_row_id).all()
+    return c.json((results as any[])[0], 201)
+  } catch (err) {
+    console.error('Create rule error:', err)
+    return c.json({ error: 'Failed to create rule' }, 500)
+  }
+})
+
+app.put('/api/rules/:id', authMiddleware, async (c) => {
+  try {
+    const userId = c.get('userId') as number
+    const ruleId = parseInt(c.req.param('id'))
+    const existing = await c.env.sribuu_db.prepare('SELECT id FROM rules WHERE id = ? AND user_id = ?').bind(ruleId, userId).first()
+    if (!existing) return c.json({ error: 'Rule not found' }, 404)
+    const body = await c.req.json()
+    const updates: string[] = []
+    const params: any[] = []
+    for (const [key, val] of Object.entries(body)) {
+      if (['name', 'description', 'priority', 'is_active'].includes(key)) {
+        updates.push(`${key} = ?`)
+        params.push(val)
+      } else if (key === 'condition' || key === 'action') {
+        updates.push(`${key} = ?`)
+        params.push(JSON.stringify(val))
+      }
+    }
+    if (updates.length === 0) return c.json({ error: 'No valid fields to update' }, 400)
+    params.push(ruleId, userId)
+    await c.env.sribuu_db.prepare(`UPDATE rules SET ${updates.join(', ')} WHERE id = ? AND user_id = ?`).bind(...params).run()
+    const { results } = await c.env.sribuu_db.prepare('SELECT * FROM rules WHERE id = ?').bind(ruleId).all()
+    return c.json((results as any[])[0])
+  } catch (err) {
+    console.error('Update rule error:', err)
+    return c.json({ error: 'Failed to update rule' }, 500)
+  }
+})
+
+app.delete('/api/rules/:id', authMiddleware, async (c) => {
+  try {
+    const userId = c.get('userId') as number
+    const ruleId = parseInt(c.req.param('id'))
+    const existing = await c.env.sribuu_db.prepare('SELECT id FROM rules WHERE id = ? AND user_id = ?').bind(ruleId, userId).first()
+    if (!existing) return c.json({ error: 'Rule not found' }, 404)
+    await c.env.sribuu_db.prepare('DELETE FROM rules WHERE id = ? AND user_id = ?').bind(ruleId, userId).run()
+    return c.json({ success: true })
+  } catch (err) {
+    console.error('Delete rule error:', err)
+    return c.json({ error: 'Failed to delete rule' }, 500)
+  }
+})
+
+// ============================================================
+//  EXPORT
+// ============================================================
+
 export default app
