@@ -257,7 +257,7 @@ app.get('/api/transactions', authMiddleware, async (c) => {
     const limit = Math.min(parseInt(url.searchParams.get('limit') || '50'), 200)
     const offset = parseInt(url.searchParams.get('offset') || '0')
 
-    let query = 'SELECT t.id, t.amount, t.type, t.description, t.transaction_date, t.category_id, c.name as category_name, c.icon as category_icon, c.color as category_color FROM transactions t LEFT JOIN categories c ON t.category_id = c.id WHERE t.user_id = ?'
+    let query = 'SELECT t.id, t.amount, t.type, t.description as notes, t.transaction_date, t.category_id, t.payment_method_id, c.name as category_name, c.icon as category_icon, c.color as category_color FROM transactions t LEFT JOIN categories c ON t.category_id = c.id WHERE t.user_id = ?'
     const params: any[] = [userId]
 
     if (month && year) {
@@ -267,11 +267,17 @@ app.get('/api/transactions', authMiddleware, async (c) => {
     if (type) { query += ' AND t.type = ?'; params.push(type) }
     if (categoryId) { query += ' AND t.category_id = ?'; params.push(parseInt(categoryId)) }
 
+    // Count query (without LIMIT/OFFSET)
+    let countQuery = query.replace(/SELECT .+? FROM/, 'SELECT COUNT(*) as total FROM').replace(/ ORDER BY .+$/, '')
+    const countParams = [...params]
     query += ' ORDER BY t.transaction_date DESC, t.id DESC LIMIT ? OFFSET ?'
     params.push(limit, offset)
 
-    const { results } = await c.env.sribuu_db.prepare(query).bind(...params).all()
-    return c.json(results)
+    const [ { results }, { total } ] = await Promise.all([
+      c.env.sribuu_db.prepare(query).bind(...params).all(),
+      c.env.sribuu_db.prepare(countQuery).bind(...countParams).first()
+    ])
+    return c.json({ transactions: results, total: (total as any)?.total || 0 })
   } catch (err) {
     console.error('Transactions error:', err)
     return c.json({ error: 'Failed to fetch transactions' }, 500)
@@ -281,12 +287,16 @@ app.get('/api/transactions', authMiddleware, async (c) => {
 app.post('/api/transactions', authMiddleware, async (c) => {
   try {
     const userId = c.get('userId') as number
-    const { amount, type, description, transaction_date, category_id } = await c.req.json()
-    if (!amount || !type || !description) return c.json({ error: 'amount, type, and description are required' }, 400)
+    const body = await c.req.json()
+    const { amount, transaction_date, category_id, payment_method_id } = body
+    const notes = body.notes ?? body.description ?? ''
+    const type = body.type || 'expense'
+
+    if (!amount) return c.json({ error: 'amount is required' }, 400)
 
     const { meta } = await c.env.sribuu_db.prepare(
-      'INSERT INTO transactions (user_id, amount, type, description, transaction_date, category_id) VALUES (?, ?, ?, ?, ?, ?)'
-    ).bind(userId, amount, type, description, transaction_date || new Date().toISOString().split('T')[0], category_id || null).run()
+      'INSERT INTO transactions (user_id, amount, type, description, transaction_date, category_id, payment_method_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    ).bind(userId, amount, type, notes, transaction_date || new Date().toISOString().split('T')[0], category_id || null, payment_method_id || null).run()
 
     const { results } = await c.env.sribuu_db.prepare('SELECT * FROM transactions WHERE id = ?').bind(meta.last_row_id).all()
     const newTx = (results as any[])[0]
@@ -294,6 +304,25 @@ app.post('/api/transactions', authMiddleware, async (c) => {
   } catch (err) {
     console.error('Create transaction error:', err)
     return c.json({ error: 'Failed to create transaction' }, 500)
+  }
+})
+
+app.get('/api/transactions/:id', authMiddleware, async (c) => {
+  try {
+    const userId = c.get('userId') as number
+    const txId = parseInt(c.req.param('id'))
+    const tx = await c.env.sribuu_db.prepare(
+      `SELECT t.id, t.amount, t.type, t.description as notes, t.transaction_date, t.category_id, t.payment_method_id,
+              c.name as category_name, c.icon as category_icon, c.color as category_color
+       FROM transactions t
+       LEFT JOIN categories c ON t.category_id = c.id
+       WHERE t.id = ? AND t.user_id = ?`
+    ).bind(txId, userId).first()
+    if (!tx) return c.json({ error: 'Transaction not found' }, 404)
+    return c.json(tx)
+  } catch (err) {
+    console.error('Get transaction error:', err)
+    return c.json({ error: 'Failed to fetch transaction' }, 500)
   }
 })
 
@@ -309,8 +338,11 @@ app.put('/api/transactions/:id', authMiddleware, async (c) => {
     const updates: string[] = []
     const params: any[] = []
     for (const [key, val] of Object.entries(body)) {
-      if (['amount', 'type', 'description', 'transaction_date', 'category_id'].includes(key)) {
+      if (['amount', 'type', 'transaction_date', 'category_id', 'payment_method_id'].includes(key)) {
         updates.push(`${key} = ?`)
+        params.push(val)
+      } else if (key === 'notes') {
+        updates.push('description = ?')
         params.push(val)
       }
     }
