@@ -123,27 +123,26 @@ app.use('/*', cors())
 
 // --- Static File Serving ---
 app.get('/', async (c) => {
-  const file = STATIC_FILES['index.html']
+  const file = STATIC_FILES['/index.html']
   if (file) return c.html(file.content)
   return c.text('Not Found', 404)
 })
 
 app.get('/app', async (c) => {
-  const file = STATIC_FILES['app.html']
+  const file = STATIC_FILES['/app.html']
   if (file) return c.html(file.content)
   return c.text('Not Found', 404)
 })
 
-app.get('/manifest.json', async (c) => {
-  const file = STATIC_FILES['manifest.json']
-  if (file) return c.json(JSON.parse(file.content))
-  return c.text('Not Found', 404)
-})
-
-app.get('/sw.js', async (c) => {
-  const file = STATIC_FILES['sw.js']
-  if (file) return c.text(file.content, 200, { 'Content-Type': 'application/javascript' })
-  return c.text('Not Found', 404)
+// Generic route for static files served from /public
+app.get('/:file{[a-z][a-z0-9._-]*}', async (c) => {
+  const name = c.req.param('file')
+  const key = '/' + name
+  const file = STATIC_FILES[key]
+  if (!file) return c.text('Not Found', 404)
+  const ext = name.split('.').pop() || ''
+  if (ext === 'json') return c.json(JSON.parse(file.content))
+  return c.body(file.content, 200, { 'Content-Type': file.mime })
 })
 
 // --- Health Check ---
