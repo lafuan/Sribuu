@@ -230,6 +230,21 @@ app.get('/api/categories', authMiddleware, async (c) => {
   }
 })
 
+// --- Payment Methods ---
+app.get('/api/payment-methods', authMiddleware, async (c) => {
+  try {
+    const { results } = await c.env.sribuu_db.prepare(
+      `SELECT id, name, icon, is_default, is_active
+       FROM payment_methods WHERE is_active = 1
+       ORDER BY is_default DESC, name ASC`
+    ).all()
+    return c.json(results)
+  } catch (err) {
+    console.error('Payment methods error:', err)
+    return c.json({ error: 'Failed to fetch payment methods' }, 500)
+  }
+})
+
 // --- Transactions ---
 app.get('/api/transactions', authMiddleware, async (c) => {
   try {
