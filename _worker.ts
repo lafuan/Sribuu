@@ -279,7 +279,7 @@ app.get('/api/transactions', authMiddleware, async (c) => {
       c.env.sribuu_db.prepare(query).bind(...params).all(),
       c.env.sribuu_db.prepare(countQuery).bind(...countParams).first()
     ])
-    return c.json({ transactions: results, total: (total as any)?.total || 0 })
+    return c.json({ transactions: results, total: total ?? 0 })
   } catch (err) {
     console.error('Transactions error:', err)
     return c.json({ error: 'Failed to fetch transactions' }, 500)
