@@ -1,11 +1,12 @@
 {
   "name": "sribuu-worker",
   "version": "1.0.0",
-  "description": "Sribuu - Personal finance tracker on Cloudflare Workers",
-  "main": "src/index.ts",
+  "description": "Sribuu - Personal finance tracker on Cloudflare Pages",
+  "main": "_worker.ts",
   "scripts": {
-    "deploy": "wrangler deploy",
-    "dev": "wrangler dev",
+    "build": "esbuild _worker.ts --bundle --format=esm --platform=browser --outfile=_worker.js",
+    "deploy": "npm run build && wrangler pages deploy . --project-name sribuu --branch main",
+    "dev": "wrangler pages dev .",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -16,6 +17,7 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250706.0",
+    "esbuild": "^0.24.0",
     "typescript": "^5.9.3"
   }
 }

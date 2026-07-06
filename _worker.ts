@@ -11,8 +11,9 @@ app.get('/api/health', (c) => {
 })
 
 app.onError((err, c) => {
-  console.error('Pages Function Error:', err.message)
+  console.error('Worker Error:', err.message)
   return c.text(`Error: ${err.message}`, 500)
 })
 
-export const onRequest = app.fetch
+// Cloudflare Pages Advanced Mode: export default with fetch
+export default app
