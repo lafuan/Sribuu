@@ -1,8 +1,9 @@
 -- Migration: 0001_initial_schema
 -- Ported from PostgreSQL to D1 (SQLite)
+-- Using IF NOT EXISTS for idempotent re-runs
 
 -- Users
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     email TEXT NOT NULL UNIQUE,
@@ -12,10 +13,10 @@ CREATE TABLE users (
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
-CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 
 -- Payment Methods
-CREATE TABLE payment_methods (
+CREATE TABLE IF NOT EXISTS payment_methods (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE,
     icon TEXT NOT NULL,
@@ -23,10 +24,10 @@ CREATE TABLE payment_methods (
     is_active INTEGER NOT NULL DEFAULT 1,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
-CREATE INDEX idx_payment_methods_active ON payment_methods(is_active);
+CREATE INDEX IF NOT EXISTS idx_payment_methods_active ON payment_methods(is_active);
 
 -- Categories
-CREATE TABLE categories (
+CREATE TABLE IF NOT EXISTS categories (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
@@ -36,11 +37,11 @@ CREATE TABLE categories (
     is_active INTEGER NOT NULL DEFAULT 1,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
-CREATE INDEX idx_categories_default ON categories(is_default, is_active);
-CREATE INDEX idx_categories_user ON categories(user_id, is_active);
+CREATE INDEX IF NOT EXISTS idx_categories_default ON categories(is_default, is_active);
+CREATE INDEX IF NOT EXISTS idx_categories_user ON categories(user_id, is_active);
 
 -- Transactions
-CREATE TABLE transactions (
+CREATE TABLE IF NOT EXISTS transactions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE RESTRICT,
@@ -53,14 +54,14 @@ CREATE TABLE transactions (
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
-CREATE INDEX idx_tx_user_date ON transactions(user_id, transaction_date);
-CREATE INDEX idx_tx_user_category ON transactions(user_id, category_id);
-CREATE INDEX idx_tx_user_payment ON transactions(user_id, payment_method_id);
-CREATE INDEX idx_tx_parent ON transactions(parent_transaction_id);
-CREATE INDEX idx_tx_user_amount ON transactions(user_id, transaction_date, amount);
+CREATE INDEX IF NOT EXISTS idx_tx_user_date ON transactions(user_id, transaction_date);
+CREATE INDEX IF NOT EXISTS idx_tx_user_category ON transactions(user_id, category_id);
+CREATE INDEX IF NOT EXISTS idx_tx_user_payment ON transactions(user_id, payment_method_id);
+CREATE INDEX IF NOT EXISTS idx_tx_parent ON transactions(parent_transaction_id);
+CREATE INDEX IF NOT EXISTS idx_tx_user_amount ON transactions(user_id, transaction_date, amount);
 
 -- Budgets
-CREATE TABLE budgets (
+CREATE TABLE IF NOT EXISTS budgets (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
@@ -69,11 +70,11 @@ CREATE TABLE budgets (
     amount INTEGER NOT NULL,
     rollover INTEGER NOT NULL DEFAULT 0
 );
-CREATE INDEX idx_budget_user_month ON budgets(user_id, year, month);
-CREATE INDEX idx_budget_user_cat_month ON budgets(user_id, category_id, year, month);
+CREATE INDEX IF NOT EXISTS idx_budget_user_month ON budgets(user_id, year, month);
+CREATE INDEX IF NOT EXISTS idx_budget_user_cat_month ON budgets(user_id, category_id, year, month);
 
 -- Subscriptions
-CREATE TABLE subscriptions (
+CREATE TABLE IF NOT EXISTS subscriptions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE RESTRICT,
@@ -85,11 +86,11 @@ CREATE TABLE subscriptions (
     is_active INTEGER NOT NULL DEFAULT 1,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
-CREATE INDEX idx_sub_user_active ON subscriptions(user_id, is_active);
-CREATE INDEX idx_sub_user_cat ON subscriptions(user_id, category_id);
+CREATE INDEX IF NOT EXISTS idx_sub_user_active ON subscriptions(user_id, is_active);
+CREATE INDEX IF NOT EXISTS idx_sub_user_cat ON subscriptions(user_id, category_id);
 
 -- Bills
-CREATE TABLE bills (
+CREATE TABLE IF NOT EXISTS bills (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE RESTRICT,
@@ -100,11 +101,11 @@ CREATE TABLE bills (
     paid_date TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
-CREATE INDEX idx_bills_user_due ON bills(user_id, due_date);
-CREATE INDEX idx_bills_user_paid ON bills(user_id, is_paid);
+CREATE INDEX IF NOT EXISTS idx_bills_user_due ON bills(user_id, due_date);
+CREATE INDEX IF NOT EXISTS idx_bills_user_paid ON bills(user_id, is_paid);
 
 -- Rules (auto-categorization)
-CREATE TABLE rules (
+CREATE TABLE IF NOT EXISTS rules (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
@@ -115,11 +116,11 @@ CREATE TABLE rules (
     priority INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
-CREATE INDEX idx_rules_user_active ON rules(user_id, is_active);
-CREATE INDEX idx_rules_user_priority ON rules(user_id, priority);
+CREATE INDEX IF NOT EXISTS idx_rules_user_active ON rules(user_id, is_active);
+CREATE INDEX IF NOT EXISTS idx_rules_user_priority ON rules(user_id, priority);
 
 -- Transaction Templates
-CREATE TABLE transaction_templates (
+CREATE TABLE IF NOT EXISTS transaction_templates (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE RESTRICT,
@@ -129,4 +130,4 @@ CREATE TABLE transaction_templates (
     notes TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
-CREATE INDEX idx_templates_user ON transaction_templates(user_id);
+CREATE INDEX IF NOT EXISTS idx_templates_user ON transaction_templates(user_id);

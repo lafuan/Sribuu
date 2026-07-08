@@ -1,8 +1,8 @@
 -- Migration: 0002_seed_defaults
--- Default payment methods and categories
+-- Default payment methods and categories (idempotent)
 
 -- Default payment methods
-INSERT INTO payment_methods (name, icon, is_default, is_active) VALUES
+INSERT OR IGNORE INTO payment_methods (name, icon, is_default, is_active) VALUES
     ('Cash', '💵', 0, 1),
     ('Debit Card', '💳', 0, 1),
     ('Credit Card', '💳', 0, 1),
@@ -10,7 +10,7 @@ INSERT INTO payment_methods (name, icon, is_default, is_active) VALUES
     ('Bank Transfer', '🏦', 0, 1);
 
 -- Default categories (user_id = NULL for system defaults)
-INSERT INTO categories (user_id, name, icon, color, is_default, is_active) VALUES
+INSERT OR IGNORE INTO categories (user_id, name, icon, color, is_default, is_active) VALUES
     (NULL, 'Food & Dining', '🍔', '#FF6B6B', 1, 1),
     (NULL, 'Transportation', '🚗', '#4ECDC4', 1, 1),
     (NULL, 'Shopping', '🛍️', '#45B7D1', 1, 1),
