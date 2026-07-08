@@ -9,18 +9,18 @@
 | Date | Issues Created | Queries Audited | Recommendations |
 |------|----------------|-----------------|----------------|
 | 2026-07-08 | #562, #563, #564 | All 20 SQL queries in _worker.js | Stats endpoint dead code; 3 dead columns; category_id silent default |
+| 2026-07-08 (21:00) | #608, #609 | All 20 SQL queries re-audited | Frontend stats only receives 50 tx; payment method broken at POST + PUT |
 
-**Latest Run:** 2026-07-08 13:58 WIB
+**Latest Run:** 2026-07-08 21:00 WIB
 
 ## Findings Summary
 
-### New Issues (2026-07-08 13:00 WIB)
+### New Issues (2026-07-08 21:00 WIB)
 
 | # | Severity | Title | Impact |
 |---|----------|-------|--------|
-| 562 | 🟡 MEDIUM | `/api/stats/summary` endpoint is dead code — frontend calculates stats client-side | D1 read quota waste: downloads ALL monthly transactions instead of using aggregate query |
-| 563 | 🟢 LOW | Three dead columns with zero API coverage — `attachment_path`, `notification_enabled`, `reminder_time` | Schema weight, developer confusion, ~130KB+ wasted storage per 10K rows |
-| 564 | 🟡 MEDIUM | `category_id` silently defaults to 1 for missing/invalid values | Silent data mis-categorization under "Food & Dining" |
+| 608 | 🟡 MEDIUM | Frontend `loadMonthlyStats()` only receives 50 transactions (backend default limit) — income/expense inaccurate >50 tx/month | Silent wrong numbers on dashboard for users with >50 monthly transactions |
+| 609 | 🟡 MEDIUM | PUT `/api/transactions/:id` silently ignores `payment_method_id` — INSERT also ignores it | Payment method feature completely broken: users select method but it's never stored |
 
 ### Queries Audited
 
