@@ -160,7 +160,8 @@ app.get('/api/payment-methods', authMiddleware, async (c) => {
 // --- Transactions ---
 // Schema: id, user_id, category_id, payment_method_id, parent_transaction_id,
 //         amount (INTEGER), notes (TEXT), attachment_path, transaction_date
-// Income/expense determined by sign of amount (positive=expense? no, negative=expense in frontend)
+// Income/expense determined by sign of amount (positive=income, negative=expense).
+// The frontend is responsible for setting the correct sign based on user input.
 
 app.get('/api/transactions', authMiddleware, async (c) => {
   try {
@@ -299,10 +300,10 @@ app.get('/api/stats/summary', authMiddleware, async (c) => {
     const month = url.searchParams.get('month')
     const year = url.searchParams.get('year')
 
-    let incomeQuery = 'SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE user_id = ? AND amount > 0'
+    let incomeQuery = 'SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE user_id = ? AND amount >= 0'
     let expenseQuery = 'SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE user_id = ? AND amount < 0'
     const params: any[] = [userId]
-    const params2: any[] = [userId];
+    const params2: any[] = [userId]
 
     if (month && year) {
       const filter = ' AND strftime(\'%m\', transaction_date) = ? AND strftime(\'%Y\', transaction_date) = ?'

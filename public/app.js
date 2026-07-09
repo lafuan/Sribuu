@@ -153,20 +153,22 @@ async function openAddTx() {
 }
 
 async function openEditTx(id) {
-  try {
-    const tx = await API.getTransaction(id)
-    const modal = document.getElementById('tx-modal')
-    document.getElementById('modal-title').textContent = 'Edit Transaksi'
-    document.getElementById('tx-id').value = id
-    document.getElementById('tx-submit').textContent = 'Update'
-    document.getElementById('tx-delete').style.display = 'block'
-    
-    await populateSelects()
-    document.getElementById('tx-date').value = tx.transaction_date
-    document.getElementById('tx-amount').value = Math.abs(tx.amount)
-    document.getElementById('tx-category').value = tx.category_id || ''
-    document.getElementById('tx-payment').value = tx.payment_method_id || ''
-    document.getElementById('tx-notes').value = tx.notes || ''
+ try {
+   const tx = await API.getTransaction(id)
+   const modal = document.getElementById('tx-modal')
+   document.getElementById('modal-title').textContent = 'Edit Transaksi'
+   document.getElementById('tx-id').value = id
+   document.getElementById('tx-submit').textContent = 'Update'
+   document.getElementById('tx-delete').style.display = 'block'
+   
+   await populateSelects()
+   document.getElementById('tx-date').value = tx.transaction_date
+   document.getElementById('tx-amount').value = Math.abs(tx.amount)
+   document.getElementById('type-expense').checked = tx.amount < 0
+   document.getElementById('type-income').checked = tx.amount >= 0
+   document.getElementById('tx-category').value = tx.category_id || ''
+   document.getElementById('tx-payment').value = tx.payment_method_id || ''
+   document.getElementById('tx-notes').value = tx.notes || ''
     modal.classList.add('open')
   } catch (e) {
     showToast('Gagal memuat transaksi', 'error')
@@ -189,21 +191,27 @@ async function populateSelects() {
 }
 
 async function submitTx() {
-  const id = document.getElementById('tx-id').value
-  const btn = document.getElementById('tx-submit')
-  btn.disabled = true
-  
-  try {
-    const data = {
-      amount: Number(document.getElementById('tx-amount').value),
-      transaction_date: document.getElementById('tx-date').value,
-      category_id: document.getElementById('tx-category').value || null,
-      payment_method_id: document.getElementById('tx-payment').value || null,
-      notes: document.getElementById('tx-notes').value || null,
-    }
-    
-    if (!data.amount || !data.transaction_date) {
-      showToast('Jumlah dan tanggal wajib diisi', 'error')
+ const id = document.getElementById('tx-id').value
+ const btn = document.getElementById('tx-submit')
+ btn.disabled = true
+ 
+ try {
+   const type = document.querySelector('input[name="transaction_type"]:checked').value
+   let amount = Number(document.getElementById('tx-amount').value)
+   if (type === 'expense') {
+     amount = -Math.abs(amount)
+   }
+
+   const data = {
+     amount: amount,
+     transaction_date: document.getElementById('tx-date').value,
+     category_id: document.getElementById('tx-category').value || null,
+     payment_method_id: document.getElementById('tx-payment').value || null,
+     notes: document.getElementById('tx-notes').value || null,
+   }
+   
+   if (!data.amount || !data.transaction_date) {
+     showToast('Jumlah dan tanggal wajib diisi', 'error')
       btn.disabled = false
       return
     }
