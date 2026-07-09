@@ -10,63 +10,69 @@
 |------|----------------|------------|--------------|
 | 2026-07-08 06:00 | #507, #508, #509, #510, #511, #512 | — | ✅ Deploy: FAIL (table already exists) — iOS build: N/A (workflow not on main) |
 | 2026-07-08 18:00 | #589, #590, #591 | — | ✅ Deploy: FAIL (evolved to payment_method_id COLUMN error) — iOS build: N/A |
-| 2026-07-09 06:00 | Status update on #589, #590, #591 | — | ❌ Deploy: STILL FAILING (same payment_method_id error) — iOS build: N/A |
+| 2026-07-09 06:00 | — | — | ❌ Deploy: STILL FAILING (same payment_method_id error) — iOS build: N/A |
+| 2026-07-09 18:00 | #675 (flutter_lints 6.0.0) | #591 (closed) | ❌ Deploy: STILL FAILING (runs #236-#240, same error) — iOS build: N/A |
 
-**Latest Run:** 2026-07-09 06:00 WIB
+**Latest Run:** 2026-07-09 18:00 WIB
 
-## Findings — 2026-07-09 06:00 WIB
+## Findings — 2026-07-09 18:00 WIB
 
-### Status — No Changes Since Last Run
+### Status Overview
 
-All issues from previous run **(#589, #590, #591)** remain **open and unresolved**. New observations:
+**No changes since last run** — deploys continue to fail, Flutter PRs remain blocked.
 
-1. **🔴 Deploy still failing** — 5+ consecutive failed runs since yesterday, all with same `no such column: payment_method_id` error
-   - The migration fails at `CREATE INDEX IF NOT EXISTS idx_tx_user_payment ON transactions(user_id, payment_method_id)` — column doesn't exist in the existing D1 database
-   - Every `push to main` triggers this failure (including harmless docs-only commits)
-   - Last failed run: 28975315679 (2026-07-08 20:59 UTC)
+### 1. 🔴 Deploy still failing — 5+ consecutive runs with same error
+- **Last 5 runs:** #236 through #240 — ALL failed
+- **Error:** `no such column: payment_method_id at offset 72: SQLITE_ERROR`
+- **Root cause:** `0001_initial.sql` has `CREATE INDEX IF NOT EXISTS idx_tx_user_payment ON transactions(user_id, payment_method_id)` but the live D1 database was created with the old schema (no `payment_method_id` column)
+- **Status:** Commented on #589 with recommended fix sequence
 
-2. **✅ SPA still live** — https://sribuu.pages.dev returns 200 OK, `/api/health` responds
-   - Content is stale (last successful deploy was before migration changes)
-   - API still functional for existing users because no new deploys have succeeded to break it
+### 2. 🟢 Issue #590 (schema drift) — CLOSED by @lafuan
+- ✅ Resolved
 
-3. **✅ PR #312 merges cleanly into main** — tested locally, no conflicts
-   - Blocked only by the deploy pipeline being broken
-   - Once deploy is fixed, #312 can merge immediately
+### 3. 🟢 Issue #591 (PR #388 stale) — CLOSED by mobile-agent
+- ✅ Closed via `gh issue close`
 
-4. **⚠️ No new mobile app issues** — nothing new to report for Flutter side
+### 4. 🟡 New issue #675 created: flutter_lints 6.0.0 available
+- `flutter_lints ^5.0.0` → `^6.0.0` (major)
+- Requires review before bumping (may need Flutter SDK bump)
 
-### Critical Blockers (carried over)
+### 5. 🔴 PR #312 still BLOCKED on deploy fix
+- Flutter iOS app + CI build workflow cannot merge to main until deploy pipeline is fixed
+- PR #382 (dep bumps) also blocked on this
 
-1. **🐛 Deploy error: no such column: payment_method_id** (issue #589) — **UNRESOLVED**
-   - Commented with fresh status update
-   - Still needs migration 0003 with ALTER TABLE then CREATE INDEX IF NOT EXISTS
+### 6. 🟢 Dependency versions checked (pub.dev API)
 
-2. **🐛 Schema drift: _worker.ts vs migration** (issue #590) — **UNRESOLVED**
-   - Worker INSERT uses old columns (type, description)
-   - Migration expects new schema (payment_method_id, notes)
-   - Commented with decision request: Option A (update worker) vs Option B (revert migration)
+| Package | Locked | Latest | Status |
+|---------|--------|--------|--------|
+| `webview_flutter` | 4.13.0 (`^4.13.0`) | 4.14.1 | ⚠️ PR #382 bumps to `^4.14.0` (auto-resolves) |
+| `cupertino_icons` | 1.0.8 (`^1.0.8`) | 1.0.9 | ⚠️ PR #382 bumps to `^1.0.9` |
+| `flutter_lints` | 5.0.0 (`^5.0.0`) | **6.0.0** | 🆕 Issue #675 created |
 
-3. **🔀 PR #388 stale** (issue #591) — **UNRESOLVED**
-   - Still open, based on old commit, would revert main
-   - Commented to close
+### 7. 🟢 SPA live at sribuu.pages.dev
+- Still serving stale content (no successful deploy since migration changes)
+- API still functional for existing users
+- Bearer token auth compatible with WKWebView (no cookie dependencies)
 
-### Dependency Updates
+### 8. 🟢 iOS build workflow history
+- Last successful iOS build: Jul 5 (run 28725626644) — unsigned IPA still on GitHub
+- No new iOS builds can run until #312 merges to main
 
-4. **No new dep bumps available since last check** — webview_flutter still latest is 4.14.1
+## Critical Blockers (for next run)
 
-### iOS Build Workflow
+1. **🔴 Deploy error #589** — needs migration 0003 with `ALTER TABLE` before `CREATE INDEX`. Blocking everything.
+2. **🔴 PR #312 merge** — blocked by #589. Once deploy fixed, merge #312 → main to unblock iOS CI.
+3. **🔴 PR #382 merge** — blocked by #312. Once #312 merges, rebase + merge #382 for dep bumps.
+4. **🆕 flutter_lints 6.0.0** — review if bump is feasible with current Flutter SDK (3.27.4)
 
-5. **No iOS build workflow on main** — still blocked by PR #312 not merged
-6. **Last successful iOS build:** Jul 5 — unsigned IPA still on GitHub (run 28725626644)
-
-## Latest Audit Summary (2026-07-09 06:00 WIB)
+## Latest Audit Summary (2026-07-09 18:00 WIB)
 
 | Area | Status | Notes |
 |------|--------|-------|
-| Dependency Updates | ⚠️ PR #382 pending (blocked by #312) | No new bumps available |
-| WebView Compatibility | ✅ OK — SPA live at sribuu.pages.dev | Bearer token auth via localStorage |
-| Build Status | ❌ Deploy failing (5+ runs, same error) | iOS build workflow not on main |
-| iOS Platform Issues | ⚠️ Info.plist OK, Podfile missing | Needs `flutter create` on macOS for Podfile |
-| API Compatibility | ⚠️ Schema drift (migration vs worker code) | Issue #590 tracks this |
-| Performance | ⚠️ No offline cache, no splash optimization | Issue #252 exists |
+| Dependency Updates | ⚠️ #675 created, PR #382 blocked | webview_flutter 4.14.1, flutter_lints 6.0.0 |
+| WebView Compatibility | ✅ OK — SPA uses Bearer tokens | Works with WKWebView, no cookie issues |
+| Build Status | ❌ Deploy failing (6+ runs) | iOS build workflow still not on main |
+| iOS Platform Issues | ⚠️ No Podfile committed | Needs `flutter create` on macOS |
+| API Compatibility | ✅ Issue #590 CLOSED | Schema drift resolved by @lafuan |
+| Performance | ⚠️ No splash optimization, no offline cache | Issue #252 exists |
 | Session Persistence | ⚠️ localStorage ephemeral in WKWebView | Issue #251 exists |
