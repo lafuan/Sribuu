@@ -167,13 +167,12 @@ app.get('/api/transactions', authMiddleware, async (c) => {
     const userId = c.get('userId') as number
     const url = new URL(c.req.url)
     const month = url.searchParams.get('month')
-    const year = url.searchParams.get('year')
-    const categoryId = url.searchParams.get('category_id')
-    const limit = Math.min(parseInt(url.searchParams.get('limit') || '50'), 200)
-    const offset = parseInt(url.searchParams.get('offset') || '0')
+    const year = url.searchParams.get('year');
+    const categoryId = url.searchParams.get('category_id');
+    const limit = Math.min(parseInt(url.searchParams.get('limit') || '50'), 200);
+    const offset = parseInt(url.searchParams.get('offset') || '0');
 
-    // Old schema: description field, type column, no payment_method_id
-    let query = 'SELECT t.id, t.amount, t.description as notes, t.transaction_date, t.category_id, NULL as payment_method_id, c.name as category_name, c.icon as category_icon, c.color as category_color FROM transactions t LEFT JOIN categories c ON t.category_id = c.id WHERE t.user_id = ?'
+    let query = 'SELECT t.id, t.amount, t.notes, t.transaction_date, t.category_id, t.payment_method_id, c.name as category_name, c.icon as category_icon, c.color as category_color FROM transactions t LEFT JOIN categories c ON t.category_id = c.id WHERE t.user_id = ?'
     const params: any[] = [userId]
 
     if (month && year) {
@@ -183,13 +182,14 @@ app.get('/api/transactions', authMiddleware, async (c) => {
     if (categoryId) { query += ' AND t.category_id = ?'; params.push(parseInt(categoryId)) }
 
     const countQuery = query.replace(/SELECT .+? FROM/, 'SELECT COUNT(*) as total FROM').replace(/ ORDER BY .+$/, '')
-    const countParams = [...params]
-    query += ' ORDER BY t.transaction_date DESC, t.id DESC LIMIT ? OFFSET ?'
-    params.push(limit, offset)
+    const countParams = [...params];
+
+    query += ' ORDER BY t.transaction_date DESC, t.id DESC LIMIT ? OFFSET ?';
+    params.push(limit, offset);
 
     const [ { results }, count ] = await Promise.all([
       c.env.sribuu_db.prepare(query).bind(...params).all(),
-      c.env.sribuu_db.prepare(countQuery).bind(...countParams).first()
+      c.env.sribuu_db.prepare(countQuery).bind(...countParams).first(),
     ])
     return c.json({ transactions: results, total: (count as any)?.total ?? 0 })
   } catch (err) {
@@ -201,20 +201,19 @@ app.get('/api/transactions', authMiddleware, async (c) => {
 app.post('/api/transactions', authMiddleware, async (c) => {
   try {
     const userId = c.get('userId') as number
-    const body = await c.req.json()
-    const { amount, transaction_date, category_id } = body
+    const { amount, transaction_date, category_id, notes, payment_method_id } = await c.req.json()
 
     if (!amount) return c.json({ error: 'amount is required' }, 400)
-    // Old schema: description (maps to notes), type column, no payment_method_id
+    
     const finalCategory = category_id || 1
-    const notesText = body.notes ?? ''
+    const finalDate = transaction_date || new Date().toISOString().split('T')[0]
 
     const { meta } = await c.env.sribuu_db.prepare(
-      'INSERT INTO transactions (user_id, amount, type, description, transaction_date, category_id) VALUES (?, ?, ?, ?, ?, ?)'
-    ).bind(userId, amount, 'expense', notesText, transaction_date || new Date().toISOString().split('T')[0], finalCategory).run()
+      'INSERT INTO transactions (user_id, amount, transaction_date, category_id, notes, payment_method_id) VALUES (?, ?, ?, ?, ?, ?)'
+    ).bind(userId, amount, finalDate, finalCategory, notes || '', payment_method_id || null).run()
 
     const { results } = await c.env.sribuu_db.prepare(
-      'SELECT t.id, t.amount, t.description as notes, t.transaction_date, t.category_id, NULL as payment_method_id, c.name as category_name, c.icon as category_icon, c.color as category_color FROM transactions t LEFT JOIN categories c ON t.category_id = c.id WHERE t.id = ?'
+      'SELECT t.id, t.amount, t.notes, t.transaction_date, t.category_id, t.payment_method_id, c.name as category_name, c.icon as category_icon, c.color as category_color FROM transactions t LEFT JOIN categories c ON t.category_id = c.id WHERE t.id = ?'
     ).bind(meta.last_row_id).all()
     return c.json((results as any[])[0], 201)
   } catch (err) {
@@ -228,7 +227,7 @@ app.get('/api/transactions/:id', authMiddleware, async (c) => {
     const userId = c.get('userId') as number
     const txId = parseInt(c.req.param('id'))
     const tx = await c.env.sribuu_db.prepare(
-      `SELECT t.id, t.amount, t.description as notes, t.transaction_date, t.category_id, NULL as payment_method_id,
+      `SELECT t.id, t.amount, t.notes, t.transaction_date, t.category_id, t.payment_method_id,
               c.name as category_name, c.icon as category_icon, c.color as category_color
        FROM transactions t
        LEFT JOIN categories c ON t.category_id = c.id
@@ -253,13 +252,12 @@ app.put('/api/transactions/:id', authMiddleware, async (c) => {
 
     const updates: string[] = []
     const params: any[] = []
-    for (const [key, val] of Object.entries(body)) {
-      if (['amount', 'transaction_date', 'category_id'].includes(key)) {
+    // Use a fixed list of allowed fields to prevent injection
+    const allowedFields = ['amount', 'transaction_date', 'category_id', 'notes', 'payment_method_id'];
+    for (const key of allowedFields) {
+      if (body.hasOwnProperty(key)) {
         updates.push(`${key} = ?`)
-        params.push(val)
-      } else if (key === 'notes') {
-        updates.push('description = ?')
-        params.push(val)
+        params.push(body[key])
       }
     }
     if (updates.length === 0) return c.json({ error: 'No valid fields to update' }, 400)
@@ -267,7 +265,7 @@ app.put('/api/transactions/:id', authMiddleware, async (c) => {
     await c.env.sribuu_db.prepare(`UPDATE transactions SET ${updates.join(', ')} WHERE id = ? AND user_id = ?`).bind(...params).run()
 
     const { results } = await c.env.sribuu_db.prepare(
-      'SELECT t.id, t.amount, t.description as notes, t.transaction_date, t.category_id, NULL as payment_method_id, c.name as category_name, c.icon as category_icon, c.color as category_color FROM transactions t LEFT JOIN categories c ON t.category_id = c.id WHERE t.id = ?'
+      'SELECT t.id, t.amount, t.notes, t.transaction_date, t.category_id, t.payment_method_id, c.name as category_name, c.icon as category_icon, c.color as category_color FROM transactions t LEFT JOIN categories c ON t.category_id = c.id WHERE t.id = ?'
     ).bind(txId).all()
     return c.json((results as any[])[0])
   } catch (err) {
@@ -301,10 +299,10 @@ app.get('/api/stats/summary', authMiddleware, async (c) => {
     const month = url.searchParams.get('month')
     const year = url.searchParams.get('year')
 
-    let incomeQuery = 'SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE user_id = ? AND type = \'income\''
-    let expenseQuery = 'SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE user_id = ? AND type = \'expense\''
+    let incomeQuery = 'SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE user_id = ? AND amount > 0'
+    let expenseQuery = 'SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE user_id = ? AND amount < 0'
     const params: any[] = [userId]
-    const params2: any[] = [userId]
+    const params2: any[] = [userId];
 
     if (month && year) {
       const filter = ' AND strftime(\'%m\', transaction_date) = ? AND strftime(\'%Y\', transaction_date) = ?'
@@ -318,8 +316,8 @@ app.get('/api/stats/summary', authMiddleware, async (c) => {
       c.env.sribuu_db.prepare(incomeQuery).bind(...params).first(),
       c.env.sribuu_db.prepare(expenseQuery).bind(...params2).first()
     ])
-    const incomeTotal = (income as any)?.total || 0
-    const expenseTotal = (expense as any)?.total || 0
+    const incomeTotal = (income as any)?.total || 0;
+    const expenseTotal = Math.abs((expense as any)?.total || 0); // Return positive value for expense
     return c.json({ income: incomeTotal, expense: expenseTotal, balance: incomeTotal - expenseTotal })
   } catch (err) {
     console.error('Stats error:', err)

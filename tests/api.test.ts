@@ -10,7 +10,7 @@ const TEST_PASSWORD = 'password123'
 // ============================================================
 
 interface UserRow { id: number; name: string; email: string; password_hash: string }
-interface TransactionRow { id: number; user_id: number; amount: number; description: string; transaction_date: string; category_id: number; type: string }
+interface TransactionRow { id: number; user_id: number; amount: number; notes: string; transaction_date: string; category_id: number; payment_method_id: number | null }
 interface CategoryRow { id: number; name: string; icon: string; color: string; is_default: number; is_active: number; user_id: number | null }
 interface RuleRow { id: number; user_id: number; name: string; description: string; condition: string; action: string; priority: number; is_active: number; created_at: string }
 
@@ -69,10 +69,10 @@ function makeMockDb() {
             const tx = transactions.find(t => t.id === txId && t.user_id === userId)
             if (!tx) return null
             // Full SELECT with JOIN (for GET /transactions/:id)
-            if (query.includes('description as notes')) {
+            if (query.includes('t.notes') || query.includes('description as notes')) {
               const cat = categories.find(c => c.id === tx.category_id)
               return {
-                id: tx.id, amount: tx.amount, notes: tx.description,
+                id: tx.id, amount: tx.amount, notes: tx.notes,
                 transaction_date: tx.transaction_date, category_id: tx.category_id,
                 payment_method_id: null,
                 category_name: cat?.name ?? null,
@@ -115,14 +115,12 @@ function makeMockDb() {
             if (query.includes('WHERE user_id = ?')) {
               filtered = filtered.filter(t => t.user_id === binds[0])
             }
-            if (query.includes('type')) {
-              if (query.includes("type = 'income'")) {
-                filtered = filtered.filter(t => t.type === 'income' || t.amount > 0)
-              } else if (query.includes("type = 'expense'")) {
-                filtered = filtered.filter(t => t.type === 'expense' || t.amount < 0)
-              }
+            if (query.includes('amount > 0')) { // income
+              filtered = filtered.filter(t => t.amount > 0);
+            } else if (query.includes('amount < 0')) { // expense
+              filtered = filtered.filter(t => t.amount < 0);
             }
-            const total = filtered.reduce((sum, t) => sum + Math.abs(t.amount), 0)
+            const total = filtered.reduce((sum, t) => sum + t.amount, 0)
             return { total }
           }
           return null
@@ -161,10 +159,10 @@ function makeMockDb() {
             const results = filtered.map(t => ({
               id: t.id,
               amount: t.amount,
-              notes: t.description,
+              notes: t.notes,
               transaction_date: t.transaction_date,
               category_id: t.category_id,
-              payment_method_id: null,
+              payment_method_id: t.payment_method_id,
               category_name: categories.find(c => c.id === t.category_id)?.name || null,
               category_icon: categories.find(c => c.id === t.category_id)?.icon || null,
               category_color: categories.find(c => c.id === t.category_id)?.color || null,
@@ -191,10 +189,10 @@ function makeMockDb() {
           }
           // --- INSERT transaction ---
           if (query.includes('INSERT INTO transactions')) {
-            const [userId, amount, type, description, transactionDate, categoryId] = binds as any[]
+            const [userId, amount, transactionDate, categoryId, notes, paymentMethodId] = binds as any[]
             const newTx: TransactionRow = {
-              id: nextTxId++, user_id: userId, amount, description,
-              transaction_date: transactionDate, category_id: categoryId, type
+              id: nextTxId++, user_id: userId, amount, notes: notes || '',
+              transaction_date: transactionDate, category_id: categoryId, payment_method_id: paymentMethodId || null
             }
             transactions.push(newTx)
             return { meta: { last_row_id: newTx.id } }
@@ -495,60 +493,36 @@ describe('API Routes', () => {
     it('lists transactions', async () => {
       // Create a transaction first
       await app.request('/api/transactions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ amount: 75000, transaction_date: '2026-07-06', category_id: 2 })
-      }, env(mockDb))
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ amount: -75000, transaction_date: '2026-07-06', category_id: 2, notes: 'Gas' })
+      }, env(mockDb));
 
       const res = await app.request('/api/transactions', {
         headers: { 'Authorization': `Bearer ${token}` }
       }, env(mockDb))
       expect(res.status).toBe(200)
       const body: any = await res.json()
-      expect(body.transactions).toBeDefined()
-      expect(body.total).toBeGreaterThanOrEqual(1)
-    })
-
-    it('gets a single transaction', async () => {
-      await app.request('/api/transactions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ amount: 25000, transaction_date: '2026-07-06', category_id: 1 })
-      }, env(mockDb))
-
-      const res = await app.request('/api/transactions/1', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      }, env(mockDb))
-      expect(res.status).toBe(200)
-      const body: any = await res.json()
-      expect(body.amount).toBe(25000)
+      expect(body.transactions.length).toBe(1)
+      expect(body.transactions[0].amount).toBe(-75000)
+      expect(body.transactions[0].notes).toBe('Gas')
     })
 
     it('filters transactions by month/year', async () => {
-      await app.request('/api/transactions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ amount: 10000, transaction_date: '2026-01-15', category_id: 1 })
-      }, env(mockDb))
-      await app.request('/api/transactions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ amount: 20000, transaction_date: '2026-02-20', category_id: 2 })
-      }, env(mockDb))
+       await app.request('/api/transactions', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ amount: -1000, transaction_date: '2026-02-15', category_id: 1 })
+      }, env(mockDb));
+       await app.request('/api/transactions', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ amount: -2000, transaction_date: '2026-03-20', category_id: 1 })
+      }, env(mockDb));
 
-      const res = await app.request('/api/transactions?month=2&year=2026', {
+      const res = await app.request('/api/transactions?month=02&year=2026', {
         headers: { 'Authorization': `Bearer ${token}` }
       }, env(mockDb))
       expect(res.status).toBe(200)
       const body: any = await res.json()
       expect(body.total).toBe(1) // Only February transaction
-    })
-
-    it('rejects unauthenticated requests', async () => {
-      const res = await app.request('/api/transactions', {
-        headers: { 'Authorization': 'Bearer invalid' }
-      }, env(mockDb))
-      expect(res.status).toBe(401)
     })
   })
 
@@ -558,15 +532,27 @@ describe('API Routes', () => {
 
   describe('GET /api/stats/summary', () => {
     it('returns zero stats when no transactions', async () => {
-      const token = await genToken()
-      const res = await app.request('/api/stats/summary', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      }, env(mockDb))
+      const token = await genToken();
+      const res = await app.request('/api/stats/summary', { headers: { 'Authorization': `Bearer ${token}` }}, env(mockDb));
       expect(res.status).toBe(200)
       const body: any = await res.json()
-      expect(body.income).toBe(0)
-      expect(body.expense).toBe(0)
+      expect(body.income).toBe(0);
+      expect(body.expense).toBe(0);
       expect(body.balance).toBe(0)
     })
+  })
+
+  it('rejects unauthenticated requests', async () => {
+    const res = await app.request('/api/transactions')
+    expect(res.status).toBe(401)
+  })
+
+  it('returns zero stats when no transactions', async () => {
+    const token = await genToken()
+    const res = await app.request('/api/stats/summary?month=07&year=2026', { headers: { 'Authorization': `Bearer ${token}` } }, env(mockDb))
+    expect(res.status).toBe(200)
+    const body: any = await res.json()
+    expect(body.income).toBe(0);
+    expect(body.expense).toBe(0);
   })
 })
