@@ -13,10 +13,18 @@
 || 2026-07-09 (13:00) | #660, #662, #663, #664 | Full re-audit post-PR#637 (all queries in _worker.ts) | Income/expense regression (classification flipped); amount validation allows negatives; Promise.all() lacks snapshot isolation; Rules API schema drift remains |
 || 2026-07-10 (05:00) | #719, #720, #721 | Full re-audit post-PR#688 (all queries in _worker.ts + _worker.js stale vs _worker.ts) | Stale build artifact skews local dev; no pagination UI makes COUNT query waste; loadMonthlyStats() bypasses backend stats endpoint |
 || 2026-07-10 (13:00) | — | Re-audit — no code changes since 05:00 run | Closed #609 (payment_method_id confirmed fixed); no new findings |
+|| 2026-07-11 (05:00) | #783, #784 | Re-audit post-PR#729 (migration index removed) | PR#729 merged (removed idx_tx_user_payment); no code changes to _worker.ts; test suite false positive for Rules API (new finding); loadMonthlyStats duplicates loadTransactions (new finding); commented on #719 (_worker.js rebuilt locally) |
 
-**Latest Run:** 2026-07-10 13:00 WIB
+**Latest Run:** 2026-07-11 05:00 WIB
 
 ## Findings Summary
+
+### New Issues (2026-07-11 05:00 WIB)
+
+| # | Severity | Title | Impact |
+|---|----------|-------|--------|
+| 783 | 🟡 MEDIUM | Test suite has false positive for Rules API — mock uses broken API schema, masks real D1 schema drift (#664) | All 42 tests pass while Rules API is entirely broken against real D1; false test confidence |
+| 784 | 🟡 MEDIUM | loadMonthlyStats() duplicates loadTransactions() — wastes 2 extra D1 queries per dashboard page load | Every dashboard page burns ~55 extra rows-read; stats wrong for >50 tx/month users |
 
 ### New Issues (2026-07-10 05:00 WIB)
 
@@ -35,34 +43,37 @@
 | 662 | 🟡 MEDIUM — Still Open | Still Open | amount validation still uses !amount falsy check |
 | 663 | 🟡 MEDIUM — Still Open | Still Open | Promise.all() still used instead of .batch() |
 | 664 | 🔴 HIGH — Still Open | Still Open | Rules API schema drift unfixed (last remaining blocker)
+| 719 | 🟡 MEDIUM — Commented (2026-07-11 05:00) | Still Open | _worker.js rebuilt locally; CI unaffected; recommend close
+| 783 | 🟡 MEDIUM — New (2026-07-11) | Open | Test suite false positive for Rules API
+| 784 | 🟡 MEDIUM — New (2026-07-11) | Open | loadMonthlyStats() duplicates loadTransactions()
 
-### Queries Audited (2026-07-10 13:00 WIB)
+### Queries Audited (2026-07-11 05:00 WIB)
 
-All queries from current `_worker.ts` (post-PR#688, 22 total SQL statements):
+All queries from current `_worker.ts` (post-PR#688 + migration index removal PR#729, same 22 total SQL statements — no code changes since last audit):
 
 | Endpoint | Query | Status | Notes |
 |----------|-------|--------|-------|
-| POST /api/auth/register (SELECT) | SELECT id FROM users WHERE email = ? | Existing | TOCTOU race (issue #472) |
-| POST /api/auth/register (INSERT) | INSERT INTO users (name, email, password_hash) | Existing | OK |
-| POST /api/auth/login | SELECT id, name, email, password_hash FROM users WHERE email = ? | Existing | OK |
-| GET /api/categories | SELECT ... FROM categories WHERE is_active=1 AND (user_id IS NULL OR user_id=?) | Existing | OR defeats index (issue #419) |
-| GET /api/payment-methods | SELECT ... FROM payment_methods WHERE is_active = 1 | Existing | No user_id filter (issue #424) |
-| GET /api/transactions (list) | SELECT t.id, t.amount, t.notes, t.payment_method_id, ... | FIXED in PR#637 | Real notes, real payment_method_id |
-| GET /api/transactions (count) | SELECT COUNT(*) ... | Existing | Regex hack + LEFT JOIN (issue #421, #720) |
-| POST /api/transactions (INSERT) | INSERT INTO transactions (...) VALUES (...) | FIXED in PR#637 | Real columns, no type/description |
-| POST /api/transactions (re-fetch) | SELECT ... WHERE t.id = ? | FIXED | Returns real payment_method_id |
-| GET /api/transactions/:id | SELECT ... WHERE t.id = ? AND t.user_id = ? | FIXED | Returns real notes, payment_method_id |
-| PUT /api/transactions/:id (check) | SELECT id FROM transactions WHERE id = ? AND user_id = ? | Existing | Wasted query (issue #471) |
-| PUT /api/transactions/:id (UPDATE) | UPDATE transactions SET ... WHERE id = ? AND user_id = ? | Existing | Dynamic SQL (issue #377); no updated_at (issue #420) |
-| PUT /api/transactions/:id (re-fetch) | SELECT ... FROM transactions LEFT JOIN categories WHERE t.id = ? | FIXED | Returns real notes and payment_method_id |
-| DELETE /api/transactions/:id (check) | SELECT id FROM transactions WHERE id = ? AND user_id = ? | Existing | Wasted query (issue #471) |
-| DELETE /api/transactions/:id (delete) | DELETE FROM transactions WHERE id = ? AND user_id = ? | Existing | OK |
-| GET /api/stats/summary (income) | SELECT COALESCE(SUM(amount), 0) as total FROM ... WHERE user_id=? AND amount >= 0 | UPDATED in PR#688 | Changed from >0 to >=0; frontend bypasses this endpoint (issue #721) |
-| GET /api/stats/summary (expense) | SELECT COALESCE(SUM(amount), 0) as total FROM ... WHERE user_id=? AND amount < 0 | FIXED in PR#637 | No more type = expense dead code |
-| GET /api/rules (list) | SELECT * FROM rules WHERE user_id = ? OR user_id IS NULL | Existing | SELECT * (issue #303); OR defeats index |
-| POST /api/rules (INSERT) | INSERT INTO rules (user_id, name, description, condition, action, priority) | STILL BROKEN | Non-existent columns (issue #664) |
+| POST /api/auth/register (SELECT) | SELECT id FROM users WHERE email = ? | Unchanged | TOCTOU race (issue #472) |
+| POST /api/auth/register (INSERT) | INSERT INTO users (name, email, password_hash) | Unchanged | OK |
+| POST /api/auth/login | SELECT id, name, email, password_hash FROM users WHERE email = ? | Unchanged | OK |
+| GET /api/categories | SELECT ... FROM categories WHERE is_active=1 AND (user_id IS NULL OR user_id=?) | Unchanged | OR defeats index (issue #419) |
+| GET /api/payment-methods | SELECT ... FROM payment_methods WHERE is_active = 1 | Unchanged | No user_id filter (issue #424) |
+| GET /api/transactions (list) | SELECT t.id, t.amount, t.notes, t.payment_method_id, ... | Unchanged | OK |
+| GET /api/transactions (count) | SELECT COUNT(*) ... (with unnecessary LEFT JOIN) | Unchanged | Regex hack copy (issue #421, #720) |
+| POST /api/transactions (INSERT) | INSERT INTO transactions (...) VALUES (...) | Unchanged | OK |
+| POST /api/transactions (re-fetch) | SELECT ... WHERE t.id = ? | Unchanged | OK |
+| GET /api/transactions/:id | SELECT ... WHERE t.id = ? AND t.user_id = ? | Unchanged | OK |
+| PUT /api/transactions/:id (check) | SELECT id FROM transactions WHERE id = ? AND user_id = ? | Unchanged | Wasted query (issue #471) |
+| PUT /api/transactions/:id (UPDATE) | UPDATE transactions SET ... WHERE id = ? AND user_id = ? | Unchanged | Dynamic SQL (issue #377); no updated_at (issue #420) |
+| PUT /api/transactions/:id (re-fetch) | SELECT ... FROM transactions LEFT JOIN categories WHERE t.id = ? | Unchanged | OK |
+| DELETE /api/transactions/:id (check) | SELECT id FROM transactions WHERE id = ? AND user_id = ? | Unchanged | Wasted query (issue #471) |
+| DELETE /api/transactions/:id (delete) | DELETE FROM transactions WHERE id = ? AND user_id = ? | Unchanged | OK |
+| GET /api/stats/summary (income) | SELECT COALESCE(SUM(amount), 0) as total FROM ... WHERE user_id=? AND amount >= 0 | Unchanged | Frontend bypasses this (issue #721, #784) |
+| GET /api/stats/summary (expense) | SELECT COALESCE(SUM(amount), 0) as total FROM ... WHERE user_id=? AND amount < 0 | Unchanged | OK |
+| GET /api/rules (list) | SELECT * FROM rules WHERE user_id = ? OR user_id IS NULL | Unchanged | SELECT * (issue #303); OR defeats index; schema drift unfixed (issue #664, #783) |
+| POST /api/rules (INSERT) | INSERT INTO rules (user_id, name, description, condition, action, priority) | STILL BROKEN | Non-existent columns (issue #664, #783) |
 | PUT /api/rules/:id (UPDATE) | UPDATE rules SET ... | STILL BROKEN | Same schema drift |
-| DELETE /api/rules/:id (check) | SELECT id FROM rules WHERE id = ? AND user_id = ? | Existing | Wasted query |
+| DELETE /api/rules/:id (check) | SELECT id FROM rules WHERE id = ? AND user_id = ? | Unchanged | Wasted query |
 
 ### Schema Design Review
 
@@ -78,4 +89,4 @@ All queries from current `_worker.ts` (post-PR#688, 22 total SQL statements):
 | bills | 9 | 2 | No API (issue #482) |
 | transaction_templates | 7 | 1 | No API (issue #482) |
 
-### Open Database Issues: 54+ active (excluding deploy/CI issues)
+### Open Database Issues: 56+ active (excluding deploy/CI issues)
