@@ -12,13 +12,14 @@
 | 2026-07-08 | #568, #571, #573, #575, #576, #577 | D1 schema drift (HIGH), Stale feature branch (MEDIUM), No SRI hashes (LOW), TOCTOU race condition on registration (LOW), No post-deploy smoke test (MEDIUM), GHA not pinned to SHA (LOW) | Deep code audit across all 10 focus areas; cross-referenced 50+ existing issues for uniqueness; discovered schema drift between migration files and API code, stale branch, and CI/CD hardening gaps |
 | 2026-07-09 | #639, #640, #641, #642, #643 | Auto D1 migration without review gate (MEDIUM), No audit logging for auth events (MEDIUM), Prototype pollution via hasOwnProperty (MEDIUM), Negative LIMIT bypass (MEDIUM), No Content-Type validation (LOW) | Full re-audit after schema fix commit 32cddc9; discovered new vulnerabilities introduced by the fix itself (hasOwnProperty); analyzed latest _worker.ts, workflows, dependencies; identified 5 new issues all verified unique against 87 existing security issues |
 | 2026-07-09 | #692, #693, #694, #695 | No request body size limits — memory exhaustion DoS (MEDIUM), JWT in localStorage — XSS token theft (MEDIUM), Weak password policy — 6-char minimum (MEDIUM), No max-length validation on text fields — D1 storage exhaustion (LOW) | Full re-audit at 21:00 WIB; scanned 31 open security issues for uniqueness; discovered 4 new findings across input validation, token storage, password policy, and resource exhaustion |
-| 2026-07-10 | #714, #715, #716, #717, #718 | No account deletion/data export (HIGH), No password change endpoint (MEDIUM), No email verification on registration (MEDIUM), Mass transaction creation D1 write DoS (MEDIUM), No active session management (MEDIUM) | Full re-audit at 03:00 WIB; scanned 80+ open security issues for uniqueness; discovered 5 new findings across account lifecycle, credential management, email verification, D1 write quota exhaustion, and session management; verified all unique against 97 existing issues |
+|| 2026-07-10 | #714, #715, #716, #717, #718 | No account deletion/data export (HIGH), No password change endpoint (MEDIUM), No email verification on registration (MEDIUM), Mass transaction creation D1 write DoS (MEDIUM), No active session management (MEDIUM) | Full re-audit at 03:00 WIB; scanned 80+ open security issues for uniqueness; discovered 5 new findings across account lifecycle, credential management, email verification, D1 write quota exhaustion, and session management; verified all unique against 97 existing issues |
+|| 2026-07-10 | #731 | SQLite BINARY collation — email case sensitivity enables case-variant duplicate registration (MEDIUM) | Full re-audit at 09:00 WIB; analyzed _worker.ts, utils.ts, migrations, workflows, dependencies, and ~90 open security issues; discovered 1 new finding about email normalization gap; verified unique against all existing issues |
 
-**Latest Run:** 2026-07-10 03:00 WIB — Created 5 new findings. See issues #714, #715, #716, #717, #718 for details.
+**Latest Run:** 2026-07-10 09:00 WIB — Created 1 new finding. See issue #731 for details.
 
 ## Summary Statistics
 
-- **Total unique security issues created (all time):** 52
-- **Issues created this run:** 5
+- **Total unique security issues created (all time):** 53
+- **Issues created this run:** 1
 - **Issues closed since last run:** 0
-- **Highest severity this run:** 🔴 HIGH
+- **Highest severity this run:** 🟡 MEDIUM
