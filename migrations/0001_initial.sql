@@ -57,7 +57,6 @@ CREATE TABLE IF NOT EXISTS transactions (
 CREATE INDEX IF NOT EXISTS idx_tx_user_date ON transactions(user_id, transaction_date);
 CREATE INDEX IF NOT EXISTS idx_tx_user_category ON transactions(user_id, category_id);
 
-CREATE INDEX IF NOT EXISTS idx_tx_parent ON transactions(parent_transaction_id);
 CREATE INDEX IF NOT EXISTS idx_tx_user_amount ON transactions(user_id, transaction_date, amount);
 
 -- Budgets
