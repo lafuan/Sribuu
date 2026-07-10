@@ -15,12 +15,13 @@
 | 2026-07-10 | #714, #715, #716, #717, #718 | No account deletion/data export (HIGH), No password change endpoint (MEDIUM), No email verification on registration (MEDIUM), Mass transaction creation D1 write DoS (MEDIUM), No active session management (MEDIUM) | Full re-audit at 03:00 WIB; scanned 80+ open security issues for uniqueness; discovered 5 new findings across account lifecycle, credential management, email verification, D1 write quota exhaustion, and session management; verified all unique against 97 existing issues |
 | 2026-07-10 | #731 | SQLite BINARY collation — email case sensitivity enables case-variant duplicate registration (MEDIUM) | Full re-audit at 09:00 WIB; analyzed _worker.ts, utils.ts, migrations, workflows, dependencies, and ~90 open security issues; discovered 1 new finding about email normalization gap; verified unique against all existing issues |
 | 2026-07-10 | #766, #767 | Overly permissive CSP — 3 unused CDN script sources (LOW), Fragile regex-based count query transformation (LOW) | Full security audit at 15:00 WIB; analyzed _worker.ts, nginx config at duckdns.org, dependencies (npm audit), _worker.js, and 90+ open security issues; discovered 2 low-severity findings; verified uniqueness against all 97+ existing security issues |
+| 2026-07-11 | #780, #781 | CSP missing form-action, base-uri, frame-ancestors directives — amplifies existing stored XSS risk (MEDIUM), No set_real_ip_from for Cloudflare — nginx rate limiting and logging use CF edge IPs not real client IPs (MEDIUM) | Full security audit at 21:00 WIB; analyzed _worker.ts, nginx config at duckdns.org (CSP, rate_limits), dependencies (npm audit), workflows, open ports/services, and 97+ open security issues; discovered 2 medium-severity findings; verified uniqueness against all existing issues |
 
-**Latest Run:** 2026-07-10 15:00 WIB — Created 2 new findings. See issues #766, #767 for details.
+**Latest Run:** 2026-07-11 21:00 WIB — Created 2 new findings. See issues #780, #781 for details.
 
 ## Summary Statistics
 
-- **Total unique security issues created (all time):** 55
+- **Total unique security issues created (all time):** 57
 - **Issues created this run:** 2
 - **Issues closed since last run:** 0
-- **Highest severity this run:** 🟢 LOW
+- **Highest severity this run:** 🟡 MEDIUM
