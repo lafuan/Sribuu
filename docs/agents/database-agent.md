@@ -12,8 +12,9 @@
 || 2026-07-08 (21:00) | #608, #609 | All 20 SQL queries re-audited | Frontend stats only receives 50 tx; payment method broken at POST + PUT |
 || 2026-07-09 (13:00) | #660, #662, #663, #664 | Full re-audit post-PR#637 (all queries in _worker.ts) | Income/expense regression (classification flipped); amount validation allows negatives; Promise.all() lacks snapshot isolation; Rules API schema drift remains |
 || 2026-07-10 (05:00) | #719, #720, #721 | Full re-audit post-PR#688 (all queries in _worker.ts + _worker.js stale vs _worker.ts) | Stale build artifact skews local dev; no pagination UI makes COUNT query waste; loadMonthlyStats() bypasses backend stats endpoint |
+|| 2026-07-10 (13:00) | — | Re-audit — no code changes since 05:00 run | Closed #609 (payment_method_id confirmed fixed); no new findings |
 
-**Latest Run:** 2026-07-10 05:00 WIB
+**Latest Run:** 2026-07-10 13:00 WIB
 
 ## Findings Summary
 
@@ -30,12 +31,12 @@
 | # | Previous Status | Current Status | Change |
 |---|----------------|----------------|--------|
 | 660 | 🔴 CRITICAL — Open (2026-07-09 13:00) | ✅ CLOSED by PR #688 | Income/expense regression fixed |
-| 609 | 🟡 MEDIUM — Open (2026-07-08) | ✅ FIXED in PR #637 | payment_method_id now works in INSERT/PUT/SELECT |
+| 609 | 🟡 MEDIUM — Open (2026-07-08) | ✅ CLOSED by Database Agent (2026-07-10 13:00) | payment_method_id confirmed working in _worker.ts (post-PR#637) |
 | 662 | 🟡 MEDIUM — Still Open | Still Open | amount validation still uses !amount falsy check |
 | 663 | 🟡 MEDIUM — Still Open | Still Open | Promise.all() still used instead of .batch() |
 | 664 | 🔴 HIGH — Still Open | Still Open | Rules API schema drift unfixed (last remaining blocker)
 
-### Queries Audited (2026-07-10 05:00 WIB)
+### Queries Audited (2026-07-10 13:00 WIB)
 
 All queries from current `_worker.ts` (post-PR#688, 22 total SQL statements):
 
