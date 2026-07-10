@@ -13,103 +13,83 @@
 | 2026-07-09 06:00 | — | — | ❌ Deploy: STILL FAILING (same payment_method_id error) — iOS build: N/A |
 | 2026-07-09 18:00 | #675 (flutter_lints 6.0.0) | #591 (closed) | ❌ Deploy: STILL FAILING (runs #236-#240, same error) — iOS build: N/A |
 | 2026-07-10 06:00 | #722, #723, #724, #725 | #589 (closed) | ❌ Deploy: STILL FAILING (run #29054960757, same payment_method_id error) — iOS build: N/A |
+| 2026-07-10 18:00 | — (PR #729 opened by db-agent) | — | ❌ Deploy: STILL FAILING (run #29087296114, same error) — iOS build: N/A |
 
-**Latest Run:** 2026-07-10 06:00 WIB
+**Latest Run:** 2026-07-10 18:00 WIB
 
-## Findings — 2026-07-10 06:00 WIB
+## Findings — 2026-07-10 18:00 WIB
 
 ### Status Overview
 
-**Deploy still failing** — the `payment_method_id` migration issue persists. The SPA at sribuu.pages.dev is live and serving **updated content** (fixes from #637 and #688 are deployed — the `_worker.ts` and `app.js` have been updated on Cloudflare Pages despite the failed migration step in CI). This means deploys partially succeed — the worker code deploys, but migration step fails.
+**Deploy still failing** — the `payment_method_id` migration issue persists. PR #729 was created by the database agent to fix it (removes the failing `CREATE INDEX` from 0001_initial.sql). The SPA at sribuu.pages.dev is live and serving updated content via Cloudflare Pages worker deployment (only the D1 migration step fails).
 
-### 1. 🔴 Deploy still failing — confirmed run #29054960757 (2026-07-09)
-- **Error:** `no such column: payment_method_id at offset 72: SQLITE_ERROR`
-- **Root cause:** Live D1 `transactions` table created without `payment_method_id` column; migration 0001 tries `CREATE INDEX` on it
-- **Fix:** Needs `migrations/0003_add_payment_method_id.sql` with `ALTER TABLE transactions ADD COLUMN payment_method_id INTEGER REFERENCES payment_methods(id) ON DELETE SET NULL;` before the CREATE INDEX can succeed
-- **Issue #722 created** with detailed root cause and fix recommendations
+### 1. 🔴 Deploy still failing — confirmed run #29087296114 (2026-07-10 17:44 WIB)
+- **Error:** Same `no such column: payment_method_id at offset 72: SQLITE_ERROR`
+- **Failure count:** 9+ consecutive failures over multiple days
+- **PR #729 opened** by database agent: removes the `CREATE INDEX idx_tx_user_payment ON transactions(user_id, payment_method_id)` line from `migrations/0001_initial.sql`
+- **Status:** PR #729 is open, awaiting merge to main
 
-### 2. 🆕 Issue #722 created: Deploy still fails — migration fix needed
-- Detailed migration fix for the `payment_method_id` column
-- Recommends creating `migrations/0003_add_payment_method_id.sql` with `ALTER TABLE`
+### 2. 🔴 PR #312 (fix/ios-url-wrong-backend) — still blocked by deploy fix
+- Contains the Flutter iOS app (`flutter_app/`), ios-build.yml, and WebView URL fix
+- Cannot merge until deploy is fixed and main is stable
+- **Last updated:** 2026-07-07T23:20:52Z
 
-### 3. 🆕 Issue #723 created: webview_flutter 4.14.x requires Flutter >=3.38.0
-- Current CI uses Flutter 3.27.4 — incompatible with webview_flutter 4.14.0+
-- PR #382 bumps to `^4.14.0` which requires Dart SDK ^3.10.0 and Flutter >=3.38.0
-- Recommendation: either stay on `^4.13.0` or bump CI Flutter to 3.38.x
+### 3. 🔴 PR #382 (chore/flutter-dep-bumps-2026-07-07) — blocked by #312 + SDK incompatibility
+- Bumps: webview_flutter to `^4.14.0`, cupertino_icons to `^1.0.9`
+- Also fixes IPA fallback step in CI
+- **SDK incompatibility (#723):** webview_flutter 4.14.1 requires Flutter >=3.38.0, Dart SDK ^3.10.0
+- Our CI uses Flutter 3.27.4 — must either cap at `^4.13.0` or bump CI Flutter version
 
-### 4. 🆕 Issue #724 created: WebView URL verified working correctly
-- Loads `https://sribuu.pages.dev` — this is correct
-- SPA uses Bearer token auth → compatible with WKWebView (no cookie parsing needed)
-- Verified: login, register, payment-methods, categories all work
-- Closed as not-a-bug
+### 4. 🟢 Dependency versions verified via pub.dev API
 
-### 5. 🆕 Issue #725 created: PR merge sequence tracker
-- Documents the blocking chain: deploy fix → #312 → #382
-- All three PRs still blocked
+| Package | Current (pubspec) | Latest | SDK Requirement | Compatible? |
+|---------|-------------------|--------|-----------------|-------------|
+| `webview_flutter` | ^4.13.0 | **4.14.1** | Flutter >=3.38.0, SDK ^3.10.0 | ❌ with Flutter 3.27.4 |
+| `cupertino_icons` | ^1.0.8 | **1.0.9** | None | ✅ |
+| `flutter_lints` | ^5.0.0 | **6.0.0** | SDK ^3.8.0 | ⚠️ needs ^3.8.0 |
 
-### 6. 🟢 Issue #589 (deploy error) — CLOSED by mobile-agent
-- Consolidated into #722 since the error evolved
-- The original issue's root cause (generic deploy failure) has been refined
-
-### 7. 🟢 SPA at sribuu.pages.dev — serving UPDATED content
-- Despite migration failures, the Cloudflare Pages worker deployment **succeeds** (only D1 migration step fails)
+### 5. 🟢 SPA at sribuu.pages.dev — serving updated content
+- HTTPS: 200 OK
+- API health: 200 OK
+- Auth endpoint returning 401 (expected — no token)
 - Fixes from #637 and #688 are live
-- API endpoints all verified working (register, login, me, payment-methods, categories)
-- Bearer token auth works correctly
+- Bearer token auth works correctly in WKWebView
 
-### 8. 🟢 Dependency versions checked (pub.dev API)
+### 6. 🟡 PR #729 (fix/722-failing-d1-migration) — the right direction
+- Removes only the `CREATE INDEX idx_tx_user_payment` line from 0001_initial.sql
+- This unblocks deploys immediately
+- The missing index can be added back later via a proper 0003 migration with `ALTER TABLE` first
+- **But:** this approach means the index will be permanently lost unless a follow-up migration adds it
 
-| Package | Locked | Latest | Compatible with Flutter 3.27.4? |
-|---------|--------|--------|----------------------------------|
-| `webview_flutter` | 4.13.0 (`^4.13.0`) | **4.14.1** | ❌ 4.14.x requires Flutter >=3.38.0 |
-| `cupertino_icons` | 1.0.8 (`^1.0.8`) | 1.0.9 | ✅ No platform requirement |
-| `flutter_lints` | 5.0.0 (`^5.0.0`) | **6.0.0** | ⚠️ Requires Dart SDK ^3.8.0 (pubspec says ^3.6.2, need to verify) |
-
-### 9. 🟡 Key finding: webview_flutter 4.14.x SDK requirements
-- `webview_flutter 4.14.0` requires `Dart SDK ^3.10.0, Flutter >=3.38.0`
-- `webview_flutter 4.13.0` requires `Dart SDK ^3.6.0, Flutter >=3.27.0`
-- Our CI: Flutter 3.27.4, SDK constraint ^3.6.2
-- **If PR #382 bumps to `^4.14.0`, it will fail to resolve** on CI with Flutter 3.27.4
-- Need to either: (a) keep `^4.13.0` for now, or (b) bump CI to Flutter 3.38.x
-
-### 10. 🟡 PR #388 (fix/384-d1-migration-idempotent) — CONFLICTING
-- Modify 0001_initial.sql directly instead of adding 0003 migration
+### 7. 🟡 PR #388 (fix/384-d1-migration-idempotent) — still conflicting
+- Modifies 0001_initial.sql directly (similar approach to #729 but with more changes)
 - Has merge conflicts with main
-- Wrong approach — should be closed in favor of proper 0003 migration
+- Should be closed in favor of #729 if #729 merges first
 
-## Open Issues Summary
+## Open PRs Summary
 
-| # | Title | Labels | Since |
-|---|-------|--------|-------|
-| **722** | 🐛 Deploy still fails: migration 0001 payment_method_id | bug, mobile, infra | NEW |
-| **723** | ⬆️ webview_flutter 4.14.1 needs Flutter >=3.38.0 | enhancement, mobile | NEW |
-| **724** | 🐛 WebView URL verified working correctly | bug, mobile | NEW |
-| **725** | 📋 PR merge sequence #312 → #382 still stuck | tech-debt, mobile, ci | NEW |
-| 252 | feat: offline connectivity check | enhancement, mobile, ux | Jul 4 |
-| 251 | feat: persist WebView session across restarts | enhancement, mobile | Jul 4 |
-| 210 | 📦 Dependabot tidak mencakup Flutter/pub | enhancement, mobile, infra | Jul 3 |
-| 209 | 🔧 iOS Podfile hilang | bug, mobile, infra | Jul 3 |
-| 208 | 🐛 Widget test references non-existent MyApp class | bug, mobile, tests | Jul 3 |
-| 175 | ci: commit Podfile to ios/ | enhancement, mobile, infra | Jul 1 |
-| 174 | refactor: extract config/services from main.dart | tech-debt, mobile | Jul 1 |
-| 160 | chore: run flutter pub outdated | chore, mobile | Jun 30 |
-| 159 | feat: add smoke tests for SribuuWebView | enhancement, mobile | Jun 30 |
+| PR | Branch | Base | State | Blocked By |
+|----|--------|------|-------|------------|
+| **#729** | fix/722-failing-d1-migration | main | OPEN | needs review & merge |
+| #388 | fix/384-d1-migration-idempotent | main | OPEN (CONFLICTING) | schema mismatch |
+| **#312** | fix/ios-url-wrong-backend | main | OPEN | deploy fix (#729) |
+| **#382** | chore/flutter-dep-bumps-2026-07-07 | fix/ios-url-wrong-backend | OPEN | #312 + #723 |
 
-## Critical Blockers (for next run)
+## Critical Blockers (priority order)
 
-1. **🔴 #722 — Migration fix** — needs `migrations/0003_add_payment_method_id.sql`. Blocking everything.
-2. **🔴 PR #312 merge** — blocked by deploy fix. Once fixed, rebase+merge to main.
-3. **🔴 PR #382** — blocked by #312. AND has SDK compatibility issue (#723).
-4. **🟡 #723 — webview_flutter 4.14.x incompatibility** — needs decision: stay on 4.13.x or bump Flutter SDK.
+1. **🔴 PR #729 → Merge to main** — unblocks deploy, which unblocks everything else
+2. **🔴 Merge PR #312** — brings Flutter iOS app to main, enables CI iOS builds
+3. **🔴 #723 — webview_flutter 4.14.x SDK incompatibility** — needs decision: lock at `^4.13.0` or bump CI Flutter to 3.38.x
+4. **🟡 Merge PR #382** — dependency bumps + IPA fallback fix
 
-## Latest Audit Summary (2026-07-10 06:00 WIB)
+## Latest Audit Summary (2026-07-10 18:00 WIB)
 
 | Area | Status | Notes |
 |------|--------|-------|
-| Dependency Updates | ⚠️ #723 created (SDK incompatibility), #675 (flutter_lints) | webview_flutter 4.14.x needs Flutter >=3.38.0 |
-| WebView Compatibility | ✅ SPA uses Bearer tokens, WKWebView compatible | Issue #724 verified and closed |
-| Build Status | ❌ Deploy failing (run #29054960757) — SPA content updates ARE deployed | Worker deploys succeed; only migration fails |
-| iOS Platform Issues | ⚠️ No Podfile committed, ExportOptions.plist uses `debugging` method | OK for CI unsigned builds |
-| API Compatibility | ✅ All endpoints verified working | Register, login, payment-methods, categories, me |
-| Performance | ⚠️ No splash optimization, no offline cache | Issue #252 exists |
-| Session Persistence | ⚠️ localStorage in WKWebView is ephemeral on some iOS versions | Issue #251 exists |
+| Dependency Updates | ⚠️ webview_flutter 4.14.1 incompatible with Flutter 3.27.4 | #723 open, PR #382 blocked |
+| WebView Compatibility | ✅ SPA uses Bearer tokens, WKWebView compatible | #724 verified & closed |
+| Build Status | ❌ Deploy failing (run #29087296114) — PR #729 fix pending | Worker deploy succeeds; migration step fails |
+| iOS Platform Issues | ⚠️ No Podfile committed, ExportOptions.plist uses `debugging` | OK for unsigned CI builds |
+| API Compatibility | ✅ All endpoints verified | sribuu.pages.dev serving updated content |
+| Performance | ⚠️ No splash optimization, no offline cache | #252 open |
+| Session Persistence | ⚠️ localStorage in WKWebView is ephemeral on some iOS | #251 open |
