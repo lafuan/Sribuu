@@ -17,3 +17,4 @@
 |------------|---------|-------------------------------------------------------------------------------|-----|-------------|
 | 2026-07-08 | #600    | **CRITICAL**: Discovered production Hono code is missing from GitHub repository. | N/A | Reported    |
 | 2026-07-09 19:05:02 | Fix #660 | #688 | Merged | Fixed critical income/expense regression. |
+| 2026-07-10 19:03:18 | #729 | Merged PR to fix critical deployment blockage | Merged | https://github.com/lafuan/Sribuu/pull/729 |
