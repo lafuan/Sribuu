@@ -14,81 +14,73 @@
 | 2026-07-09 18:00 | #675 (flutter_lints 6.0.0) | #591 (closed) | ❌ Deploy: STILL FAILING (runs #236-#240, same error) — iOS build: N/A |
 | 2026-07-10 06:00 | #722, #723, #724, #725 | #589 (closed) | ❌ Deploy: STILL FAILING (run #29054960757, same payment_method_id error) — iOS build: N/A |
 | 2026-07-10 18:00 | — (PR #729 opened by db-agent) | — | ❌ Deploy: STILL FAILING (run #29087296114, same error) — iOS build: N/A |
+| 2026-07-11 06:00 | PR #785 (fix), #786 (tracking) | — | ❌ Deploy: STILL FAILING (run #29127845211, `no such column: parent_transaction_id`) — PR #785 opened |
 
-**Latest Run:** 2026-07-10 18:00 WIB
+**Latest Run:** 2026-07-11 06:00 WIB
 
-## Findings — 2026-07-10 18:00 WIB
+## Findings — 2026-07-11 06:00 WIB
 
 ### Status Overview
 
-**Deploy still failing** — the `payment_method_id` migration issue persists. PR #729 was created by the database agent to fix it (removes the failing `CREATE INDEX` from 0001_initial.sql). The SPA at sribuu.pages.dev is live and serving updated content via Cloudflare Pages worker deployment (only the D1 migration step fails).
+**Deploy still failing** — but the root cause has evolved. PR #729 (db-agent) removed `idx_tx_user_payment` from 0001_initial.sql, but the deploy now fails on `idx_tx_parent` (references `parent_transaction_id` column, also missing in live D1). **PR #785** (this agent) addresses this.
 
-### 1. 🔴 Deploy still failing — confirmed run #29087296114 (2026-07-10 17:44 WIB)
-- **Error:** Same `no such column: payment_method_id at offset 72: SQLITE_ERROR`
-- **Failure count:** 9+ consecutive failures over multiple days
-- **PR #729 opened** by database agent: removes the `CREATE INDEX idx_tx_user_payment ON transactions(user_id, payment_method_id)` line from `migrations/0001_initial.sql`
-- **Status:** PR #729 is open, awaiting merge to main
+### 1. 🔴 Deploy still failing — run #29127845211 (2026-07-11 05:29 WIB)
+- **Error:** `no such column: parent_transaction_id at offset 57: SQLITE_ERROR`
+- The error changed from `payment_method_id` to `parent_transaction_id` — same underlying issue
+- **PR #785 created** — removes `idx_tx_parent` from `0001_initial.sql` + creates `0003_drop_broken_indexes.sql` migration to DROP both broken indexes live
+- This should be the last such failure — all remaining missing-column indexes are now cleaned up
 
-### 2. 🔴 PR #312 (fix/ios-url-wrong-backend) — still blocked by deploy fix
+### 2. 🟢 PR #729 (fix/722-failing-d1-migration) — merged and deployed
+- Removed `idx_tx_user_payment` from 0001_initial.sql ✅
+- Exposed the next broken index (`idx_tx_parent`) — which PR #785 fixes
+
+### 3. 🔴 PR #312 (fix/ios-url-wrong-backend) — still blocked by deploy fix
 - Contains the Flutter iOS app (`flutter_app/`), ios-build.yml, and WebView URL fix
 - Cannot merge until deploy is fixed and main is stable
 - **Last updated:** 2026-07-07T23:20:52Z
 
-### 3. 🔴 PR #382 (chore/flutter-dep-bumps-2026-07-07) — blocked by #312 + SDK incompatibility
+### 4. 🔴 PR #382 (chore/flutter-dep-bumps-2026-07-07) — blocked by #312 + SDK incompatibility
 - Bumps: webview_flutter to `^4.14.0`, cupertino_icons to `^1.0.9`
-- Also fixes IPA fallback step in CI
 - **SDK incompatibility (#723):** webview_flutter 4.14.1 requires Flutter >=3.38.0, Dart SDK ^3.10.0
 - Our CI uses Flutter 3.27.4 — must either cap at `^4.13.0` or bump CI Flutter version
 
-### 4. 🟢 Dependency versions verified via pub.dev API
-
-| Package | Current (pubspec) | Latest | SDK Requirement | Compatible? |
-|---------|-------------------|--------|-----------------|-------------|
-| `webview_flutter` | ^4.13.0 | **4.14.1** | Flutter >=3.38.0, SDK ^3.10.0 | ❌ with Flutter 3.27.4 |
-| `cupertino_icons` | ^1.0.8 | **1.0.9** | None | ✅ |
-| `flutter_lints` | ^5.0.0 | **6.0.0** | SDK ^3.8.0 | ⚠️ needs ^3.8.0 |
-
-### 5. 🟢 SPA at sribuu.pages.dev — serving updated content
+### 5. 🟢 SPA at sribuu.pages.dev — serving content
 - HTTPS: 200 OK
-- API health: 200 OK
-- Auth endpoint returning 401 (expected — no token)
-- Fixes from #637 and #688 are live
+- Worker deploys succeed; only the D1 migration step fails
 - Bearer token auth works correctly in WKWebView
 
-### 6. 🟡 PR #729 (fix/722-failing-d1-migration) — the right direction
-- Removes only the `CREATE INDEX idx_tx_user_payment` line from 0001_initial.sql
-- This unblocks deploys immediately
-- The missing index can be added back later via a proper 0003 migration with `ALTER TABLE` first
-- **But:** this approach means the index will be permanently lost unless a follow-up migration adds it
+### 6. ⚠️ Flutter dependency status
 
-### 7. 🟡 PR #388 (fix/384-d1-migration-idempotent) — still conflicting
-- Modifies 0001_initial.sql directly (similar approach to #729 but with more changes)
-- Has merge conflicts with main
-- Should be closed in favor of #729 if #729 merges first
+| Package | Current (pubspec) | Latest | SDK Requirement | Action |
+|---------|-------------------|--------|-----------------|--------|
+| `webview_flutter` | ^4.13.0 | **4.14.1** | Flutter >=3.38.0 | Lock at `^4.13.0` or bump CI Flutter |
+| `cupertino_icons` | ^1.0.8 | **1.0.9** | None | ✅ PR #382 bumps to `^1.0.9` |
+| `flutter_lints` | ^5.0.0 | **6.0.0** | SDK ^3.8.0 | #675 open, needs review |
 
 ## Open PRs Summary
 
 | PR | Branch | Base | State | Blocked By |
 |----|--------|------|-------|------------|
-| **#729** | fix/722-failing-d1-migration | main | OPEN | needs review & merge |
+| **#785** | fix/722-d1-migration-parent-tx | main | OPEN | needs review & merge |
+| #729 | fix/722-failing-d1-migration | main | ✅ MERGED | — |
 | #388 | fix/384-d1-migration-idempotent | main | OPEN (CONFLICTING) | schema mismatch |
-| **#312** | fix/ios-url-wrong-backend | main | OPEN | deploy fix (#729) |
-| **#382** | chore/flutter-dep-bumps-2026-07-07 | fix/ios-url-wrong-backend | OPEN | #312 + #723 |
+| **#312** | fix/ios-url-wrong-backend | main | OPEN | deploy fix (#785) |
+| **#382** | chore/flutter-dep-bumps-2026-07-07 | fix/ios-url-wrong-backend | OPEN | #312 |
 
 ## Critical Blockers (priority order)
 
-1. **🔴 PR #729 → Merge to main** — unblocks deploy, which unblocks everything else
+1. **🔴 PR #785 → Merge to main** — unblocks deploy, which unblocks everything else
 2. **🔴 Merge PR #312** — brings Flutter iOS app to main, enables CI iOS builds
 3. **🔴 #723 — webview_flutter 4.14.x SDK incompatibility** — needs decision: lock at `^4.13.0` or bump CI Flutter to 3.38.x
 4. **🟡 Merge PR #382** — dependency bumps + IPA fallback fix
 
-## Latest Audit Summary (2026-07-10 18:00 WIB)
+## Latest Audit Summary (2026-07-11 06:00 WIB)
 
 | Area | Status | Notes |
 |------|--------|-------|
-| Dependency Updates | ⚠️ webview_flutter 4.14.1 incompatible with Flutter 3.27.4 | #723 open, PR #382 blocked |
-| WebView Compatibility | ✅ SPA uses Bearer tokens, WKWebView compatible | #724 verified & closed |
-| Build Status | ❌ Deploy failing (run #29087296114) — PR #729 fix pending | Worker deploy succeeds; migration step fails |
+| Dependency Updates | ⚠️ PR #382 blocked by #312 + #723 | flutter_lints 6.0.0 (#675), webview_flutter 4.14.1 incompatible with Flutter 3.27.4 |
+| WebView Compatibility | ✅ SPA uses Bearer tokens, WKWebView compatible | sribuu.pages.dev serving content |
+| Build Status | ❌ Deploy failing (run #29127845211) — PR #785 fix pending | Error: `no such column: parent_transaction_id` |
 | iOS Platform Issues | ⚠️ No Podfile committed, ExportOptions.plist uses `debugging` | OK for unsigned CI builds |
 | API Compatibility | ✅ All endpoints verified | sribuu.pages.dev serving updated content |
 | Performance | ⚠️ No splash optimization, no offline cache | #252 open |
