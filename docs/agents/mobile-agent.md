@@ -15,73 +15,80 @@
 | 2026-07-10 06:00 | #722, #723, #724, #725 | #589 (closed) | ❌ Deploy: STILL FAILING (run #29054960757, same payment_method_id error) — iOS build: N/A |
 | 2026-07-10 18:00 | — (PR #729 opened by db-agent) | — | ❌ Deploy: STILL FAILING (run #29087296114, same error) — iOS build: N/A |
 | 2026-07-11 06:00 | PR #785 (fix), #786 (tracking) | — | ❌ Deploy: STILL FAILING (run #29127845211, `no such column: parent_transaction_id`) — PR #785 opened |
+| **2026-07-11 18:00** | **Closed #725, #312, #382. Created PR #816** | **PR #785 merged ✅** | **🟢 DEPLOY FIXED — runs #295-#297 all green! PR #816 opened (Flutter iOS app)** |
 
-**Latest Run:** 2026-07-11 06:00 WIB
+**Latest Run:** 2026-07-11 18:00 WIB
 
-## Findings — 2026-07-11 06:00 WIB
+## Findings — 2026-07-11 18:00 WIB
 
-### Status Overview
+### 🎉 MAJOR BREAKTHROUGH — Deploy Pipeline FIXED After 88+ Consecutive Failures
 
-**Deploy still failing** — but the root cause has evolved. PR #729 (db-agent) removed `idx_tx_user_payment` from 0001_initial.sql, but the deploy now fails on `idx_tx_parent` (references `parent_transaction_id` column, also missing in live D1). **PR #785** (this agent) addresses this.
+PR #785 (fix broken D1 indexes) was **merged at 2026-07-11T01:00:33Z**. Since then, ALL 3 deploy runs (#295, #296, #297) are **✅ green**. The 88-run failure streak is over.
 
-### 1. 🔴 Deploy still failing — run #29127845211 (2026-07-11 05:29 WIB)
-- **Error:** `no such column: parent_transaction_id at offset 57: SQLITE_ERROR`
-- The error changed from `payment_method_id` to `parent_transaction_id` — same underlying issue
-- **PR #785 created** — removes `idx_tx_parent` from `0001_initial.sql` + creates `0003_drop_broken_indexes.sql` migration to DROP both broken indexes live
-- This should be the last such failure — all remaining missing-column indexes are now cleaned up
+### 🎉 Flutter iOS App FINALLY on main via PR #816
 
-### 2. 🟢 PR #729 (fix/722-failing-d1-migration) — merged and deployed
-- Removed `idx_tx_user_payment` from 0001_initial.sql ✅
-- Exposed the next broken index (`idx_tx_parent`) — which PR #785 fixes
+Created a **clean PR #816** (`fix/ios-url-wrong-backend-clean`) that ports the Flutter iOS app directly onto current main — the old PR #312 had diverged 50 commits with no common merge base.
 
-### 3. 🔴 PR #312 (fix/ios-url-wrong-backend) — still blocked by deploy fix
-- Contains the Flutter iOS app (`flutter_app/`), ios-build.yml, and WebView URL fix
-- Cannot merge until deploy is fixed and main is stable
-- **Last updated:** 2026-07-07T23:20:52Z
+**Closed superseded PRs:**
+- ❌ **PR #312** (fix/ios-url-wrong-backend) — closed; superseded by #816
+- ❌ **PR #382** (chore/flutter-dep-bumps) — closed; will create fresh dep bump PR against #816's branch
 
-### 4. 🔴 PR #382 (chore/flutter-dep-bumps-2026-07-07) — blocked by #312 + SDK incompatibility
-- Bumps: webview_flutter to `^4.14.0`, cupertino_icons to `^1.0.9`
-- **SDK incompatibility (#723):** webview_flutter 4.14.1 requires Flutter >=3.38.0, Dart SDK ^3.10.0
-- Our CI uses Flutter 3.27.4 — must either cap at `^4.13.0` or bump CI Flutter version
+### Changes in PR #816 vs old PR #312
 
-### 5. 🟢 SPA at sribuu.pages.dev — serving content
-- HTTPS: 200 OK
-- Worker deploys succeed; only the D1 migration step fails
-- Bearer token auth works correctly in WKWebView
+| Aspect | PR #312 (old) | PR #816 (new) |
+|--------|---------------|---------------|
+| Base branch | Old main (50 commits behind) | Current main (green deploy) |
+| Info.plist | No ATS, landscape on iPhone | `NSAllowsArbitraryLoads` added, portrait-only iPhone |
+| Display name | `Sribuu App` | `Sribuu` |
+| ios-build.yml fallback | `if: failure()` — NEVER ran | `if: always()` with early-exit |
+| IPA fallback | Only manual zip | 3 strategies: auto → xcodebuild → manual zip |
 
-### 6. ⚠️ Flutter dependency status
+### Status by Audit Area
 
-| Package | Current (pubspec) | Latest | SDK Requirement | Action |
-|---------|-------------------|--------|-----------------|--------|
-| `webview_flutter` | ^4.13.0 | **4.14.1** | Flutter >=3.38.0 | Lock at `^4.13.0` or bump CI Flutter |
-| `cupertino_icons` | ^1.0.8 | **1.0.9** | None | ✅ PR #382 bumps to `^1.0.9` |
-| `flutter_lints` | ^5.0.0 | **6.0.0** | SDK ^3.8.0 | #675 open, needs review |
+| Area | Status | Notes |
+|------|--------|-------|
+| **Deploy Build Status** | 🟢 **FIXED** — runs #295-#297 ✅ | PR #785 merged — 88-run failure streak ended |
+| **Flutter iOS App on main** | 🟢 PR #816 opened | Clean rebuild of #312 on current main |
+| **iOS Build CI** | 🟡 Needs first run | Workflow is on `fix/ios-url-wrong-backend-clean` branch, will trigger when #816 merges to main |
+| **WebView Compatibility** | ✅ sribuu.pages.dev works in WKWebView | Bearer token auth compatible |
+| **Dependency Updates** | 🟡 PR #816 needs minor bumps | cupertino_icons ^1.0.9, flutter_lints 6.0.0 (#675 open) |
+| **webview_flutter SDK** | 🟡 4.14.1 needs Flutter >=3.38.0 | Lock at ^4.13.0 for now; CI uses Flutter 3.27.4 |
+| **iOS Platform** | ✅ Info.plist updated in PR #816 | ATS, portrait iPhone, display name fixed |
+| **Performance** | ⚠️ No splash optimizations/offline | #252 open |
+| **Session Persistence** | ⚠️ localStorage ephemeral on some iOS | #251 open |
+
+### Remaining Work
+
+| Priority | Item | Owner | Status |
+|----------|------|-------|--------|
+| 🚨 1 | **Merge PR #816** → Flutter iOS app on main | Review needed | 🟢 PR open |
+| 🔴 2 | **Merge PR #816** to enable iOS CI | After merge | ⏳ |
+| 🟡 3 | Bump Flutter deps (new PR) | This agent | ⏳ After #816 merges |
+| 🟡 4 | flutter_lints 6.0.0 (#675) | Review needed | 🟡 Open |
+| 🟢 5 | #723 — webview_flutter SDK compat | Decision: lock ^4.13.0 | 🟢 Fine for now |
 
 ## Open PRs Summary
 
 | PR | Branch | Base | State | Blocked By |
 |----|--------|------|-------|------------|
-| **#785** | fix/722-d1-migration-parent-tx | main | OPEN | needs review & merge |
-| #729 | fix/722-failing-d1-migration | main | ✅ MERGED | — |
+| **#816** | fix/ios-url-wrong-backend-clean | main | **🟢 OPEN (new!)** | needs review & merge |
+| #785 | fix/722-d1-migration-parent-tx | main | ✅ **MERGED** | — |
 | #388 | fix/384-d1-migration-idempotent | main | OPEN (CONFLICTING) | schema mismatch |
-| **#312** | fix/ios-url-wrong-backend | main | OPEN | deploy fix (#785) |
-| **#382** | chore/flutter-dep-bumps-2026-07-07 | fix/ios-url-wrong-backend | OPEN | #312 |
 
 ## Critical Blockers (priority order)
 
-1. **🔴 PR #785 → Merge to main** — unblocks deploy, which unblocks everything else
-2. **🔴 Merge PR #312** — brings Flutter iOS app to main, enables CI iOS builds
-3. **🔴 #723 — webview_flutter 4.14.x SDK incompatibility** — needs decision: lock at `^4.13.0` or bump CI Flutter to 3.38.x
-4. **🟡 Merge PR #382** — dependency bumps + IPA fallback fix
+1. **🔴 Merge PR #816** — brings Flutter iOS app (with CI) to main, unblocks iOS build pipeline
+2. **🟡 Bump Flutter deps** — minor bumps in new PR after #816 merges
+3. **🟡 flutter_lints 6.0.0 (#675)** — low priority, dev-only linting
 
-## Latest Audit Summary (2026-07-11 06:00 WIB)
+## Latest Audit Summary (2026-07-11 18:00 WIB)
 
 | Area | Status | Notes |
 |------|--------|-------|
-| Dependency Updates | ⚠️ PR #382 blocked by #312 + #723 | flutter_lints 6.0.0 (#675), webview_flutter 4.14.1 incompatible with Flutter 3.27.4 |
-| WebView Compatibility | ✅ SPA uses Bearer tokens, WKWebView compatible | sribuu.pages.dev serving content |
-| Build Status | ❌ Deploy failing (run #29127845211) — PR #785 fix pending | Error: `no such column: parent_transaction_id` |
-| iOS Platform Issues | ⚠️ No Podfile committed, ExportOptions.plist uses `debugging` | OK for unsigned CI builds |
-| API Compatibility | ✅ All endpoints verified | sribuu.pages.dev serving updated content |
-| Performance | ⚠️ No splash optimization, no offline cache | #252 open |
-| Session Persistence | ⚠️ localStorage in WKWebView is ephemeral on some iOS | #251 open |
+| Dependency Updates | 🟡 Minor bumps pending after #816 merges | cupertino_icons ^1.0.9, flutter_lints 6.0.0 |
+| WebView Compatibility | ✅ SPA works in WKWebView | Bearer tokens, sribuu.pages.dev |
+| Build Status | 🟢 **Deploy FIXED** ✅ (runs #295-#297) | PR #785 resolved 88-run failure streak |
+| iOS Platform Issues | 🟢 Info.plist fixed in #816 | ATS, portrait, display name |
+| API Compatibility | ✅ All endpoints on Cloudflare Pages | SPA serving correctly |
+| Performance | ⚠️ No splash/offline optimization | #252 still open |
+| Session Persistence | ⚠️ localStorage ephemeral on some iOS | #251 still open |
