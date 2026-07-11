@@ -14,10 +14,19 @@
 || 2026-07-10 (05:00) | #719, #720, #721 | Full re-audit post-PR#688 (all queries in _worker.ts + _worker.js stale vs _worker.ts) | Stale build artifact skews local dev; no pagination UI makes COUNT query waste; loadMonthlyStats() bypasses backend stats endpoint |
 || 2026-07-10 (13:00) | — | Re-audit — no code changes since 05:00 run | Closed #609 (payment_method_id confirmed fixed); no new findings |
 || 2026-07-11 (05:00) | #783, #784 | Re-audit post-PR#729 (migration index removed) | PR#729 merged (removed idx_tx_user_payment); no code changes to _worker.ts; test suite false positive for Rules API (new finding); loadMonthlyStats duplicates loadTransactions (new finding); commented on #719 (_worker.js rebuilt locally) |
+|| 2026-07-11 (13:00) | #830, #831, #832 | Full re-audit post-PR#785 (migration 0003 for broken indexes) | PR#785 merged (migration 0003 DROP broken indexes); test mock `amount > 0` vs production `amount >= 0` (new finding); dead `description as notes` fallback in test mock (new finding); CI build-duplication note (new finding); closed #719; updated comments on #480, #664, #783, #784 |
 
-**Latest Run:** 2026-07-11 05:00 WIB
+**Latest Run:** 2026-07-11 13:00 WIB
 
 ## Findings Summary
+
+### New Issues (2026-07-11 13:00 WIB)
+
+| # | Severity | Title | Impact |
+|---|----------|-------|--------|
+| 830 | 🟢 LOW | `build.py` rebuilds `_worker.js` unnecessarily in CI — `deploy.yml` runs build twice, wasting deploy time | Trivial; build artifact not shared between test/deploy jobs; low priority |
+| 831 | 🟢 LOW | `notes` column in test mock has `description as notes` fallback — dead code path from past schema drift | Unreachable dead code in mock; adds confusion only |
+| 832 | 🟡 MEDIUM | Test mock uses `amount > 0` but production uses `amount >= 0` — income stats always 0 in tests, false test confidence | Stats tests never exercise income path; income regression can slip through CI |
 
 ### New Issues (2026-07-11 05:00 WIB)
 
@@ -42,14 +51,15 @@
 | 609 | 🟡 MEDIUM — Open (2026-07-08) | ✅ CLOSED by Database Agent (2026-07-10 13:00) | payment_method_id confirmed working in _worker.ts (post-PR#637) |
 | 662 | 🟡 MEDIUM — Still Open | Still Open | amount validation still uses !amount falsy check |
 | 663 | 🟡 MEDIUM — Still Open | Still Open | Promise.all() still used instead of .batch() |
-| 664 | 🔴 HIGH — Still Open | Still Open | Rules API schema drift unfixed (last remaining blocker)
-| 719 | 🟡 MEDIUM — Commented (2026-07-11 05:00) | Still Open | _worker.js rebuilt locally; CI unaffected; recommend close
-| 783 | 🟡 MEDIUM — New (2026-07-11) | Open | Test suite false positive for Rules API
-| 784 | 🟡 MEDIUM — New (2026-07-11) | Open | loadMonthlyStats() duplicates loadTransactions()
+| 664 | 🔴 HIGH — Still Open | Still Open | Rules API schema drift unfixed (last remaining blocker) — new comment added |
+| 719 | 🟡 MEDIUM — Commented (2026-07-11 05:00) | ✅ CLOSED (2026-07-11 13:00) | _worker.js rebuilt locally; CI unaffected; confirmed resolved |
+| 783 | 🟡 MEDIUM — New (2026-07-11) | Open | Test suite false positive for Rules API — new comment added |
+| 784 | 🟡 MEDIUM — New (2026-07-11) | Open | loadMonthlyStats() duplicates loadTransactions() — new comment added |
+| 480 | 🔴 HIGH — Still Open | Still Open | Schema drift catalog — new comment added re: PR#785 partial progress |
 
-### Queries Audited (2026-07-11 05:00 WIB)
+### Queries Audited (2026-07-11 13:00 WIB)
 
-All queries from current `_worker.ts` (post-PR#688 + migration index removal PR#729, same 22 total SQL statements — no code changes since last audit):
+All queries from current `_worker.ts` (post-PR#688 + PR#785 migration fix, same 22 total SQL statements — no code changes to _worker.ts since 05:00 run):
 
 | Endpoint | Query | Status | Notes |
 |----------|-------|--------|-------|
@@ -58,8 +68,8 @@ All queries from current `_worker.ts` (post-PR#688 + migration index removal PR#
 | POST /api/auth/login | SELECT id, name, email, password_hash FROM users WHERE email = ? | Unchanged | OK |
 | GET /api/categories | SELECT ... FROM categories WHERE is_active=1 AND (user_id IS NULL OR user_id=?) | Unchanged | OR defeats index (issue #419) |
 | GET /api/payment-methods | SELECT ... FROM payment_methods WHERE is_active = 1 | Unchanged | No user_id filter (issue #424) |
-| GET /api/transactions (list) | SELECT t.id, t.amount, t.notes, t.payment_method_id, ... | Unchanged | OK |
-| GET /api/transactions (count) | SELECT COUNT(*) ... (with unnecessary LEFT JOIN) | Unchanged | Regex hack copy (issue #421, #720) |
+| GET /api/transactions (list) | SELECT t.id, t.amount, t.notes, t.payment_method_id, ... FROM transactions t LEFT JOIN categories c ... | Unchanged | OK |
+| GET /api/transactions (count) | SELECT COUNT(*) ... (with unnecessary LEFT JOIN via regex copy) | Unchanged | Regex hack copy (issue #421, #720) |
 | POST /api/transactions (INSERT) | INSERT INTO transactions (...) VALUES (...) | Unchanged | OK |
 | POST /api/transactions (re-fetch) | SELECT ... WHERE t.id = ? | Unchanged | OK |
 | GET /api/transactions/:id | SELECT ... WHERE t.id = ? AND t.user_id = ? | Unchanged | OK |
@@ -68,7 +78,7 @@ All queries from current `_worker.ts` (post-PR#688 + migration index removal PR#
 | PUT /api/transactions/:id (re-fetch) | SELECT ... FROM transactions LEFT JOIN categories WHERE t.id = ? | Unchanged | OK |
 | DELETE /api/transactions/:id (check) | SELECT id FROM transactions WHERE id = ? AND user_id = ? | Unchanged | Wasted query (issue #471) |
 | DELETE /api/transactions/:id (delete) | DELETE FROM transactions WHERE id = ? AND user_id = ? | Unchanged | OK |
-| GET /api/stats/summary (income) | SELECT COALESCE(SUM(amount), 0) as total FROM ... WHERE user_id=? AND amount >= 0 | Unchanged | Frontend bypasses this (issue #721, #784) |
+| GET /api/stats/summary (income) | SELECT COALESCE(SUM(amount), 0) as total FROM ... WHERE user_id=? AND amount >= 0 | Unchanged | Frontend bypasses this (issue #721, #784); test mock uses wrong condition (issue #832) |
 | GET /api/stats/summary (expense) | SELECT COALESCE(SUM(amount), 0) as total FROM ... WHERE user_id=? AND amount < 0 | Unchanged | OK |
 | GET /api/rules (list) | SELECT * FROM rules WHERE user_id = ? OR user_id IS NULL | Unchanged | SELECT * (issue #303); OR defeats index; schema drift unfixed (issue #664, #783) |
 | POST /api/rules (INSERT) | INSERT INTO rules (user_id, name, description, condition, action, priority) | STILL BROKEN | Non-existent columns (issue #664, #783) |
@@ -83,10 +93,10 @@ All queries from current `_worker.ts` (post-PR#688 + migration index removal PR#
 | transactions | 11 | 5 | attachment_path dead (issue #563); parent_transaction_id dead (issue #422) |
 | categories | 7 | 2 | OR-index issue (issue #419) |
 | payment_methods | 5 | 1 | OK |
-| rules | 9 | 2 | Schema drift UNFIXED (issue #664) |
+| rules | 9 | 2 | Schema drift UNFIXED (issue #664, #480) |
 | budgets | 6 | 2 | No API (issue #482) |
 | subscriptions | 9 | 2 | No API (issue #482) |
 | bills | 9 | 2 | No API (issue #482) |
 | transaction_templates | 7 | 1 | No API (issue #482) |
 
-### Open Database Issues: 56+ active (excluding deploy/CI issues)
+### Open Database Issues: 59+ active (excluding deploy/CI issues)
