@@ -14,9 +14,10 @@
 || 2026-07-10 (05:00) | #719, #720, #721 | Full re-audit post-PR#688 (all queries in _worker.ts + _worker.js stale vs _worker.ts) | Stale build artifact skews local dev; no pagination UI makes COUNT query waste; loadMonthlyStats() bypasses backend stats endpoint |
 || 2026-07-10 (13:00) | — | Re-audit — no code changes since 05:00 run | Closed #609 (payment_method_id confirmed fixed); no new findings |
 || 2026-07-11 (05:00) | #783, #784 | Re-audit post-PR#729 (migration index removed) | PR#729 merged (removed idx_tx_user_payment); no code changes to _worker.ts; test suite false positive for Rules API (new finding); loadMonthlyStats duplicates loadTransactions (new finding); commented on #719 (_worker.js rebuilt locally) |
-|| 2026-07-11 (13:00) | #830, #831, #832 | Full re-audit post-PR#785 (migration 0003 for broken indexes) | PR#785 merged (migration 0003 DROP broken indexes); test mock `amount > 0` vs production `amount >= 0` (new finding); dead `description as notes` fallback in test mock (new finding); CI build-duplication note (new finding); closed #719; updated comments on #480, #664, #783, #784 |
+||| 2026-07-11 (13:00) | #830, #831, #832 | Full re-audit post-PR#785 (migration 0003 for broken indexes) | PR#785 merged (migration 0003 DROP broken indexes); test mock `amount > 0` vs production `amount >= 0` (new finding); dead `description as notes` fallback in test mock (new finding); CI build-duplication note (new finding); closed #719; updated comments on #480, #664, #783, #784 |
+||| 2026-07-12 (05:00) | — | Re-audit — no code changes since 13:00 run | Zero changes to _worker.ts, migrations, config, or workflows since last run; no new findings |
 
-**Latest Run:** 2026-07-11 13:00 WIB
+**Latest Run:** 2026-07-12 05:00 WIB
 
 ## Findings Summary
 
