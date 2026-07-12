@@ -183,6 +183,12 @@ function makeMockDb() {
           // --- INSERT user ---
           if (query.includes('INSERT INTO users')) {
             const [name, email, passwordHash] = binds
+            // Simulate UNIQUE constraint on email
+            if (users.some(u => u.email === email)) {
+              const err = new Error('UNIQUE constraint failed: users.email')
+              ;(err as any).message = 'UNIQUE constraint failed: users.email'
+              throw err
+            }
             const newUser: UserRow = { id: nextUserId++, name, email, password_hash: passwordHash }
             users.push(newUser)
             return { meta: { last_row_id: newUser.id } }
@@ -330,9 +336,9 @@ describe('API Routes', () => {
       const body = JSON.stringify({ name: 'Test', email: 'dup@test.com', password: TEST_PASSWORD })
       await app.request('/api/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body }, env(mockDb))
       const res = await app.request('/api/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body }, env(mockDb))
-      expect(res.status).toBe(409)
+      expect(res.status).toBe(400)
       const data: any = await res.json()
-      expect(data.error).toContain('already registered')
+      expect(data.error).toContain('Registration failed')
     })
   })
 

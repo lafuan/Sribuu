@@ -63,6 +63,10 @@ app.get('/api/health', (c) => c.json({ status: 'ok', platform: 'cloudflare-pages
 // --- Register ---
 app.post('/api/auth/register', async (c) => {
   try {
+    const contentType = c.req.header('Content-Type') || ''
+    if (!contentType.includes('application/json')) {
+      return c.json({ error: 'Content-Type must be application/json' }, 415)
+    }
     const { name, email, password } = await c.req.json()
     if (!name || !email || !password) {
       return c.json({ error: 'name, email, and password are required' }, 400)
@@ -70,10 +74,11 @@ app.post('/api/auth/register', async (c) => {
     if (password.length < 6) {
       return c.json({ error: 'Password must be at least 6 characters' }, 400)
     }
+    if (password.length > 128) {
+      return c.json({ error: 'Password must not exceed 128 characters' }, 400)
+    }
 
-    const existing = await c.env.sribuu_db.prepare('SELECT id FROM users WHERE email = ?').bind(email).first()
-    if (existing) return c.json({ error: 'Email already registered' }, 409)
-
+    // Let the UNIQUE constraint handle duplicate emails — don't pre-check
     const hash = await hashPassword(password)
     const { meta } = await c.env.sribuu_db.prepare(
       'INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)'
@@ -84,6 +89,10 @@ app.post('/api/auth/register', async (c) => {
 
     return c.json({ user: { id: userId, name, email }, token }, 201)
   } catch (err) {
+    // Suppress UNIQUE constraint details — use a generic error message
+    if (err instanceof Error && err.message?.includes?.('UNIQUE constraint failed')) {
+      return c.json({ error: 'Registration failed. Please check your information and try again.' }, 400)
+    }
     console.error('Register error:', err)
     return c.json({ error: 'Registration failed' }, 500)
   }
@@ -92,8 +101,15 @@ app.post('/api/auth/register', async (c) => {
 // --- Login ---
 app.post('/api/auth/login', async (c) => {
   try {
+    const contentType = c.req.header('Content-Type') || ''
+    if (!contentType.includes('application/json')) {
+      return c.json({ error: 'Content-Type must be application/json' }, 415)
+    }
     const { email, password } = await c.req.json()
     if (!email || !password) return c.json({ error: 'email and password are required' }, 400)
+    if (password.length > 128) {
+      return c.json({ error: 'Invalid email or password' }, 401)
+    }
 
     const user = await c.env.sribuu_db.prepare(
       'SELECT id, name, email, password_hash FROM users WHERE email = ?'
@@ -201,6 +217,10 @@ app.get('/api/transactions', authMiddleware, async (c) => {
 
 app.post('/api/transactions', authMiddleware, async (c) => {
   try {
+    const contentType = c.req.header('Content-Type') || ''
+    if (!contentType.includes('application/json')) {
+      return c.json({ error: 'Content-Type must be application/json' }, 415)
+    }
     const userId = c.get('userId') as number
     const { amount, transaction_date, category_id, notes, payment_method_id } = await c.req.json()
 
@@ -244,6 +264,10 @@ app.get('/api/transactions/:id', authMiddleware, async (c) => {
 
 app.put('/api/transactions/:id', authMiddleware, async (c) => {
   try {
+    const contentType = c.req.header('Content-Type') || ''
+    if (!contentType.includes('application/json')) {
+      return c.json({ error: 'Content-Type must be application/json' }, 415)
+    }
     const userId = c.get('userId') as number
     const txId = parseInt(c.req.param('id'))
     const body = await c.req.json()

@@ -25,6 +25,14 @@ const API = {
   getPaymentMethods: () => API.request('GET', '/api/payment-methods'),
 }
 
+// ===== HTML sanitization helper =====
+function escapeHtml(str) {
+  if (str == null) return ''
+  const div = document.createElement('div')
+  div.textContent = str
+  return div.innerHTML
+}
+
 // ===== Auth =====
 function isLoggedIn() { return !!localStorage.getItem('token') }
 
@@ -74,10 +82,10 @@ function renderTx(tx) {
   const color = tx.category_color || '#6366f1'
   return `
     <div class="tx-item ${isExpense ? 'expense' : 'income'}" data-id="${tx.id}" onclick="openEditTx(${tx.id})">
-      <div class="tx-icon" style="background:${hexToRgba(color, 0.15)}">${tx.category_icon || '📦'}</div>
+      <div class="tx-icon" style="background:${hexToRgba(color, 0.15)}">${escapeHtml(tx.category_icon) || '📦'}</div>
       <div class="tx-info">
-        <div class="tx-category">${tx.category_name || 'Uncategorized'}</div>
-        ${tx.notes ? `<div class="tx-notes">${tx.notes}</div>` : ''}
+        <div class="tx-category">${escapeHtml(tx.category_name) || 'Uncategorized'}</div>
+        ${tx.notes ? `<div class="tx-notes">${escapeHtml(tx.notes)}</div>` : ''}
       </div>
       <div class="tx-right">
         <div class="tx-amount">${isExpense ? '-' : '+'}Rp${formatMoney(absAmt)}</div>
@@ -119,7 +127,7 @@ async function loadMeta() {
     if (filterBar) {
       let html = '<button class="filter-chip active" onclick="setFilter({})">Semua</button>'
       categories.forEach(c => {
-        html += `<button class="filter-chip" data-cat="${c.id}" onclick="setFilter({category_id:${c.id}})">${c.icon} ${c.name}</button>`
+        html += `<button class="filter-chip" data-cat="${c.id}" onclick="setFilter({category_id:${c.id}})">${escapeHtml(c.icon)} ${escapeHtml(c.name)}</button>`
       })
       filterBar.innerHTML = html
     }
@@ -182,11 +190,11 @@ async function populateSelects() {
     
     const catEl = document.getElementById('tx-category')
     catEl.innerHTML = '<option value="">Pilih kategori</option>' +
-      categories.map(c => `<option value="${c.id}">${c.icon} ${c.name}</option>`).join('')
+      categories.map(c => `<option value="${c.id}">${escapeHtml(c.icon)} ${escapeHtml(c.name)}</option>`).join('')
     
     const payEl = document.getElementById('tx-payment')
     payEl.innerHTML = '<option value="">Pilih metode</option>' +
-      paymentMethods.map(p => `<option value="${p.id}">${p.icon} ${p.name}</option>`).join('')
+      paymentMethods.map(p => `<option value="${p.id}">${escapeHtml(p.icon)} ${escapeHtml(p.name)}</option>`).join('')
   } catch (e) { /* pass */ }
 }
 
