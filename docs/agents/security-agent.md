@@ -18,12 +18,13 @@
 | 2026-07-11 | #780, #781 | CSP missing form-action, base-uri, frame-ancestors directives — amplifies existing stored XSS risk (MEDIUM), No set_real_ip_from for Cloudflare — nginx rate limiting and logging use CF edge IPs not real client IPs (MEDIUM) | Full security audit at 21:00 WIB; analyzed _worker.ts, nginx config at duckdns.org (CSP, rate_limits), dependencies (npm audit), workflows, open ports/services, and 97+ open security issues; discovered 2 medium-severity findings; verified uniqueness against all existing issues |
 | 2026-07-11 | #807, #808 | No input trimming/sanitization on registration — email and name accept leading/trailing whitespace (LOW), CSP includes unnecessary 'unsafe-eval' and 6 unused CDN origins — relaxes XSS defenses without benefit (LOW) | Full security audit at 15:00 WIB; analyzed _worker.ts, migrations (bf4bdf6 PR#785), dependencies (npm audit), nginx CSP headers, GHA workflows, 96 open security issues; discovered 2 low-severity findings related to input sanitization gaps and unnecessary CSP relaxations; verified uniqueness against all 97+ existing issues |
 | 2026-07-12 | #849, #850 | GitHub Actions missing `permissions:` block — default `write-all` GITHUB_TOKEN (HIGH), No max password length enables PBKDF2 CPU exhaustion DoS (MEDIUM) | Full security audit at 03:00 WIB; analyzed _worker.ts, utils.ts, GHA workflows, dependencies (npm audit), nginx headers, migrations, 99 open security issues; discovered 2 new unique findings across CI/CD hardening and resource exhaustion |
+| 2026-07-12 | **#861** | **🔴 HIGH: Password type coercion bypass — min/max length checks nullified by non-string password values** | Full security audit at 15:00 WIB; analyzed _worker.ts (post-3b29860), utils.ts, public/app.js, app.html, index.html, GHA workflows, nginx headers, migrations; discovered 1 new finding: password/email/name fields accept non-string JSON types (number, boolean) that bypass `length` checks. Verified live against `sribuu.pages.dev`. Created issue #861. |
 
-**Latest Run:** 2026-07-12 03:00 WIB — Created 2 new findings. See issues #849, #850 for details.
+**Latest Run:** 2026-07-12 15:00 WIB — Created 1 new finding. See issue #861 for details.
 
 ## Summary Statistics
 
-- **Total unique security issues created (all time):** 61
-- **Issues created this run:** 2
+- **Total unique security issues created (all time):** 62
+- **Issues created this run:** 1
 - **Issues closed since last run:** 0
 - **Highest severity this run:** 🔴 HIGH
