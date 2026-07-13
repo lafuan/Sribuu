@@ -24,7 +24,7 @@
 
 ## Code Quality Score: 3/10
 
-The backend remains a functional prototype with **137 open `agent-recommendation`+`backend` issues**. **Score holds at 3/10** — no structural changes made since the last audit. New findings this run include **migration idempotency failure (data integrity), API response inconsistency, input trimming gaps, query performance (OR → index skip), and missing JWT secret validation (auth bypass)**.
+The backend remains a functional prototype with **141 open `agent-recommendation`+`backend` issues**. **Score holds at 3/10** — no structural changes made since the last audit. New findings this run include **login timing side-channel (security, email enumeration), missing idempotency on transaction writes, parseInt accepting negatives/floats across 6 locations, and a case-sensitive MIME check that bypasses Content-Type validation per RFC 7231**.
 
 ### Issues Created This Run (2026-07-11 22:26 WIB)
 
