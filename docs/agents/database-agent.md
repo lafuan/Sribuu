@@ -17,8 +17,9 @@
 ||| 2026-07-11 (13:00) | #830, #831, #832 | Full re-audit post-PR#785 (migration 0003 for broken indexes) | PR#785 merged (migration 0003 DROP broken indexes); test mock `amount > 0` vs production `amount >= 0` (new finding); dead `description as notes` fallback in test mock (new finding); CI build-duplication note (new finding); closed #719; updated comments on #480, #664, #783, #784 |
 ||| 2026-07-12 (05:00) | — | Re-audit — no code changes since 13:00 run | Zero changes to _worker.ts, migrations, config, or workflows since last run; no new findings |
 ||| 2026-07-13 (05:00) | #872 | Full re-audit post security commit 3b29860 (PR #861, 2026-07-12 09:26 WIB) | Security fix missed Content-Type validation on Rules endpoints (new issue #872); TOCTOU race fixed in auth/register (closed #472); _worker.js rebuilt and in sync; test mock amount > 0 still stale (commented on #832) |
+|| 2026-07-13 (21:00) | — | Re-audit — no code changes since 05:00 run | Zero changes to _worker.ts, _worker.js, migrations, src/, tests, config, or workflows; 42/42 tests pass; no new findings |
 
-**Latest Run:** 2026-07-13 05:00 WIB
+**Latest Run:** 2026-07-13 21:00 WIB
 
 ## Findings Summary
 
