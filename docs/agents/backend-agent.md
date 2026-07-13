@@ -18,8 +18,9 @@
 | 2026-07-11 (10:00) | [#793](https://github.com/lafuan/Sribuu/issues/793) [#794](https://github.com/lafuan/Sribuu/issues/794) [#795](https://github.com/lafuan/Sribuu/issues/795) [#796](https://github.com/lafuan/Sribuu/issues/796) [#797](https://github.com/lafuan/Sribuu/issues/797) [#798](https://github.com/lafuan/Sribuu/issues/798) [#799](https://github.com/lafuan/Sribuu/issues/799) [#800](https://github.com/lafuan/Sribuu/issues/800) [#801](https://github.com/lafuan/Sribuu/issues/801) [#802](https://github.com/lafuan/Sribuu/issues/802) [#803](https://github.com/lafuan/Sribuu/issues/803) [#804](https://github.com/lafuan/Sribuu/issues/804) | — | pages_build_output_dir exposes D1 ID / config as static assets; esbuild --platform=browser mismatch; dev script missing --d1 flag; test:ci script fails without build step; No rate limiting still on auth; Inconsistent 404 response format (text vs JSON); Test mock N+1 category lookups; No refresh token mechanism; Test mock global mutable state; Mock divergence from schema; Static files missing cache headers; Orphan tests outside describe blocks |
 || 2026-07-11 (22:00) | [#809](https://github.com/lafuan/Sribuu/issues/809) [#810](https://github.com/lafuan/Sribuu/issues/810) [#811](https://github.com/lafuan/Sribuu/issues/811) [#812](https://github.com/lafuan/Sribuu/issues/812) [#813](https://github.com/lafuan/Sribuu/issues/813) [#814](https://github.com/lafuan/Sribuu/issues/814) | — | build.py crashes with UnicodeDecodeError on binary files in public/; Hardcoded PBKDF2 iterations without config knob; No .gitignore — generated artifacts pollute git status; Missing engines field in package.json; Math.floor(Date.now()/1000) repeated 6 times — DRY violation; JWT `nbf` claim not validated |
 || 2026-07-11 (22:26) | [#833](https://github.com/lafuan/Sribuu/issues/833) [#834](https://github.com/lafuan/Sribuu/issues/834) [#835](https://github.com/lafuan/Sribuu/issues/835) [#836](https://github.com/lafuan/Sribuu/issues/836) [#837](https://github.com/lafuan/Sribuu/issues/837) | — | Migration `INSERT OR IGNORE` has no effect on categories (no UNIQUE constraint); `/api/auth/me` omits `name` field; Whitespace-only `name` accepted on registration; Categories/rules `OR` query prevents index usage; No startup validation for empty `JWT_SECRET` — forgeable tokens |
+|| 2026-07-13 (10:00) | [#879](https://github.com/lafuan/Sribuu/issues/879) [#880](https://github.com/lafuan/Sribuu/issues/880) [#881](https://github.com/lafuan/Sribuu/issues/881) [#882](https://github.com/lafuan/Sribuu/issues/882) | — | Login timing side-channel (email enumeration); No idempotency key on POST transactions (duplicate data); parseInt silently accepts negatives/floats (wasted reads, data integrity); Content-Type MIME check case-sensitive (RFC 7231 violation) |
 
-||**Latest Run:** 2026-07-11 22:26 WIB|
+||**Latest Run:** 2026-07-13 10:00 WIB|
 
 ## Code Quality Score: 3/10
 
@@ -33,4 +34,13 @@ The backend remains a functional prototype with **137 open `agent-recommendation
 | [#834](https://github.com/lafuan/Sribuu/issues/834) | 🟡 MEDIUM | `/api/auth/me` omits `name` field — inconsistent API contract, breaks UI refresh | `_worker.ts:125-127` |
 | [#835](https://github.com/lafuan/Sribuu/issues/835) | 🟡 MEDIUM | Registration accepts whitespace-only `name` — stores blank string, breaks avatar/display | `_worker.ts:66-68` |
 | [#836](https://github.com/lafuan/Sribuu/issues/836) | 🟢 LOW | Categories/rules list queries use `OR` condition that prevents index usage — table scan | `_worker.ts:133-137`, `_worker.ts:336-338` |
-| [#837](https://github.com/lafuan/Sribuu/issues/837) | 🟡 MEDIUM | No startup validation for empty/missing `JWT_SECRET` — trivially forgeable tokens | `src/utils.ts:74-80` |
+|| [#837](https://github.com/lafuan/Sribuu/issues/837) | 🟡 MEDIUM | No startup validation for empty/missing `JWT_SECRET` — trivially forgeable tokens | `src/utils.ts:74-80` |
+
+### Issues Created This Run (2026-07-13 10:00 WIB)
+
+| # | Priority | Title | File:Line |
+|---|----------|-------|-----------|
+| [#879](https://github.com/lafuan/Sribuu/issues/879) | 🔴 HIGH | Login timing side-channel enables email enumeration via PBKDF2 verification delay | `_worker.ts:114-121` |
+| [#880](https://github.com/lafuan/Sribuu/issues/880) | 🟡 MEDIUM | No idempotency key on POST /api/transactions — network retry creates duplicate transactions | `_worker.ts:218-244` |
+| [#881](https://github.com/lafuan/Sribuu/issues/881) | 🟡 MEDIUM | parseInt on path/ID parameters silently accepts negative numbers and floats — wastes D1 reads | `_worker.ts:249,272,304,389,419,199` |
+| [#882](https://github.com/lafuan/Sribuu/issues/882) | 🟢 LOW | Content-Type MIME type check is case-sensitive — bypasses validation per RFC 7231 | `_worker.ts:67,105,221,268` |
