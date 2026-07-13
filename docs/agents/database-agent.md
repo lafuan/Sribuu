@@ -16,10 +16,17 @@
 || 2026-07-11 (05:00) | #783, #784 | Re-audit post-PR#729 (migration index removed) | PR#729 merged (removed idx_tx_user_payment); no code changes to _worker.ts; test suite false positive for Rules API (new finding); loadMonthlyStats duplicates loadTransactions (new finding); commented on #719 (_worker.js rebuilt locally) |
 ||| 2026-07-11 (13:00) | #830, #831, #832 | Full re-audit post-PR#785 (migration 0003 for broken indexes) | PR#785 merged (migration 0003 DROP broken indexes); test mock `amount > 0` vs production `amount >= 0` (new finding); dead `description as notes` fallback in test mock (new finding); CI build-duplication note (new finding); closed #719; updated comments on #480, #664, #783, #784 |
 ||| 2026-07-12 (05:00) | — | Re-audit — no code changes since 13:00 run | Zero changes to _worker.ts, migrations, config, or workflows since last run; no new findings |
+||| 2026-07-13 (05:00) | #872 | Full re-audit post security commit 3b29860 (PR #861, 2026-07-12 09:26 WIB) | Security fix missed Content-Type validation on Rules endpoints (new issue #872); TOCTOU race fixed in auth/register (closed #472); _worker.js rebuilt and in sync; test mock amount > 0 still stale (commented on #832) |
 
-**Latest Run:** 2026-07-12 05:00 WIB
+**Latest Run:** 2026-07-13 05:00 WIB
 
 ## Findings Summary
+
+### New Issues (2026-07-13 05:00 WIB)
+
+|| # | Severity | Title | Impact |
+||---|----------|-------|--------|
+|| 872 | 🟢 LOW | Rules API write endpoints lack Content-Type validation — missed by security PR #861 | Rules endpoints accept non-JSON bodies and error with 500 instead of proper 415; observability noise |
 
 ### New Issues (2026-07-11 13:00 WIB)
 
@@ -48,6 +55,7 @@
 
 | # | Previous Status | Current Status | Change |
 |---|----------------|----------------|--------|
+| 472 | 🟡 MEDIUM — Open (2026-07-07) | ✅ CLOSED by security commit 3b29860 (PR #861) | TOCTOU race fixed in auth/register — UNIQUE constraint now acts as sole gate; 500 error replaced with generic 400 |
 | 660 | 🔴 CRITICAL — Open (2026-07-09 13:00) | ✅ CLOSED by PR #688 | Income/expense regression fixed |
 | 609 | 🟡 MEDIUM — Open (2026-07-08) | ✅ CLOSED by Database Agent (2026-07-10 13:00) | payment_method_id confirmed working in _worker.ts (post-PR#637) |
 | 662 | 🟡 MEDIUM — Still Open | Still Open | amount validation still uses !amount falsy check |
@@ -58,14 +66,13 @@
 | 784 | 🟡 MEDIUM — New (2026-07-11) | Open | loadMonthlyStats() duplicates loadTransactions() — new comment added |
 | 480 | 🔴 HIGH — Still Open | Still Open | Schema drift catalog — new comment added re: PR#785 partial progress |
 
-### Queries Audited (2026-07-11 13:00 WIB)
+### Queries Audited (2026-07-13 05:00 WIB)
 
-All queries from current `_worker.ts` (post-PR#688 + PR#785 migration fix, same 22 total SQL statements — no code changes to _worker.ts since 05:00 run):
+All queries from current `_worker.ts` (post-security commit 3b29860, same 21 total SQL statements — TOCTOU pre-check removed, `amount >= 0` confirmed correct in both _worker.ts and _worker.js, _worker.js fully rebuilt and in sync with source):
 
 | Endpoint | Query | Status | Notes |
 |----------|-------|--------|-------|
-| POST /api/auth/register (SELECT) | SELECT id FROM users WHERE email = ? | Unchanged | TOCTOU race (issue #472) |
-| POST /api/auth/register (INSERT) | INSERT INTO users (name, email, password_hash) | Unchanged | OK |
+| POST /api/auth/register (INSERT) | INSERT INTO users (name, email, password_hash) | ✅ UNIQUE constraint is sole gate | TOCTOU race eliminated (closed #472) — no SELECT pre-check |
 | POST /api/auth/login | SELECT id, name, email, password_hash FROM users WHERE email = ? | Unchanged | OK |
 | GET /api/categories | SELECT ... FROM categories WHERE is_active=1 AND (user_id IS NULL OR user_id=?) | Unchanged | OR defeats index (issue #419) |
 | GET /api/payment-methods | SELECT ... FROM payment_methods WHERE is_active = 1 | Unchanged | No user_id filter (issue #424) |
