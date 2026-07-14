@@ -21,23 +21,33 @@
 | 2026-07-13 (10:00) | [#879](https://github.com/lafuan/Sribuu/issues/879) [#880](https://github.com/lafuan/Sribuu/issues/880) [#881](https://github.com/lafuan/Sribuu/issues/881) [#882](https://github.com/lafuan/Sribuu/issues/882) | — | Login timing side-channel (email enumeration); No idempotency key on POST transactions (duplicate data); parseInt silently accepts negatives/floats (wasted reads, data integrity); Content-Type MIME check case-sensitive (RFC 7231 violation) |
 | 2026-07-13 (16:00) | [#898](https://github.com/lafuan/Sribuu/issues/898) [#899](https://github.com/lafuan/Sribuu/issues/899) [#900](https://github.com/lafuan/Sribuu/issues/900) [#901](https://github.com/lafuan/Sribuu/issues/901) [#902](https://github.com/lafuan/Sribuu/issues/902) | — | Auth Bearer scheme case-sensitive (RFC 7235); Weak password policy (6-char min, no complexity); TOCTOU race on DELETE/PUT endpoints; JWT verify missing `sub` claim validation; All 17 catch blocks return generic 500 |
 | 2026-07-14 (10:00) | [#928](https://github.com/lafuan/Sribuu/issues/928) | — | PUT re-fetch SELECT missing user_id filter — returns null on HTTP 200 after concurrent DELETE |
-| 2026-07-14 (22:00) | [#938](https://github.com/lafuan/Sribuu/issues/938) [#939](https://github.com/lafuan/Sribuu/issues/939) | — | Negative LIMIT bypasses pagination (D1 quota exhaustion); Rules POST/PUT re-fetch omits user_id (cross-user data leak) |
-|
-||**Latest Run:** 2026-07-14 22:00 WIB|
-|
-|## Code Quality Score: 3/10|
-|
-|The backend remains a functional prototype with **170 open `agent-recommendation`+`backend` issues**. **Score holds at 3/10** — no structural changes.|
-|
-|### Issues Created This Run (2026-07-14 10:00 WIB)|
-|
-|| # | Priority | Title | File:Line |
-||---|----------|-------|-----------|
-|| [#928](https://github.com/lafuan/Sribuu/issues/928) | 🟢 LOW | PUT /api/transactions/:id re-fetch SELECT omits user_id filter — returns null on HTTP 200 after concurrent DELETE | `_worker.ts:292-294` |
-|
-|### Issues Created This Run (2026-07-14 22:00 WIB)|
-|
-|| # | Priority | Title | File:Line |
-||---|----------|-------|-----------|
-|| [#938](https://github.com/lafuan/Sribuu/issues/938) | 🔴 HIGH | Negative LIMIT value bypasses pagination cap — D1 read quota exhaustion and unbounded result sets | `_worker.ts:189-190` |
-|| [#939](https://github.com/lafuan/Sribuu/issues/939) | 🟡 MEDIUM | Rules POST/PUT re-fetch SELECT queries omit user_id filter — leaks cross-user rule data | `_worker.ts:378,407` |
+|| 2026-07-14 (22:00) | [#938](https://github.com/lafuan/Sribuu/issues/938) [#939](https://github.com/lafuan/Sribuu/issues/939) | — | Negative LIMIT bypasses pagination (D1 quota exhaustion); Rules POST/PUT re-fetch omits user_id (cross-user data leak) |
+|| 2026-07-15 (08:00) | [#964](https://github.com/lafuan/Sribuu/issues/964) [#965](https://github.com/lafuan/Sribuu/issues/965) [#966](https://github.com/lafuan/Sribuu/issues/966) [#967](https://github.com/lafuan/Sribuu/issues/967) | — | parseInt no radix (8 occurrences); No pagination metadata in transaction list; UTC date default wrong for WIB users; PUT amount validation missing |
+||
+|||**Latest Run:** 2026-07-15 08:00 WIB|
+||
+||## Code Quality Score: 3/10|
+||
+||The backend remains a functional prototype with **174 open `agent-recommendation`+`backend` issues**. **Score holds at 3/10** — no structural changes.|
+||
+||### Issues Created This Run (2026-07-14 10:00 WIB)|
+||
+||| # | Priority | Title | File:Line |
+|||---|----------|-------|-----------|
+||| [#928](https://github.com/lafuan/Sribuu/issues/928) | 🟢 LOW | PUT /api/transactions/:id re-fetch SELECT omits user_id filter — returns null on HTTP 200 after concurrent DELETE | `_worker.ts:292-294` |
+||
+||### Issues Created This Run (2026-07-14 22:00 WIB)|
+||
+||| # | Priority | Title | File:Line |
+|||---|----------|-------|-----------|
+||| [#938](https://github.com/lafuan/Sribuu/issues/938) | 🔴 HIGH | Negative LIMIT value bypasses pagination cap — D1 read quota exhaustion and unbounded result sets | `_worker.ts:189-190` |
+||| [#939](https://github.com/lafuan/Sribuu/issues/939) | 🟡 MEDIUM | Rules POST/PUT re-fetch SELECT queries omit user_id filter — leaks cross-user rule data | `_worker.ts:378,407` |
+||
+||### Issues Created This Run (2026-07-15 08:00 WIB)|
+||
+||| # | Priority | Title | File:Line |
+|||---|----------|-------|-----------|
+||| [#964](https://github.com/lafuan/Sribuu/issues/964) | 🟡 MEDIUM | All 8 parseInt() calls lack radix parameter — hex/octal/binary prefix bypasses intent | `_worker.ts:189,190,199,249,272,305,389,418` |
+||| [#965](https://github.com/lafuan/Sribuu/issues/965) | 🟡 MEDIUM | GET /api/transactions response has no pagination metadata — frontend cannot implement load-more or detect end of results | `_worker.ts:211` |
+||| [#966](https://github.com/lafuan/Sribuu/issues/966) | 🟢 LOW | new Date().toISOString() default date uses UTC, not WIB — late-night transactions get wrong date | `_worker.ts:230` |
+||| [#967](https://github.com/lafuan/Sribuu/issues/967) | 🟡 MEDIUM | PUT /api/transactions/:id has zero amount validation — NaN, null, empty string, and objects silently accepted | `_worker.ts:278-286` |
