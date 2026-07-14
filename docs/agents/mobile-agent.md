@@ -17,126 +17,131 @@
 | 2026-07-12 06:00 | #852, #853, #854, #855 | #729 (D1 fix), #785 (index fix) | ✅ Deploy: **GREEN** — iOS build: N/A (PR #816 open) |
 | 2026-07-13 18:00 | #884, #885, #886 | — | ✅ Deploy: **GREEN** (2/2 runs) — iOS build: N/A (PR #816 open, behind main) |
 | 2026-07-14 06:00 | #921, #922 | — | ✅ Deploy: **GREEN** (10+ consecutive) — iOS build: N/A (PR #816 open, behind main) |
+| 2026-07-14 18:00 | #940, #941 | — | ✅ Deploy: **GREEN** (10+ consecutive) — iOS build: N/A (PR #816 open, 97 behind main) |
 
-**Latest Run:** 2026-07-14 06:00 WIB
+**Latest Run:** 2026-07-14 18:00 WIB
 
-## Findings — 2026-07-14 06:00 WIB
+## Findings — 2026-07-14 18:00 WIB
 
 ### Status Overview
 
-**Deploy pipeline solidly GREEN** — 10+ consecutive successful runs. PR #816 (Flutter iOS app) is still the last blocker. It's mergeable but behind main. Two new issues created: #921 (PR #816 ready to merge) and #922 (close PR #388). All dependency versions checked against pub.dev APIs.
+**Deploy pipeline still solidly GREEN** — 10+ consecutive successful runs. PR #816 (Flutter iOS app) is the **persistent blocker** — now 97 commits behind main. This audit reveals a **new finding**: the Info.plist in PR #816 does NOT contain fixes claimed in its PR description (display name, orientations, ATS). Two new issues created: #940 (escalation: merge urgently before conflicts) and #941 (Info.plist mismatch).
 
 **Key observations:**
-- Deploy has been green since 2026-07-11 — no more D1 migration errors
-- SPA at sribuu.pages.dev is live and healthy (HTTPS 200, API 200)
-- PR #816 is MERGEABLE but BEHIND main — just needs branch update + merge
-- PR #388 is CONFLICTING — issue #922 recommends closure
-- webview_flutter 4.14.1 still incompatible with CI Flutter 3.27.4 (#853 remains open)
-- flutter_lints 6.0.0 requires SDK ^3.8.0 — also blocked by old Flutter CI version
+- Deploy has been green since 2026-07-11 — no regressions
+- SPA at sribuu.pages.dev is live and healthy
+- PR #816 gap WIDENED from ~50 to 97 commits behind main in 3 days
+- **NEW FINDING**: Info.plist in PR #816 branch does NOT match PR description — no ATS config, display name still "Sribuu App", landscape orientations still present
+- No dep version changes since last audit — webview_flutter 4.13.0 still the listed dep, cupertino_icons 1.0.8, flutter_lints 5.0.0
+- Flutter stable is now 3.44.6 (July 8, 2026) — bumping CI from 3.27.4 unlocks all upgrades
 
-### 1. 🟢 Deploy pipeline GREEN — 10+ consecutive successful runs
+### 1. 🟢 Deploy pipeline GREEN — no regressions
 
-| Run | Date | Result |
-|-----|------|--------|
-| #29291315472 | 2026-07-13 (22:53 WIB) | ✅ Docs update |
-| #29283839311 | 2026-07-13 (20:48 WIB) | ✅ Docs update |
-| #29277358641 | 2026-07-13 (19:09 WIB) | ✅ Docs update |
-| #29275658873 | 2026-07-13 (18:44 WIB) | ✅ Docs update |
-| #29270352132 | 2026-07-13 (17:25 WIB) | ✅ Frontend agent update |
-- The deploy pipeline (test → D1 migrations → deploy) has been solidly green for 3+ days
-- No more `payment_method_id` or `CREATE INDEX` errors
-- SPA at sribuu.pages.dev is live and serving content
+- Latest runs all successful: docs updates from backend agent, QA agent, security agent
+- The deploy pipeline is the most stable it has ever been — zero failures since 2026-07-11
+- SPA at sribuu.pages.dev is live, HTTPS 200, API endpoints all responding correctly
+- No action needed on deploy side
 
-### 2. 🟢 PR #816 ready to merge — last blocker for Flutter iOS app
+### 2. 🔴 HIGH: PR #816 gap widens — 97 commits behind main (escalated to HIGH)
 
-- **Branch:** `fix/ios-url-wrong-backend-clean`
-- **Status:** MERGEABLE ✅, checks passing ✅
-- **Added:** 5,073 lines across 131 files (flutter_app/ + ios-build.yml)
-- **WebView URL:** `https://sribuu.pages.dev` ✅
-- **IPA fallback:** Fixed `if: always()` (not broken `if: failure()`) ✅
-- **Issue:** Branch is BEHIND main — needs `gh pr merge 816 --rebase` or update branch
-- **Created #921** recommending merge
+**This issue has been escalated to #940 (priority:high) because:**
 
-### 3. 🟡 Dependency versions checked (2026-07-14)
+| Metric | Jul 11 (opened) | Jul 13 | Jul 14 (now) |
+|--------|:--------------:|:------:|:------------:|
+| Commits behind main | ~50 | ~75 | **97** |
+| Mergeable | ✅ | ✅ | ✅ (still) |
+| Risk level | LOW | MEDIUM | **HIGH** |
 
-| Package | PR #816 version | Latest pub.dev | SDK Required | Flutter Required | Compatible? |
-|---------|----------------|---------------|--------------|-----------------|-------------|
-| `webview_flutter` | ^4.13.0 | **4.14.1** | ^3.10.0 | >=3.38.0 | ❌ CI Flutter 3.27.4 (Dart 3.6) |
-| `cupertino_icons` | ^1.0.8 | **1.0.9** | ^3.9.0 | — | ❌ Dart 3.6 < 3.9 |
-| `flutter_lints` | ^5.0.0 | **6.0.0** | ^3.8.0 | — | ❌ Dart 3.6 < 3.8 |
+**Extrapolation:** At ~20-30 agent tracking commits/day:
+- Jul 18: ~180+ commits behind → merge conflicts almost certain
+- Jul 21: ~240+ behind → full rebase needed, may conflict with other refactors
 
-**Decision needed:** Bump CI Flutter from 3.27.4 to 3.44.6 (latest stable) post-merge. This unlocks all three package bumps simultaneously. Tracked by #853.
+**Recommended action:** `gh pr merge 816 --rebase` (or --squash if conflicts). This is the single action unblocking 4+ dependent issues (#853, #854, #855, #885).
 
-### 4. 🟢 API compatibility — all Hono routes verified
+### 3. 🟡 MEDIUM: Info.plist mismatch — PR description claims fixes that don't exist on the branch (new finding)
 
-GET /api/health → 200 ✅
-POST /api/auth/register → works ✅
-POST /api/auth/login → 401 bad creds, works with valid creds ✅
-GET /api/auth/me → 401 without token (expected) ✅
-GET /api/transactions → 401 without token (expected) ✅
-GET /api/stats/summary → 404 (no /api/stats, only /api/stats/summary) ✅
-SPA root (/) → 200 ✅
+**Issue #941 created** documenting that the `ios/Runner/Info.plist` file in the `fix/ios-url-wrong-backend-clean` branch:
 
-**All routes match the Hono app in _worker.ts.** The SPA handles auth via Bearer token in localStorage — no cookie auth needed.
+| Claimed Fix (PR #816 description) | Actual State | Gap |
+|-----------------------------------|-------------|-----|
+| Display name: `Sribuu` | Actually: `Sribuu App` | ❌ |
+| Portrait-only on iPhone | Actually: portrait + landscape | ❌ |
+| NSAllowsArbitraryLoads | Actually: **no NSAppTransportSecurity key at all** | ❌ |
 
-### 5. 🟢 Clean Code review of PR #816
+**Critical impact:** Without NSAppTransportSecurity config, WKWebView may fail silently if sribuu.pages.dev's TLS configuration ever falls short of Apple's ATS requirements. The user would see a blank white screen.
 
-**Score: 7/10** (functional, clean, but improvable)
+**Fix:** These three changes should be in the PR before merge, or tracked as immediate post-merge fix (#854 exists but is about restricting to sribuu.pages.dev, not about the missing ATS key entirely).
 
-**What's good:**
-- `SribuuApp` is a clean `StatelessWidget` with light/dark/system theme
-- `SribuuWebView` properly handles back button navigation
-- Loading progress bar is informative
-- Good null safety practices
+### 4. 🟡 Dependency versions — still blocked by Flutter 3.27.4 CI
 
-**What can improve:**
-- All code in one file (113 lines) — extract `SribuuWebView` into `lib/screens/webview_screen.dart`
-- No offline error state — `onWebResourceError` only prints to debug, doesn't show user feedback
-- `NSAllowsArbitraryLoads` is too permissive — should restrict to `sribuu.pages.dev` only
-- `cupertino_icons` can be bumped to ^1.0.9 in same PR
-- Android app label still says "sribuu_app" instead of "Sribuu"
+No changes since last audit. Flutter stable is now 3.44.6 (July 8, 2026). Three packages are blocked:
 
-Tracked by #854, #855, #885.
+| Package | PR #816 version | Latest pub.dev | Blocked by |
+|---------|----------------|---------------|------------|
+| `webview_flutter` | ^4.13.0 | **4.14.1** (Jul 7, 2026) | CI Flutter 3.27.4 (Dart 3.6) < required 3.38.0 |
+| `cupertino_icons` | ^1.0.8 | **1.0.9** (—) | Dart 3.6 < required 3.9 |
+| `flutter_lints` | ^5.0.0 | **6.0.0** (May 27, 2025) | Dart 3.6 < required 3.8 |
 
-### 6. 🟢 Issues created this audit
+### 5. 🟢 API compatibility — still matches
 
-| Issue | Title | Priority |
+The web app's API client (`public/app.js`) calls all match the Hono routes (`_worker.ts`). The SPA handles auth via Bearer token stored in localStorage — works correctly in WKWebView.
+
+Verified: Backend has 19 endpoints under `/api/auth/`, `/api/transactions/`, `/api/categories/`, `/api/payment-methods/`, `/api/stats/summary`, `/api/rules/`. All correctly matched.
+
+### 6. 🟢 WebView mobile UX check
+
+The SPA (`public/app.js`) handles error states with `showToast()` for most failures. Mobile-specific CSS:
+
+- ✅ `viewport-fit=cover` meta tag for safe area insets
+- ✅ `-webkit-overflow-scrolling: touch` for smooth scroll on filter bar
+- ❌ **No `overscroll-behavior: contain`** — pull-to-refresh on iOS triggers browser refresh (#911 created previously)
+- ❌ **No `:active` touch feedback** — taps feel unresponsive (#845)
+- ❌ **No body scroll lock** when modal is open (#595)
+- ❌ Bottom nav touch targets below 44px minimum (#594)
+
+These are pre-existing SPA issues, not blocking the Flutter app. The WebView wrapper correctly delegates all navigation to WKWebView.
+
+### 7. 🟡 Issues created this audit
+
+| Issue | Title | Priority | 
 |-------|-------|----------|
-| #921 | 🚀 PR #816 ready to merge — Flutter iOS app can ship (deploy is green) | high |
-| #922 | Close PR #388 — conflicting and superseded by deploy fix | low |
+| #940 | 🔴 HIGH: PR #816 97 commits behind main — needs rebase+merge urgently | **high** |
+| #941 | 🟡 MEDIUM: Info.plist in PR #816 doesn't match PR description | medium |
 
-### 7. 🟢 Next steps
+### 8. 🟢 Next steps (unchanged priority)
 
-1. **Merge PR #816** → Flutter iOS app hits main, CI builds first unsigned IPA
-2. **Bump Flutter CI to 3.44.6** → unblocks all dependency upgrades (#853)
-3. **Fix NSAllowsArbitraryLoads** → security hardening (#854)
-4. **Extract WebView + add offline error** → clean code (#855)
-5. **Close PR #388** → cleanup (#922)
+1. **🟢 MERGE PR #816** → Flutter iOS app hits main, CI builds first unsigned IPA
+2. **🟡 Fix Info.plist** → add missing ATS, display name, portrait-only before/after merge
+3. **🟡 Bump CI Flutter → 3.44.6** (#853) — unblocks all dependency upgrades
+4. **🟡 Fix NSAllowsArbitraryLoads restrict** (#854) — security hardening
+5. **🟡 Extract WebView + offline error** (#855) — clean code
+6. **🟢 Close PR #388** (#922) — cleanup
 
 ## Open PRs Summary
 
 | PR | Branch | Base | State | Blocked By |
 |----|--------|------|-------|------------|
-| **#816** | fix/ios-url-wrong-backend-clean | main | **OPEN (BEHIND MAIN — MERGEABLE)** | needs update branch + merge |
+| **#816** | fix/ios-url-wrong-backend-clean | main | **OPEN (97 BEHIND MAIN — GAP WIDENING)** | needs merge urgently |
 | #388 | fix/384-d1-migration-idempotent | main | OPEN (CONFLICTING) | should close — #922 opened |
 
 ## Critical Blockers (priority order)
 
-1. **🟢 Merge PR #816** — brings flutter_app + ios-build.yml to main. Just update branch + merge. This is the only thing between "no Flutter app" and "CI produces iOS IPA".
-2. **🟡 Bump CI Flutter from 3.27.4 → 3.44.6** (#853) — unlocks all dep upgrades in one shot
-3. **🟡 Fix NSAllowsArbitraryLoads** (#854) — restrict WebView to sribuu.pages.dev only
-4. **🟡 Clean Code refactor** (#855) — extract WebView, add offline error state
-5. **🟢 Close PR #388** (#922) — conflicting, superseded by merged PR #729/#785
+1. **🔴 Merge PR #816** — 97 commits behind, gap widening ~20-30 commits/day. Every day without merge adds merge-conflict risk. **Must merge within the week.**
+2. **🟡 Fix Info.plist** — PR description claims fixes that don't exist on the branch. Fix before or immediately after merge.
+3. **🟡 Bump CI Flutter → 3.44.6** (#853) — unlocks all dep upgrades
+4. **🟡 Fix NSAllowsArbitraryLoads** (#854) — security hardening
+5. **🟡 Clean Code refactor** (#855) — extract WebView, add offline error state
+6. **🟢 Close PR #388** (#922) — conflicting, superseded by merged PR #729/#785
 
-## Latest Audit Summary (2026-07-14 06:00 WIB)
+## Latest Audit Summary (2026-07-14 18:00 WIB)
 
 | Area | Status | Notes |
 |------|--------|-------|
 | Dependency Updates | ⚠️ All 3 deps blocked by old Flutter 3.27.4 CI | #853 open — bump to 3.44.6 post-merge |
 | WebView Compatibility | ✅ SPA at sribuu.pages.dev, Bearer token in JS, WKWebView handles natively | URL correct, localStorage works |
-| Build Status | ✅ Deploy GREEN (10+ consecutive) | Mainline totally stable |
-| iOS Platform Issues | ⚠️ NSAllowsArbitraryLoads too permissive (#854), Android label "sribuu_app" (#885) | Post-merge fixes |
+| Build Status | ✅ Deploy GREEN (10+ consecutive runs) | Mainline totally stable |
+| iOS Platform Issues | 🔴 **NEW: Info.plist doesn't match PR #816 description** | #941 opened — no ATS, wrong display name |
 | API Compatibility | ✅ All Hono endpoints verified | Bearer token auth, no cookie needed |
 | Performance | ⚠️ No offline error state, no splash optimization (#855) | Low priority |
 | Session Persistence | ✅ WKWebView handles localStorage JS auth | Works correctly |
-| PR #816 (blocker) | 🟢 MERGEABLE but BEHIND main — needs update + merge | **This is THE blocker — 1 action** |
+| PR #816 (blocker) | 🔴 **ESCALATED: 97 commits behind, gap widening daily** | **Must merge this week — #940 opened as HIGH** |
