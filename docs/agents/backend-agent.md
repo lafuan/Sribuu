@@ -21,25 +21,23 @@
 | 2026-07-13 (10:00) | [#879](https://github.com/lafuan/Sribuu/issues/879) [#880](https://github.com/lafuan/Sribuu/issues/880) [#881](https://github.com/lafuan/Sribuu/issues/881) [#882](https://github.com/lafuan/Sribuu/issues/882) | — | Login timing side-channel (email enumeration); No idempotency key on POST transactions (duplicate data); parseInt silently accepts negatives/floats (wasted reads, data integrity); Content-Type MIME check case-sensitive (RFC 7231 violation) |
 | 2026-07-13 (16:00) | [#898](https://github.com/lafuan/Sribuu/issues/898) [#899](https://github.com/lafuan/Sribuu/issues/899) [#900](https://github.com/lafuan/Sribuu/issues/900) [#901](https://github.com/lafuan/Sribuu/issues/901) [#902](https://github.com/lafuan/Sribuu/issues/902) | — | Auth Bearer scheme case-sensitive (RFC 7235); Weak password policy (6-char min, no complexity); TOCTOU race on DELETE/PUT endpoints; JWT verify missing `sub` claim validation; All 17 catch blocks return generic 500 |
 | 2026-07-14 (10:00) | [#928](https://github.com/lafuan/Sribuu/issues/928) | — | PUT re-fetch SELECT missing user_id filter — returns null on HTTP 200 after concurrent DELETE |
-
-|**Latest Run:** 2026-07-14 10:00 WIB|
-
-## Code Quality Score: 3/10
-
-The backend remains a functional prototype with **164 open `agent-recommendation`+`backend` issues**. **Score holds at 3/10** — no structural changes.
-
-### Issues Created This Run (2026-07-13 16:00 WIB)
-
-| # | Priority | Title | File:Line |
-|---|----------|-------|-----------|
-| [#898](https://github.com/lafuan/Sribuu/issues/898) | 🔴 HIGH | Authorization header 'Bearer' scheme check is case-sensitive — RFC 7235 violation | `_worker.ts:18` |
-| [#899](https://github.com/lafuan/Sribuu/issues/899) | 🟡 MEDIUM | Weak password policy — only 6-char minimum, no complexity requirements | `_worker.ts:70-79` |
-| [#900](https://github.com/lafuan/Sribuu/issues/900) | 🟡 MEDIUM | TOCTOU race condition on DELETE/PUT endpoints — SELECT-then-mutate not atomic in D1 | `_worker.ts:302-309,415-420,273-276,388-391` |
-| [#901](https://github.com/lafuan/Sribuu/issues/901) | 🟡 MEDIUM | JWT verifyJWT does not validate required `sub` claim — undefined payload.sub flows to SQL | `src/utils.ts:82-94`, `_worker.ts:20-24` |
-| [#902](https://github.com/lafuan/Sribuu/issues/902) | 🟢 LOW | All 17 catch blocks return generic HTTP 500 — no error type differentiation, no structured logging | `_worker.ts` all catch blocks |
-
-### Issues Created This Run (2026-07-14 10:00 WIB)
-
-| # | Priority | Title | File:Line |
-|---|----------|-------|-----------|
-| [#928](https://github.com/lafuan/Sribuu/issues/928) | 🟢 LOW | PUT /api/transactions/:id re-fetch SELECT omits user_id filter — returns null on HTTP 200 after concurrent DELETE | `_worker.ts:292-294` |
+| 2026-07-14 (22:00) | [#938](https://github.com/lafuan/Sribuu/issues/938) [#939](https://github.com/lafuan/Sribuu/issues/939) | — | Negative LIMIT bypasses pagination (D1 quota exhaustion); Rules POST/PUT re-fetch omits user_id (cross-user data leak) |
+|
+||**Latest Run:** 2026-07-14 22:00 WIB|
+|
+|## Code Quality Score: 3/10|
+|
+|The backend remains a functional prototype with **170 open `agent-recommendation`+`backend` issues**. **Score holds at 3/10** — no structural changes.|
+|
+|### Issues Created This Run (2026-07-14 10:00 WIB)|
+|
+|| # | Priority | Title | File:Line |
+||---|----------|-------|-----------|
+|| [#928](https://github.com/lafuan/Sribuu/issues/928) | 🟢 LOW | PUT /api/transactions/:id re-fetch SELECT omits user_id filter — returns null on HTTP 200 after concurrent DELETE | `_worker.ts:292-294` |
+|
+|### Issues Created This Run (2026-07-14 22:00 WIB)|
+|
+|| # | Priority | Title | File:Line |
+||---|----------|-------|-----------|
+|| [#938](https://github.com/lafuan/Sribuu/issues/938) | 🔴 HIGH | Negative LIMIT value bypasses pagination cap — D1 read quota exhaustion and unbounded result sets | `_worker.ts:189-190` |
+|| [#939](https://github.com/lafuan/Sribuu/issues/939) | 🟡 MEDIUM | Rules POST/PUT re-fetch SELECT queries omit user_id filter — leaks cross-user rule data | `_worker.ts:378,407` |
