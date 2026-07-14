@@ -12,7 +12,7 @@ const TEST_PASSWORD = 'password123'
 interface UserRow { id: number; name: string; email: string; password_hash: string }
 interface TransactionRow { id: number; user_id: number; amount: number; notes: string; transaction_date: string; category_id: number; payment_method_id: number | null }
 interface CategoryRow { id: number; name: string; icon: string; color: string; is_default: number; is_active: number; user_id: number | null }
-interface RuleRow { id: number; user_id: number; name: string; description: string; condition: string; action: string; priority: number; is_active: number; created_at: string }
+interface RuleRow { id: number; user_id: number; name: string; match_keywords: string; category_id: number; payment_method_id: number | null; priority: number; is_active: number; created_at: string }
 
 let nextUserId = 1
 let nextTxId = 1
@@ -215,14 +215,17 @@ function makeMockDb() {
           }
           // --- INSERT rule ---
           if (query.includes('INSERT INTO rules')) {
-            const [userId, name, desc, condition, action, priority] = binds as any[]
+            const [userId, name, match_keywords, category_id, payment_method_id, is_active, priority] = binds as any[]
             const newRule: RuleRow = {
-              id: nextRuleId++, user_id: userId,
-              name: name, description: desc,
-              condition: typeof condition === 'string' ? condition : JSON.stringify(condition),
-              action: typeof action === 'string' ? action : JSON.stringify(action),
-              priority, is_active: 1,
-              created_at: new Date().toISOString()
+                id: nextRuleId++,
+                user_id: userId,
+                name: name,
+                match_keywords: match_keywords,
+                category_id: category_id,
+                payment_method_id: payment_method_id,
+                is_active: is_active,
+                priority: priority,
+                created_at: new Date().toISOString()
             }
             rules.push(newRule)
             return { meta: { last_row_id: newRule.id } }
@@ -531,6 +534,34 @@ describe('API Routes', () => {
       expect(body.total).toBe(1) // Only February transaction
     })
   })
+
+  // ============================================================
+  //  RULES
+  // ============================================================
+
+  describe('Rules CRUD', () => {
+    let token: string;
+    let userId: number;
+
+    beforeEach(async () => {
+      userId = 1;
+      token = await genToken({ sub: userId, email: 'test@test.com', name: 'Test' });
+    });
+
+    it('creates a rule', async () => {
+      const res = await app.request('/api/rules', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ name: 'Groceries Rule', match_keywords: 'supermarket,groceries', category_id: 1, priority: 10 })
+      }, env(mockDb));
+      expect(res.status).toBe(201);
+      const body: any = await res.json();
+      expect(body.name).toBe('Groceries Rule');
+      expect(body.match_keywords).toBe('supermarket,groceries');
+      expect(body.category_id).toBe(1);
+      expect(body.priority).toBe(10);
+    });
+  });
 
   // ============================================================
   //  STATS
