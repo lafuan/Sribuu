@@ -20,12 +20,13 @@
 | 2026-07-12 | #849, #850 | GitHub Actions missing `permissions:` block — default `write-all` GITHUB_TOKEN (HIGH), No max password length enables PBKDF2 CPU exhaustion DoS (MEDIUM) | Full security audit at 03:00 WIB; analyzed _worker.ts, utils.ts, GHA workflows, dependencies (npm audit), nginx headers, migrations, 99 open security issues; discovered 2 new unique findings across CI/CD hardening and resource exhaustion |
 | 2026-07-12 | **#861** | **🔴 HIGH: Password type coercion bypass — min/max length checks nullified by non-string password values** | Full security audit at 15:00 WIB; analyzed _worker.ts (post-3b29860), utils.ts, public/app.js, app.html, index.html, GHA workflows, nginx headers, migrations; discovered 1 new finding: password/email/name fields accept non-string JSON types (number, boolean) that bypass `length` checks. Verified live against `sribuu.pages.dev`. Created issue #861. |
 | 2026-07-13 | **#874, #875, #876, #877** | **🟡 MEDIUM: nginx deprecated TLSv1.0/1.1 (MEDIUM), 🟡 MEDIUM: Node.js version not pinned in GHA (MEDIUM), 🟢 LOW: nginx server_tokens version disclosure (LOW), 🟢 LOW: Orphaned `concurrently` dep (LOW)** | Full security audit at 03:00 WIB; analyzed _worker.ts, utils.ts, static.ts, public/app.js, migrations, GHA workflows, nginx config (TLS protocols, server_tokens), npm audit, package.json dependencies, 92 open security issues; discovered 4 new findings — deprecated TLS protocols on nginx reverse proxy, unpinned Node.js in CI, nginx version disclosure, and orphaned devDependency; verified uniqueness against all 100+ existing security issues |
+| 2026-07-14 | **#934, #935, #936** | **🟡 MEDIUM: D1 free-tier read quota exhaustion via authenticated GET spamming (MEDIUM), 🟡 MEDIUM: Rules POST/PUT missing Content-Type validation (MEDIUM), 🔴 HIGH: D1 rules table schema drift — migration vs API mismatch (HIGH)** | Full security audit at 15:00 WIB; analyzed _worker.ts (post-3b29860), migrations/0001_initial.sql, api.test.ts mock schema, utils.ts, GHA workflows, nginx headers, npm audit, live API responses at duckdns.org, 100+ open security issues; discovered 3 new findings — rules table schema drift (same bug class as #828 multi-day outage), Content-Type validation gap on rules endpoints, and D1 read quota exhaustion vector; verified uniqueness against all existing issues |
 
-**Latest Run:** 2026-07-13 03:00 WIB — Created 4 new findings. See issues #874, #875, #876, #877.
+**Latest Run:** 2026-07-14 15:00 WIB — Created 3 new findings. See issues #934, #935, #936.
 
 ## Summary Statistics
 
-- **Total unique security issues created (all time):** 66
-- **Issues created this run:** 4
+- **Total unique security issues created (all time):** 69
+- **Issues created this run:** 3
 - **Issues closed since last run:** 0
-- **Highest severity this run:** 🟡 MEDIUM
+- **Highest severity this run:** 🔴 HIGH
