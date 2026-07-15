@@ -76,7 +76,19 @@ body {
 }
 .app-header h1 { font-size: 18px; font-weight: 700; }
 .app-header .user-badge {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
   display: flex; align-items: center; gap: 8px; cursor: pointer;
+  border-radius: 8px;
+  padding: 4px;
+  transition: background-color 0.2s;
+}
+.app-header .user-badge:hover, .app-header .user-badge:focus-visible {
+  background-color: var(--bg-input);
+  outline: none;
 }
 .app-header .avatar {
   width: 32px; height: 32px; border-radius: 50%;
