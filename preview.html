@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sribuu — Nintendo 2001 Console Chrome Preview</title>
+  <style>
+    /* Nintendo 2001 Design Tokens */
+    :root {
+      --c-primary: #e60012; --c-primary-hover: #c50010;
+      --c-signal: #f68d1f; --c-amber: #ecab37; --c-nav-gold: #e48600;
+      --c-canvas: #7a8aba; --c-canvas-soft: #9fbee7;
+      --c-lavender: #acace7; --c-ice: #c0d5e6; --c-periwinkle: #8ba1d4;
+      --c-chrome-indigo: #3d4f97; --c-muted-indigo: #60619c; --c-hairline: #5a5f8c;
+      --c-platinum: #dedede; --c-surface: #ffffff;
+      --c-carbon: #21242e; --c-ink: #21242e; --c-ink-soft: #3d4f97;
+      --c-on-primary: #ffffff; --c-green: #2e7d32; --c-red: #e60012;
+      --c-error: #e60012; --c-error-bg: rgba(230,0,18,0.12);
+      --f-nav-link: 700 13px/1 Arial, sans-serif;
+      --f-ui-label: 700 11px/1.1 Arial, sans-serif;
+      --f-display: 900 36px/1 Arial Black, Arial, sans-serif;
+      --f-body: 400 12px/1.4 Arial, sans-serif;
+      --f-link: 700 12px/1.4 Arial, sans-serif;
+      --r-xs: 2px; --r-sm: 4px; --r-md: 6px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font: var(--f-body);
+      background: var(--c-canvas);
+      color: var(--c-ink);
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+    }
+
+    /* Halftone pattern background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: radial-gradient(circle, rgba(255,255,255,0.15) 1px, transparent 1px);
+      background-size: 4px 4px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .app-container {
+      max-width: 480px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Carbon Nav Bar */
+    .nav-bar {
+      background: var(--c-carbon);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 3px solid var(--c-chrome-indigo);
+      box-shadow: inset 0 -1px 0 var(--c-hairline), 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .nav-bar .logo {
+      font: var(--f-display);
+      font-size: 20px;
+      color: var(--c-surface);
+      letter-spacing: 2px;
+    }
+    .nav-bar .logo em {
+      font-style: normal;
+      color: var(--c-primary);
+    }
+
+    .nav-bar .user-badge {
+      background: var(--c-chrome-indigo);
+      border: none;
+      color: var(--c-surface);
+      padding: 6px 12px;
+      border-radius: var(--r-sm);
+      font: var(--f-link);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: inset 1px 1px 0 var(--c-periwinkle), inset -1px -1px 0 var(--c-carbon);
+    }
+
+    .avatar {
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      background: var(--c-primary);
+      display: flex; align-items: center; justify-content: center;
+      font: var(--f-ui-label);
+      color: var(--c-on-primary);
+    }
+
+    /* Balance Hero Panel — beveled metal */
+    .balance-hero {
+      margin: 16px;
+      background: linear-gradient(135deg, var(--c-periwinkle), var(--c-lavender));
+      border-radius: var(--r-md);
+      padding: 24px 20px;
+      text-align: center;
+      border: 2px solid var(--c-chrome-indigo);
+      box-shadow: 
+        inset 2px 2px 0 rgba(255,255,255,0.3),
+        inset -2px -2px 0 rgba(0,0,0,0.15),
+        0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    .month-badge {
+      display: inline-block;
+      background: var(--c-amber);
+      color: var(--c-carbon);
+      font: var(--f-ui-label);
+      padding: 4px 12px;
+      border-radius: var(--r-xs);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      box-shadow: inset 1px 1px 0 rgba(255,255,255,0.4), inset -1px -1px 0 rgba(0,0,0,0.2);
+    }
+
+    .balance-label {
+      font: var(--f-ui-label);
+      color: var(--c-ink-soft);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .balance-amount {
+      font: var(--f-display);
+      font-size: 36px;
+      color: var(--c-carbon);
+      margin: 8px 0 16px;
+    }
+
+    .stats-row {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+    }
+
+    .stat-item {
+      background: var(--c-surface);
+      padding: 10px 16px;
+      border-radius: var(--r-sm);
+      font: var(--f-body);
+      flex: 1;
+      border: 1px solid var(--c-chrome-indigo);
+      box-shadow: inset 1px 1px 0 var(--c-surface), inset -1px -1px 0 var(--c-hairline);
+    }
+
+    .income-val { color: var(--c-green); font-weight: 700; }
+    .expense-val { color: var(--c-red); font-weight: 700; }
+    .count-val { color: var(--c-ink-soft); font-weight: 700; }
+
+    /* Quick Actions */
+    .quick-actions {
+      display: flex;
+      gap: 8px;
+      padding: 0 16px;
+      margin-bottom: 16px;
+    }
+
+    .qa-btn {
+      flex: 1;
+      padding: 12px;
+      border: 2px solid var(--c-chrome-indigo);
+      border-radius: var(--r-sm);
+      font: 700 13px Arial, sans-serif;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .qa-btn.primary {
+      background: linear-gradient(180deg, var(--c-signal), #e07d10);
+      color: var(--c-on-primary);
+      box-shadow: inset 1px 1px 0 rgba(255,255,255,0.3), inset -1px -1px 0 rgba(0,0,0,0.2);
+    }
+    .qa-btn.secondary {
+      background: var(--c-platinum);
+      color: var(--c-carbon);
+      box-shadow: inset 1px 1px 0 var(--c-surface), inset -1px -1px 0 var(--c-hairline);
+    }
+
+    /* Section */
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 16px;
+    }
+    .section-header h2 { font: var(--f-link); color: var(--c-ink-soft); }
+
+    .filter-btn {
+      background: var(--c-amber);
+      border: none;
+      padding: 4px 12px;
+      border-radius: var(--r-xs);
+      font: var(--f-link);
+      cursor: pointer;
+      color: var(--c-carbon);
+    }
+
+    /* Filter Chips */
+    .filter-bar { display: flex; gap: 6px; padding: 0 16px 12px; overflow-x: auto; }
+    .filter-chip {
+      background: var(--c-platinum);
+      border: 1px solid var(--c-hairline);
+      border-radius: var(--r-xs);
+      padding: 4px 10px;
+      font: var(--f-body);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .filter-chip.active {
+      background: var(--c-amber);
+      border-color: var(--c-nav-gold);
+      color: var(--c-carbon);
+      box-shadow: inset 1px 1px 0 rgba(255,255,255,0.3);
+    }
+
+    /* Transaction List */
+    .tx-list { padding: 0 16px; }
+
+    .tx-item {
+      background: var(--c-surface);
+      border-radius: var(--r-sm);
+      padding: 12px 16px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border: 1px solid var(--c-hairline);
+      box-shadow: inset 1px 1px 0 var(--c-surface), inset -1px -1px 0 var(--c-hairline);
+    }
+    .tx-item .tx-left { display: flex; flex-direction: column; }
+    .tx-item .tx-cat { font: var(--f-ui-label); color: var(--c-ink-soft); }
+    .tx-item .tx-note { font: var(--f-body); color: var(--c-ink); }
+    .tx-item .tx-date { font: var(--f-micro); color: var(--c-ink-soft); }
+    .tx-item .tx-amount { font: 700 14px Arial; }
+    .tx-item .tx-amount.income { color: var(--c-green); }
+    .tx-item .tx-amount.expense { color: var(--c-red); }
+
+    .tx-empty {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--c-ink-soft);
+    }
+    .tx-empty .empty-icon { font-size: 32px; display: block; margin-bottom: 8px; }
+
+    /* Toast */
+    .toast {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+      background: var(--c-carbon); color: var(--c-surface);
+      padding: 10px 20px; border-radius: var(--r-sm);
+      font: var(--f-link);
+      display: none;
+      z-index: 100;
+      border: 1px solid var(--c-chrome-indigo);
+    }
+    .toast.show { display: block; }
+
+    .label-demo {
+      text-align: center;
+      padding: 20px;
+      color: var(--c-ink-soft);
+      font: var(--f-ui-label);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Carbon Nav Bar with Halftone -->
+    <header class="nav-bar">
+      <div class="logo"><em>S</em>RIBUU</div>
+      <button class="user-badge" onclick="alert('User menu')">
+        <span>Naufal</span>
+        <div class="avatar">N</div>
+      </button>
+    </header>
+
+    <!-- Balance Hero (Beveled Metal Panel) -->
+    <div class="balance-hero">
+      <div class="month-badge">JULI 2026</div>
+      <div class="balance-label">Saldo Bulan Ini</div>
+      <div class="balance-amount">Rp12.450.000</div>
+      <div class="stats-row">
+        <div class="stat-item">Pemasukan<br><span class="income-val">Rp8.200.000</span></div>
+        <div class="stat-item">Pengeluaran<br><span class="expense-val">Rp4.750.000</span></div>
+        <div class="stat-item">Transaksi<br><span class="count-val">47</span></div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+      <button class="qa-btn primary" onclick="alert('Add transaction')">+ TAMBAH</button>
+      <button class="qa-btn secondary" onclick="alert('Filter')">📅 FILTER BULAN</button>
+    </div>
+
+    <!-- Section Header -->
+    <div class="section-header">
+      <h2>📋 Transaksi</h2>
+      <button class="filter-btn" onclick="alert('Filter by category')">Kategori</button>
+    </div>
+
+    <!-- Filter Chips -->
+    <div class="filter-bar">
+      <span class="filter-chip active">Semua</span>
+      <span class="filter-chip">🍔 Makanan</span>
+      <span class="filter-chip">🚗 Transport</span>
+      <span class="filter-chip">🏠 Belanja</span>
+      <span class="filter-chip">💡 Listrik</span>
+    </div>
+
+    <!-- Transaction List -->
+    <div class="tx-list">
+      <div class="tx-item">
+        <div class="tx-left">
+          <span class="tx-cat">🍔 Makanan</span>
+          <span class="tx-note">Nasi Goreng & Es Teh</span>
+          <span class="tx-date">17 Jul 2026</span>
+        </div>
+        <span class="tx-amount expense">-Rp45.000</span>
+      </div>
+      <div class="tx-item">
+        <div class="tx-left">
+          <span class="tx-cat">💰 Gaji</span>
+          <span class="tx-note">Gaji Bulan Juli</span>
+          <span class="tx-date">15 Jul 2026</span>
+        </div>
+        <span class="tx-amount income">+Rp8.200.000</span>
+      </div>
+      <div class="tx-item">
+        <div class="tx-left">
+          <span class="tx-cat">🚗 Transport</span>
+          <span class="tx-note">Gojek ke Kantor</span>
+          <span class="tx-date">14 Jul 2026</span>
+        </div>
+        <span class="tx-amount expense">-Rp25.000</span>
+      </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="demo-toast">Demo preview — Sribuu Nintendo 2001 style</div>
+  </div>
+
+  <script>
+    setTimeout(() => {
+      const t = document.getElementById('demo-toast');
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 3000);
+    }, 500);
+  </script>
+</body>
+</html>

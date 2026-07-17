@@ -203,8 +203,8 @@ function renderAuthPage() {
         <p>Catat & kelola keuangan harian</p>
       </div>
       <div class="auth-tabs">
-        <button class="auth-tab active" onclick="switchAuthTab('login')">Masuk</button>
-        <button class="auth-tab" onclick="switchAuthTab('register')">Daftar</button>
+        <button class="auth-tab active" data-tab="login">Masuk</button>
+        <button class="auth-tab" data-tab="register">Daftar</button>
       </div>
       <form class="auth-form" id="auth-login-form" onsubmit="handleLogin(event)">
         <input type="email" id="login-email" placeholder="Email" required autocomplete="email">
@@ -227,7 +227,7 @@ function switchAuthTab(tab) {
   document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'))
   document.getElementById('auth-login-form').style.display = tab === 'login' ? '' : 'none'
   document.getElementById('auth-register-form').style.display = tab === 'register' ? '' : 'none'
-  document.querySelector(`[onclick="switchAuthTab('${tab}')"]`).classList.add('active')
+  document.querySelector(`.auth-tab[data-tab="${tab}"]`)?.classList.add('active')
   document.getElementById('login-error').style.display = 'none'
   document.getElementById('reg-error').style.display = 'none'
 }
@@ -288,7 +288,7 @@ function renderTx(tx) {
   const icon = tx.category_icon || '📦'
   const catName = tx.category_name || 'Uncategorized'
   return `
-    <div class="tx-item ${isExpense ? 'expense' : 'income'}" data-id="${tx.id}" onclick="openEditTx(${tx.id})">
+    <div class="tx-item ${isExpense ? 'expense' : 'income'}" data-tx-id="${tx.id}">
       <div class="tx-icon">${escapeHtml(icon)}</div>
       <div class="tx-info">
         <div class="tx-category">${escapeHtml(catName)}</div>
@@ -330,9 +330,9 @@ async function loadMeta() {
 function renderFilterChips() {
   const filterBar = document.getElementById('filter-bar')
   if (!filterBar) return
-  let html = '<button class="filter-chip active" onclick="setFilter({})">Semua</button>'
+  let html = '<button class="filter-chip active" data-cat="">Semua</button>'
   categories.forEach(c => {
-    html += `<button class="filter-chip" data-cat="${c.id}" onclick="setFilter({category_id:${c.id}})">${escapeHtml(c.icon || '')} ${escapeHtml(c.name)}</button>`
+    html += `<button class="filter-chip" data-cat="${c.id}">${escapeHtml(c.icon || '')} ${escapeHtml(c.name)}</button>`
   })
   filterBar.innerHTML = html
 }
@@ -497,5 +497,28 @@ document.addEventListener('DOMContentLoaded', function() {
     loadMeta()
     loadTransactions()
     loadMonthlyStats()
+
+    // Event delegation — replaces insecure inline onclick with data-* attrs
+    document.addEventListener('click', function(e) {
+      // Auth tab click → switch form
+      const authTab = e.target.closest('.auth-tab')
+      if (authTab && authTab.dataset.tab) {
+        switchAuthTab(authTab.dataset.tab)
+        return
+      }
+      // Transaction item click → open edit
+      const txItem = e.target.closest('.tx-item')
+      if (txItem && txItem.dataset.txId) {
+        openEditTx(Number(txItem.dataset.txId))
+        return
+      }
+      // Filter chip click → set filter
+      const filterChip = e.target.closest('.filter-chip')
+      if (filterChip) {
+        const catId = filterChip.dataset.cat
+        setFilter(catId !== '' ? { category_id: Number(catId) } : {})
+        return
+      }
+    })
   }
 })
