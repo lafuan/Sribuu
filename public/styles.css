@@ -948,7 +948,7 @@ body::before {
    RESPONSIVE
    ══════════════════════════════════════════════════════════════ */
 
-/* Narrow viewport (< 480px) */
+/* Narrow viewport (< 480px) — merged single block */
 @media (max-width: 480px) {
   #app { max-width: 100%; }
 
@@ -990,44 +990,58 @@ body::before {
   .modal { max-width: 100%; }
 }
 
-/* Tablet / desktop (>= 601px) — centered app with side borders */
-@media (min-width: 601px) {
+/* Tablet (>= 768px) */
+@media (min-width: 768px) {
+  #app { max-width: 768px; }
+
+  .balance-hero { margin: 16px 24px; padding: 24px 28px; border-radius: 8px; }
+  .balance-amount { font-size: 36px; }
+  .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .quick-actions { margin: 0 24px 16px; gap: 12px; }
+  .section-header { padding: 12px 24px; }
+  .filter-bar { padding: 8px 24px; justify-content: center; }
+  .tx-list { padding: 0 24px 100px; }
+  .tx-item { padding: 14px 16px; }
+  .nav-bar { padding: 12px 24px; }
+  .bottom-nav { max-width: 768px; }
+  .modal { max-width: 520px; }
+  .modal-overlay { align-items: center; }
+  .modal { border-radius: var(--r-md); }
+}
+
+/* Desktop (>= 1024px) */
+@media (min-width: 1024px) {
+  body { background: #101216; }
+
   #app {
+    max-width: 960px;
     border-left: 2px solid var(--c-chrome-indigo);
     border-right: 2px solid var(--c-chrome-indigo);
-    box-shadow: 0 0 30px rgba(0,0,0,0.5);
+    box-shadow: 0 0 40px rgba(0,0,0,0.6);
+    margin-top: 24px;
+    margin-bottom: 24px;
+    border-radius: 8px;
+    min-height: calc(100vh - 48px);
   }
 
-  .modal {
-    border-radius: var(--r-md);
-    margin-bottom: auto;
-    margin-top: 5vh;
-  }
-
-  .modal-overlay {
-    align-items: center;
-  }
+  .balance-hero { margin: 20px 32px; padding: 28px 32px; }
+  .balance-amount { font-size: 42px; }
+  .balance-hero .stats-row { margin-top: 20px; padding-top: 16px; }
+  .quick-actions { margin: 0 32px 20px; gap: 16px; }
+  .section-header { padding: 12px 32px; }
+  .filter-bar { padding: 8px 32px; gap: 8px; justify-content: center; }
+  .filter-chip { padding: 6px 18px; font-size: 11px; }
+  .tx-list { padding: 0 32px 100px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .tx-item { padding: 14px 16px; border-radius: 6px; }
+  .nav-bar { padding: 12px 32px; }
+  .bottom-nav { max-width: 960px; margin: 0 auto; display: none; }
+  .modal { max-width: 560px; }
+  .auth-box { max-width: 420px; padding: 32px; }
+  .modal-overlay { align-items: center; }
+  .modal { border-radius: var(--r-md); }
 }
 
-/* ─── Responsive ──────────────────────────────────────── */
-@media (max-width: 480px) {
-  .app-container { max-width: 100%; padding: 0; }
-  .balance-hero { margin: 12px 8px; padding: 16px 12px; }
-  .balance-amount { font-size: 28px; }
-  .stats-row { flex-direction: column; gap: 4px; }
-  .stat-item { padding: 8px; }
-  .quick-actions { padding: 0 8px; gap: 6px; }
-  .qa-btn { padding: 10px; font-size: 12px; }
-  .nav-bar { padding: 10px 12px; }
-  .nav-bar .logo { font-size: 18px; }
-  .tx-list { padding: 0 8px; }
-  .tx-item { padding: 10px 12px; }
-  .section-header { padding: 8px; }
-  .filter-bar { padding: 0 8px 8px; }
-  .modal-content { width: 95%; margin: 10% auto; padding: 16px; }
-  .auth-form { padding: 16px; }
-}
-
+/* Narrowest viewport (< 360px) */
 @media (max-width: 360px) {
   .balance-amount { font-size: 24px; }
   .filter-chip { font-size: 11px; padding: 3px 8px; }
