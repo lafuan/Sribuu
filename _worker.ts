@@ -370,11 +370,16 @@ app.get('/api/rules', authMiddleware, async (c) => {
 app.post('/api/rules', authMiddleware, async (c) => {
   try {
     const userId = c.get('userId') as number
-    const { name, description, condition, action, priority } = await c.req.json()
-    if (!name || !condition || !action) return c.json({ error: 'name, condition, and action are required' }, 400)
+    const { name, match_keywords, category_id, payment_method_id, is_active, priority } = await c.req.json()
+    if (!name || !match_keywords || !category_id) {
+      return c.json({ error: 'name, match_keywords, and category_id are required' }, 400)
+    }
     const { meta } = await c.env.sribuu_db.prepare(
-      'INSERT INTO rules (user_id, name, description, condition, action, priority) VALUES (?, ?, ?, ?, ?, ?)'
-    ).bind(userId, name, description || '', JSON.stringify(condition), JSON.stringify(action), priority || 0).run()
+      'INSERT INTO rules (user_id, name, match_keywords, category_id, payment_method_id, is_active, priority) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    ).bind(
+      userId, name, match_keywords, category_id,
+      payment_method_id || null, is_active !== undefined ? is_active : 1, priority || 0
+    ).run()
     const { results } = await c.env.sribuu_db.prepare('SELECT * FROM rules WHERE id = ?').bind(meta.last_row_id).all()
     return c.json((results as any[])[0], 201)
   } catch (err) {
@@ -392,14 +397,12 @@ app.put('/api/rules/:id', authMiddleware, async (c) => {
     const body = await c.req.json()
     const updates: string[] = []
     const params: any[] = []
-    for (const [key, val] of Object.entries(body)) {
-      if (['name', 'description', 'priority', 'is_active'].includes(key)) {
-        updates.push(`${key} = ?`)
-        params.push(val)
-      } else if (key === 'condition' || key === 'action') {
-        updates.push(`${key} = ?`)
-        params.push(JSON.stringify(val))
-      }
+    const allowedFields = ['name', 'match_keywords', 'category_id', 'payment_method_id', 'is_active', 'priority']
+    for (const key of allowedFields) {
+        if (body.hasOwnProperty(key)) {
+            updates.push(`${key} = ?`)
+            params.push(body[key])
+        }
     }
     if (updates.length === 0) return c.json({ error: 'No valid fields to update' }, 400)
     params.push(ruleId, userId)
