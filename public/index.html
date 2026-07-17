@@ -3,95 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#0f0f11">
-  <title>Sribuu — Catatan Keuangan</title>
+  <meta name="theme-color" content="#020617">
   <link rel="stylesheet" href="/styles.css">
+  <title>Sribuu — Catatan Keuangan</title>
 </head>
-<body class="auth-page">
-  <div class="auth-box">
-    <div class="auth-logo">
-      <h1>📒 Sribuu</h1>
-      <p>Catat & kelola keuangan harian</p>
-    </div>
-
-    <div class="auth-tabs" id="auth-tabs">
-      <button class="auth-tab active" onclick="switchTab('login')">Masuk</button>
-      <button class="auth-tab" onclick="switchTab('register')">Daftar</button>
-    </div>
-
-    <!-- Login Form -->
-    <form class="auth-form" id="login-form" onsubmit="handleLogin(event)">
-      <input type="email" id="login-email" placeholder="Email" required autocomplete="email">
-      <input type="password" id="login-password" placeholder="Password" required autocomplete="current-password">
-      <div class="auth-error" id="login-error"></div>
-      <button type="submit" class="btn" id="login-btn">Masuk</button>
-    </form>
-
-    <!-- Register Form -->
-    <form class="auth-form" id="register-form" style="display:none" onsubmit="handleRegister(event)">
-      <input type="text" id="reg-name" placeholder="Nama" required autocomplete="name">
-      <input type="email" id="reg-email" placeholder="Email" required autocomplete="email">
-      <input type="password" id="reg-password" placeholder="Password (min 6 karakter)" required minlength="6" autocomplete="new-password">
-      <div class="auth-error" id="reg-error"></div>
-      <button type="submit" class="btn" id="reg-btn">Daftar</button>
-    </form>
-  </div>
-
-  <script>
-    function switchTab(tab) {
-      document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'))
-      document.getElementById('login-form').style.display = tab === 'login' ? '' : 'none'
-      document.getElementById('register-form').style.display = tab === 'register' ? '' : 'none'
-      document.querySelector(`[onclick="switchTab('${tab}')"]`).classList.add('active')
-      document.getElementById('login-error').style.display = 'none'
-      document.getElementById('reg-error').style.display = 'none'
-    }
-
-    function showError(id, msg) {
-      const el = document.getElementById(id)
-      el.textContent = msg
-      el.style.display = 'block'
-    }
-
-    async function handleLogin(e) {
-      e.preventDefault()
-      const btn = document.getElementById('login-btn')
-      btn.disabled = true; btn.textContent = 'Memproses...'
-      document.getElementById('login-error').style.display = 'none'
-      try {
-        const data = await API.login(
-          document.getElementById('login-email').value,
-          document.getElementById('login-password').value
-        )
-        localStorage.setItem('token', data.token)
-        localStorage.setItem('user', JSON.stringify(data.user))
-        window.location.href = '/app'
-      } catch (e) {
-        showError('login-error', e.message)
-      }
-      btn.disabled = false; btn.textContent = 'Masuk'
-    }
-
-    async function handleRegister(e) {
-      e.preventDefault()
-      const btn = document.getElementById('reg-btn')
-      btn.disabled = true; btn.textContent = 'Memproses...'
-      document.getElementById('reg-error').style.display = 'none'
-      try {
-        const data = await API.register(
-          document.getElementById('reg-name').value,
-          document.getElementById('reg-email').value,
-          document.getElementById('reg-password').value
-        )
-        localStorage.setItem('token', data.token)
-        localStorage.setItem('user', JSON.stringify(data.user))
-        window.location.href = '/app'
-      } catch (e) {
-        showError('reg-error', e.message)
-      }
-      btn.disabled = false; btn.textContent = 'Daftar'
-    }
-  </script>
+<body>
+  <div id="app"></div>
   <script src="/app.js"></script>
 </body>
 </html>
