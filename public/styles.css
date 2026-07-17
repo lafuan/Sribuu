@@ -1008,3 +1008,28 @@ body::before {
     align-items: center;
   }
 }
+
+/* ─── Responsive ──────────────────────────────────────── */
+@media (max-width: 480px) {
+  .app-container { max-width: 100%; padding: 0; }
+  .balance-hero { margin: 12px 8px; padding: 16px 12px; }
+  .balance-amount { font-size: 28px; }
+  .stats-row { flex-direction: column; gap: 4px; }
+  .stat-item { padding: 8px; }
+  .quick-actions { padding: 0 8px; gap: 6px; }
+  .qa-btn { padding: 10px; font-size: 12px; }
+  .nav-bar { padding: 10px 12px; }
+  .nav-bar .logo { font-size: 18px; }
+  .tx-list { padding: 0 8px; }
+  .tx-item { padding: 10px 12px; }
+  .section-header { padding: 8px; }
+  .filter-bar { padding: 0 8px 8px; }
+  .modal-content { width: 95%; margin: 10% auto; padding: 16px; }
+  .auth-form { padding: 16px; }
+}
+
+@media (max-width: 360px) {
+  .balance-amount { font-size: 24px; }
+  .filter-chip { font-size: 11px; padding: 3px 8px; }
+  .quick-actions { flex-direction: column; }
+}
