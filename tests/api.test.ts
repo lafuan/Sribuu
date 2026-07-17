@@ -64,6 +64,11 @@ function makeMockDb() {
             return u ? { ...u } : null
           }
           // --- Transaction existence check OR single tx fetch ---
+          if (query.includes('SELECT id FROM transactions WHERE id = ? AND user_id = ?')) {
+            const [txId, userId] = binds
+            const tx = transactions.find(t => t.id === txId && t.user_id === userId)
+            return tx ? { id: tx.id } : null
+          }
           if (query.includes('FROM transactions t') && (query.includes('WHERE t.id = ? AND t.user_id = ?'))) {
             const [txId, userId] = binds
             const tx = transactions.find(t => t.id === txId && t.user_id === userId)
@@ -205,6 +210,19 @@ function makeMockDb() {
           }
           // --- UPDATE transaction ---
           if (query.includes('UPDATE transactions SET')) {
+            // Parse SET clause to update in-memory transactions
+            const setPart = query.match(/SET (.+?) WHERE/)?.[1] || ''
+            const setClauses = setPart.split(',').map(s => s.trim())
+            // binds are: [val1, val2, ..., txId, userId]
+            const txId = binds[binds.length - 2]
+            const userId = binds[binds.length - 1]
+            const tx = transactions.find(t => t.id === txId && t.user_id === userId)
+            if (tx) {
+              for (let i = 0; i < setClauses.length; i++) {
+                const col = setClauses[i].replace(/ = \?$/, '').trim()
+                ;(tx as any)[col] = binds[i]
+              }
+            }
             return { meta: { last_row_id: 0 } }
           }
           // --- DELETE transaction ---
@@ -530,6 +548,48 @@ describe('API Routes', () => {
       const body: any = await res.json()
       expect(body.total).toBe(1) // Only February transaction
     })
+
+    it('updates a transaction via PUT', async () => {
+      const createRes = await app.request('/api/transactions', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ amount: 100000, transaction_date: '2026-07-06', category_id: 1, notes: 'Old note' })
+      }, env(mockDb))
+      expect(createRes.status).toBe(201)
+      const created: any = await createRes.json()
+      const txId = created.id
+
+      const res = await app.request(`/api/transactions/${txId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ amount: 75000, notes: 'Updated note' })
+      }, env(mockDb))
+      expect(res.status).toBe(200)
+      const body: any = await res.json()
+      expect(body.amount).toBe(75000)
+      expect(body.notes).toBe('Updated note')
+    })
+
+    it('handles hasOwnProperty-shadowed body on PUT without crashing', async () => {
+      const createRes = await app.request('/api/transactions', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ amount: 50000, transaction_date: '2026-07-06', category_id: 1, notes: 'Test' })
+      }, env(mockDb))
+      expect(createRes.status).toBe(201)
+      const created: any = await createRes.json()
+      const txId = created.id
+
+      // Body has hasOwnProperty key -> would crash with body.hasOwnProperty()
+      const res = await app.request(`/api/transactions/${txId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ hasOwnProperty: 'shadowed', amount: 25000, notes: 'Should still work' })
+      }, env(mockDb))
+      expect(res.status).toBe(200)
+      const body: any = await res.json()
+      expect(body.amount).toBe(25000)
+      expect(body.notes).toBe('Should still work')
+    })
+
   })
 
   // ============================================================

@@ -280,7 +280,7 @@ app.put('/api/transactions/:id', authMiddleware, async (c) => {
     // Use a fixed list of allowed fields to prevent injection
     const allowedFields = ['amount', 'transaction_date', 'category_id', 'notes', 'payment_method_id'];
     for (const key of allowedFields) {
-      if (body.hasOwnProperty(key)) {
+      if (Object.prototype.hasOwnProperty.call(body, key)) {
         updates.push(`${key} = ?`)
         params.push(body[key])
       }
