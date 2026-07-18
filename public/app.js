@@ -3,11 +3,19 @@
 // Design: Nintendo 2001 → Sribuu green/teal adaptation
 // ============================================================
 
+// ─── Safe localStorage (handles private browsing quarantine) ──
+const ls = {
+  getItem(k, fallback = null) { try { return localStorage.getItem(k) } catch { return fallback } },
+  setItem(k, v) { try { localStorage.setItem(k, v) } catch {} },
+  removeItem(k) { try { localStorage.removeItem(k) } catch {} },
+}
+const lsGet = (k, fb = null) => { try { return localStorage.getItem(k) } catch { return fb } }
+
 // ─── API Client ──────────────────────────────────────────────
 const API = {
   async request(method, path, body) {
     const opts = { method, headers: {} }
-    const token = localStorage.getItem('token')
+    const token = ls.getItem('token')
     if (token) opts.headers['Authorization'] = `Bearer ${token}`
     if (body) { opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body) }
     const res = await fetch(path, opts)
@@ -75,17 +83,17 @@ function showToast(msg, type = 'info') {
 }
 
 // ─── Auth ────────────────────────────────────────────────────
-function isLoggedIn() { return !!localStorage.getItem('token') }
+function isLoggedIn() { return !!ls.getItem('token') }
 
 function logout() {
-  localStorage.removeItem('token')
-  localStorage.removeItem('user')
+  ls.removeItem('token')
+  ls.removeItem('user')
   window.location.href = '/'
 }
 
 // ─── App Shell ───────────────────────────────────────────────
 function renderAppShell() {
-  const user = JSON.parse(localStorage.getItem('user') || '{}')
+  const user = JSON.parse(ls.getItem('user') || '{}')
   const initial = (user.name || '?').charAt(0).toUpperCase()
   return `
     <!-- Nav Bar -->
@@ -112,12 +120,12 @@ function renderAppShell() {
     <!-- Quick Actions -->
     <div class="quick-actions">
       <button class="qa-btn primary" onclick="openAddTx()">+ TAMBAH</button>
-      <button class="qa-btn secondary" onclick="openMonthPicker()">📅 FILTER BULAN</button>
+      <button class="qa-btn secondary" onclick="openMonthPicker()" aria-label="Filter bulan"><span role="img" aria-hidden="true">📅</span> FILTER BULAN</button>
     </div>
 
     <!-- Section Header -->
     <div class="section-header">
-      <h2>📋 Transaksi <span id="tx-count"></span></h2>
+      <h2><span role="img" aria-label="Transaksi">📋</span> Transaksi <span id="tx-count"></span></h2>
       <button class="filter-btn" onclick="document.getElementById('filter-bar').scrollIntoView({behavior:'smooth'})">Kategori</button>
     </div>
 
@@ -126,14 +134,14 @@ function renderAppShell() {
 
     <!-- Transaction List -->
     <div class="tx-list" id="tx-list">
-      <div class="tx-empty"><span class="empty-icon">📒</span>Memuat transaksi...</div>
+      <div class="tx-empty"><span class="empty-icon" role="img" aria-label="Catatan">📒</span>Memuat transaksi...</div>
     </div>
 
     <!-- Bottom Nav -->
     <nav class="bottom-nav halftone">
-      <a href="#app" class="active"><span class="nav-icon">🏠</span>Beranda</a>
-      <a href="#" onclick="openAddTx()"><span class="nav-icon">➕</span>Tambah</a>
-      <a href="#" onclick="if(confirm('Keluar dari akun ini?'))logout()"><span class="nav-icon">🚪</span>Keluar</a>
+      <button class="active" data-nav="beranda"><span class="nav-icon" role="img" aria-label="Beranda">🏠</span>Beranda</button>
+      <button onclick="openAddTx()" data-nav="tambah"><span class="nav-icon" role="img" aria-label="Tambah">➕</span>Tambah</button>
+      <button onclick="if(confirm('Keluar dari akun ini?'))logout()" data-nav="keluar"><span class="nav-icon" role="img" aria-label="Keluar">🚪</span>Keluar</button>
     </nav>
 
     <!-- Transaction Modal -->
@@ -248,8 +256,8 @@ async function handleLogin(e) {
       document.getElementById('login-email').value,
       document.getElementById('login-password').value
     )
-    localStorage.setItem('token', data.token)
-    localStorage.setItem('user', JSON.stringify(data.user))
+    ls.setItem('token', data.token)
+    ls.setItem('user', JSON.stringify(data.user))
     window.location.href = '/app'
   } catch (e) {
     showAuthError('login-error', e.message)
@@ -268,8 +276,8 @@ async function handleRegister(e) {
       document.getElementById('reg-email').value,
       document.getElementById('reg-password').value
     )
-    localStorage.setItem('token', data.token)
-    localStorage.setItem('user', JSON.stringify(data.user))
+    ls.setItem('token', data.token)
+    ls.setItem('user', JSON.stringify(data.user))
     window.location.href = '/app'
   } catch (e) {
     showAuthError('reg-error', e.message)
@@ -309,7 +317,7 @@ async function loadTransactions() {
     const list = document.getElementById('tx-list')
     const totalEl = document.getElementById('tx-count')
     if (allTransactions.length === 0) {
-      list.innerHTML = '<div class="tx-empty"><span class="empty-icon">📒</span>Belum ada transaksi.<br><button class="empty-action" onclick="openAddTx()">+ Tambah Transaksi</button></div>'
+      list.innerHTML = '<div class="tx-empty"><span class="empty-icon" role="img" aria-label="Catatan">📒</span>Belum ada transaksi.<br><button class="empty-action" onclick="openAddTx()">+ Tambah Transaksi</button></div>'
     } else {
       list.innerHTML = allTransactions.map(renderTx).join('')
     }

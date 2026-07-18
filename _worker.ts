@@ -33,6 +33,21 @@ const app = new Hono<{ Bindings: Env; Variables: { userId: number; userEmail: st
 
 app.use('/*', cors())
 
+// --- Security Headers Middleware ---
+app.use('/*', async (c, next) => {
+  await next()
+  // Only add security headers to HTML responses
+  const ct = c.res.headers.get('Content-Type') || ''
+  if (ct.includes('text/html') || ct.includes('application/json')) {
+    c.res.headers.set('X-Content-Type-Options', 'nosniff')
+    c.res.headers.set('X-Frame-Options', 'DENY')
+    c.res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+    if (ct.includes('text/html')) {
+      c.res.headers.set('Content-Security-Policy', "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; script-src 'self' 'unsafe-inline'; form-action 'self'")
+    }
+  }
+})
+
 // --- Static File Serving ---
 app.get('/', async (c) => {
   const file = STATIC_FILES['/index.html']
@@ -186,17 +201,29 @@ app.get('/api/transactions', authMiddleware, async (c) => {
     const month = url.searchParams.get('month')
     const year = url.searchParams.get('year');
     const categoryId = url.searchParams.get('category_id');
-    const limit = Math.min(parseInt(url.searchParams.get('limit') || '50'), 200);
-    const offset = parseInt(url.searchParams.get('offset') || '0');
+    const rawLimit = parseInt(url.searchParams.get('limit') || '50', 10);
+    if (Number.isNaN(rawLimit)) return c.json({ error: 'Invalid limit parameter' }, 400);
+    const limit = Math.min(rawLimit, 200);
+    const rawOffset = parseInt(url.searchParams.get('offset') || '0', 10);
+    if (Number.isNaN(rawOffset)) return c.json({ error: 'Invalid offset parameter' }, 400);
+    const offset = rawOffset;
 
     let query = 'SELECT t.id, t.amount, t.notes, t.transaction_date, t.category_id, t.payment_method_id, c.name as category_name, c.icon as category_icon, c.color as category_color FROM transactions t LEFT JOIN categories c ON t.category_id = c.id WHERE t.user_id = ?'
     const params: any[] = [userId]
 
     if (month && year) {
-      query += ' AND strftime(\'%m\', t.transaction_date) = ? AND strftime(\'%Y\', t.transaction_date) = ?'
-      params.push(month.padStart(2, '0'), year)
+      const startDate = year + '-' + month.padStart(2, '0') + '-01'
+      const endMonth = parseInt(month) === 12 ? '01' : (parseInt(month) + 1).toString().padStart(2, '0')
+      const endYear = parseInt(month) === 12 ? (parseInt(year) + 1).toString() : year
+      const endDate = endYear + '-' + endMonth + '-01'
+      query += ' AND t.transaction_date >= ? AND t.transaction_date < ?'
+      params.push(startDate, endDate)
     }
-    if (categoryId) { query += ' AND t.category_id = ?'; params.push(parseInt(categoryId)) }
+    if (categoryId) {
+      const catId = parseInt(categoryId, 10);
+      if (Number.isNaN(catId)) return c.json({ error: 'Invalid category_id parameter' }, 400);
+      query += ' AND t.category_id = ?'; params.push(catId);
+    }
 
     const countQuery = query.replace(/SELECT .+? FROM/, 'SELECT COUNT(*) as total FROM').replace(/ ORDER BY .+$/, '')
     const countParams = [...params];
@@ -224,7 +251,7 @@ app.post('/api/transactions', authMiddleware, async (c) => {
     const userId = c.get('userId') as number
     const { amount, transaction_date, category_id, notes, payment_method_id } = await c.req.json()
 
-    if (!amount) return c.json({ error: 'amount is required' }, 400)
+    if (amount === undefined || amount === null || amount === '') return c.json({ error: 'amount is required' }, 400)
     
     const finalCategory = category_id || 1
     const finalDate = transaction_date || new Date().toISOString().split('T')[0]
@@ -236,6 +263,7 @@ app.post('/api/transactions', authMiddleware, async (c) => {
     const { results } = await c.env.sribuu_db.prepare(
       'SELECT t.id, t.amount, t.notes, t.transaction_date, t.category_id, t.payment_method_id, c.name as category_name, c.icon as category_icon, c.color as category_color FROM transactions t LEFT JOIN categories c ON t.category_id = c.id WHERE t.id = ?'
     ).bind(meta.last_row_id).all()
+    if (results.length === 0) return c.json({ error: 'Failed to create transaction' }, 500)
     return c.json((results as any[])[0], 201)
   } catch (err) {
     console.error('Create transaction error:', err)
@@ -246,7 +274,8 @@ app.post('/api/transactions', authMiddleware, async (c) => {
 app.get('/api/transactions/:id', authMiddleware, async (c) => {
   try {
     const userId = c.get('userId') as number
-    const txId = parseInt(c.req.param('id'))
+    const txId = parseInt(c.req.param('id'), 10);
+    if (Number.isNaN(txId)) return c.json({ error: 'Invalid transaction ID' }, 400);
     const tx = await c.env.sribuu_db.prepare(
       `SELECT t.id, t.amount, t.notes, t.transaction_date, t.category_id, t.payment_method_id,
               c.name as category_name, c.icon as category_icon, c.color as category_color
@@ -269,7 +298,8 @@ app.put('/api/transactions/:id', authMiddleware, async (c) => {
       return c.json({ error: 'Content-Type must be application/json' }, 415)
     }
     const userId = c.get('userId') as number
-    const txId = parseInt(c.req.param('id'))
+    const txId = parseInt(c.req.param('id'), 10);
+    if (Number.isNaN(txId)) return c.json({ error: 'Invalid transaction ID' }, 400);
     const body = await c.req.json()
 
     const existing = await c.env.sribuu_db.prepare('SELECT id FROM transactions WHERE id = ? AND user_id = ?').bind(txId, userId).first()
@@ -292,6 +322,7 @@ app.put('/api/transactions/:id', authMiddleware, async (c) => {
     const { results } = await c.env.sribuu_db.prepare(
       'SELECT t.id, t.amount, t.notes, t.transaction_date, t.category_id, t.payment_method_id, c.name as category_name, c.icon as category_icon, c.color as category_color FROM transactions t LEFT JOIN categories c ON t.category_id = c.id WHERE t.id = ?'
     ).bind(txId).all()
+    if (results.length === 0) return c.json({ error: 'Transaction not found' }, 404)
     return c.json((results as any[])[0])
   } catch (err) {
     console.error('Update transaction error:', err)
@@ -302,7 +333,8 @@ app.put('/api/transactions/:id', authMiddleware, async (c) => {
 app.delete('/api/transactions/:id', authMiddleware, async (c) => {
   try {
     const userId = c.get('userId') as number
-    const txId = parseInt(c.req.param('id'))
+    const txId = parseInt(c.req.param('id'), 10);
+    if (Number.isNaN(txId)) return c.json({ error: 'Invalid transaction ID' }, 400);
     const existing = await c.env.sribuu_db.prepare('SELECT id FROM transactions WHERE id = ? AND user_id = ?').bind(txId, userId).first()
     if (!existing) return c.json({ error: 'Transaction not found' }, 404)
     await c.env.sribuu_db.prepare('DELETE FROM transactions WHERE id = ? AND user_id = ?').bind(txId, userId).run()
@@ -330,11 +362,15 @@ app.get('/api/stats/summary', authMiddleware, async (c) => {
     const params2: any[] = [userId]
 
     if (month && year) {
-      const filter = ' AND strftime(\'%m\', transaction_date) = ? AND strftime(\'%Y\', transaction_date) = ?'
+      const startDate = year + '-' + month.padStart(2, '0') + '-01'
+      const endMonth = parseInt(month) === 12 ? '01' : (parseInt(month) + 1).toString().padStart(2, '0')
+      const endYear = parseInt(month) === 12 ? (parseInt(year) + 1).toString() : year
+      const endDate = endYear + '-' + endMonth + '-01'
+      const filter = ' AND transaction_date >= ? AND transaction_date < ?'
       incomeQuery += filter
       expenseQuery += filter
-      params.push(month.padStart(2, '0'), year)
-      params2.push(month.padStart(2, '0'), year)
+      params.push(startDate, endDate)
+      params2.push(startDate, endDate)
     }
 
     const [income, expense] = await Promise.all([
@@ -358,7 +394,7 @@ app.get('/api/rules', authMiddleware, async (c) => {
   try {
     const userId = c.get('userId') as number
     const { results } = await c.env.sribuu_db.prepare(
-      'SELECT * FROM rules WHERE user_id = ? OR user_id IS NULL ORDER BY priority ASC, created_at DESC'
+      'SELECT * FROM (SELECT * FROM rules WHERE user_id = ? UNION ALL SELECT * FROM rules WHERE user_id IS NULL) ORDER BY priority ASC, created_at DESC'
     ).bind(userId).all()
     return c.json(results)
   } catch (err) {
@@ -376,6 +412,7 @@ app.post('/api/rules', authMiddleware, async (c) => {
       'INSERT INTO rules (user_id, name, description, condition, action, priority) VALUES (?, ?, ?, ?, ?, ?)'
     ).bind(userId, name, description || '', JSON.stringify(condition), JSON.stringify(action), priority || 0).run()
     const { results } = await c.env.sribuu_db.prepare('SELECT * FROM rules WHERE id = ?').bind(meta.last_row_id).all()
+    if (results.length === 0) return c.json({ error: 'Failed to create rule' }, 500)
     return c.json((results as any[])[0], 201)
   } catch (err) {
     console.error('Create rule error:', err)
@@ -386,7 +423,8 @@ app.post('/api/rules', authMiddleware, async (c) => {
 app.put('/api/rules/:id', authMiddleware, async (c) => {
   try {
     const userId = c.get('userId') as number
-    const ruleId = parseInt(c.req.param('id'))
+    const ruleId = parseInt(c.req.param('id'), 10);
+    if (Number.isNaN(ruleId)) return c.json({ error: 'Invalid rule ID' }, 400);
     const existing = await c.env.sribuu_db.prepare('SELECT id FROM rules WHERE id = ? AND user_id = ?').bind(ruleId, userId).first()
     if (!existing) return c.json({ error: 'Rule not found' }, 404)
     const body = await c.req.json()
@@ -405,6 +443,7 @@ app.put('/api/rules/:id', authMiddleware, async (c) => {
     params.push(ruleId, userId)
     await c.env.sribuu_db.prepare(`UPDATE rules SET ${updates.join(', ')} WHERE id = ? AND user_id = ?`).bind(...params).run()
     const { results } = await c.env.sribuu_db.prepare('SELECT * FROM rules WHERE id = ?').bind(ruleId).all()
+    if (results.length === 0) return c.json({ error: 'Rule not found' }, 404)
     return c.json((results as any[])[0])
   } catch (err) {
     console.error('Update rule error:', err)
@@ -415,7 +454,8 @@ app.put('/api/rules/:id', authMiddleware, async (c) => {
 app.delete('/api/rules/:id', authMiddleware, async (c) => {
   try {
     const userId = c.get('userId') as number
-    const ruleId = parseInt(c.req.param('id'))
+    const ruleId = parseInt(c.req.param('id'), 10);
+    if (Number.isNaN(ruleId)) return c.json({ error: 'Invalid rule ID' }, 400);
     const existing = await c.env.sribuu_db.prepare('SELECT id FROM rules WHERE id = ? AND user_id = ?').bind(ruleId, userId).first()
     if (!existing) return c.json({ error: 'Rule not found' }, 404)
     await c.env.sribuu_db.prepare('DELETE FROM rules WHERE id = ? AND user_id = ?').bind(ruleId, userId).run()
